@@ -87,6 +87,7 @@ Type BaseMenuElement::getType()
 {
 	return m_type;
 };
+
 //////////////////////////// MenuItem ///////////////////
 
 // bool MenuItem::operator!= ( MenuItem& item1)
@@ -305,14 +306,30 @@ MenuPage* Menu::getCurrentPage(){
 
 void Menu::moveUpLevel(){
 	MenuPage* p = getCurrentPage();
-	if (p) {
-		Serial.println("prev= = " +p->getPrev()->getId());
-	}
 	if (p && p->getPrev()) {
+		Serial.println("moveUpLevel prev= = " +p->getPrev()->getId());
 		BaseMenuElement* el = getCurrentPage()->getPrev();
-		getCurrentPage()->setPrevItem(NULL);
+		p->setPrevItem(NULL);
 		setCurrentItem(el);
 	}
+}
+
+void Menu::moveto(BaseMenuElement* el)
+{
+	if (!el) {
+		return;
+	}
+
+	if (el->getType() == Type::Item) {
+		setCurrentItem(el);
+	} else if (el->getType() == Type::Page) {
+		setCurrentItem(el->elementAt(0));
+	}
+}
+
+void Menu::moveToRoot()
+{
+	moveto(getRoot());
 }
 
 //void Menu::moveto(int pn, int itn)
@@ -326,3 +343,24 @@ void Menu::setMaxPerPage(int max)
 {
 	m_maxPerPage = max;
 };
+
+void Menu::setRoot(BaseMenuElement* root)
+{
+	m_root = root;
+}
+
+BaseMenuElement* Menu::getRoot()
+{
+	return m_root;
+}
+
+void Menu::setParams(MenuParams* params)
+{
+	delete (m_params);
+	m_params = params;
+}
+
+MenuParams* Menu::getParams()
+{
+	return m_params;
+}

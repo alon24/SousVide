@@ -19,11 +19,24 @@ enum class Type
 	Base = 0, Item = 1, Page = 2, Menu = 3
 };
 
+enum class HighlightMode
+{
+	pointer = 0,
+	Inverse = 1
+};
+
+struct MenuParams {
+	boolean boxed = 1;
+	HighlightMode highlightMode = HighlightMode::pointer;
+	boolean showBackItem = true;
+};
+
 class BaseMenuElement
 {
 	String m_id;
 	BaseMenuElement *m_parent;
 	Vector<BaseMenuElement*> m_children;
+
 	Type m_type;
 
 public:
@@ -31,8 +44,8 @@ public:
 	{
 		m_id = id;
 		m_type = type;
-	}
-	;
+	};
+
 	Type getType();
 	String getId();
 	void setParent(BaseMenuElement *parent);
@@ -102,11 +115,16 @@ public:
 class Menu: public BaseMenuElement
 {
 	BaseMenuElement* m_currentItem = NULL;
+	BaseMenuElement *m_root;
 	int m_maxPerPage = 2;
+
+	MenuParams* m_params;
+
 public:
 	Menu(String id) :
 			BaseMenuElement(id, Type::Menu)
 	{
+		m_params = new MenuParams();
 	}
 	;
 
@@ -120,8 +138,14 @@ public:
 	MenuPage* getCurrentPage();
 //	void setCurrentItem(int pn, int itn);
 	void setCurrentItem(BaseMenuElement* cur);
-
 	void setMaxPerPage(int max);
+
+	void setRoot(BaseMenuElement* root);
+	BaseMenuElement* getRoot();
+	void moveToRoot();
+
+	void setParams(MenuParams* params);
+	MenuParams* getParams();
 
 	int getCurrIndex()
 	{
@@ -130,8 +154,12 @@ public:
 
 	void movetolinked()
 	{
+		if (!getCurrent()) {
+			return;
+		}
+
 		BaseMenuElement* linked = ((MenuItem*) getCurrent())->getLinkedItem();
-		if (linked == NULL)
+		if (!linked)
 		{
 			return;
 		}
@@ -155,10 +183,10 @@ public:
 		}
 	}
 	;
+	void moveto(BaseMenuElement* el);
 
 private:
 	void moveto(int pn, int itn);
-	void moveto(BaseMenuElement* el);
 };
 
 #endif /* INCLUDE_MENUES_H_ */

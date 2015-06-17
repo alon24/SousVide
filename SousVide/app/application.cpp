@@ -4,6 +4,7 @@
 #include <menues.h>
 #include <ButtonActions.cpp>
 #include <mqttHelper.h>
+#include <utils.h>
 
 //encoder code from http://bildr.org/2012/08/rotary-encoder-arduino/
 
@@ -12,12 +13,12 @@
 Adafruit_SSD1306 display(4);
 
 //Pins used
-#define encoderPin1 13
-#define encoderPin2 12
-#define encoderSwitchPin 14 //push button switch
 #define relayPin 2
 #define sclPin 5
 #define sdaPin 4
+#define encoderPin1 13
+#define encoderPin2 12
+#define encoderSwitchPin 14 //push button switch
 
 //Timers
 Timer procTimer;
@@ -30,7 +31,6 @@ Timer blinkTimer;
 // Put you SSID and Password here
 #define WIFI_SSID ""
 #define WIFI_PWD ""
-
 
 void onMessageReceived(String topic, String message); // Forward declaration for our callback
 String name;
@@ -48,13 +48,15 @@ String getName()
 
 // For quickly check you can use: http://www.hivemq.com/demos/websocket-client/ (Connection= test.mosquitto.org:8080)
 // MQTT client
-MqttClient mqtt("test.mosquitto.org", 1883, onMessageReceived);
+//MqttClient mqtt("test.mosquitto.org", 1883, onMessageReceived);
+
+mqttHelper *mqtt;
 
 // Publish our message
 void publishMessage(String topic, String payload)
 {
 	Serial.println("Let's publish message now! t=" + topic + ", p=" + payload);
-	mqtt.publish("dood/" + topic, payload); // or publishWithQoS
+	mqtt->publishMessage("dood/" + topic, payload); // or publishWithQoS
 }
 
 void publishInit()
@@ -150,8 +152,8 @@ void onMessageReceived(String topic, String message)
 }
 
 // Will be called when WiFi station was connected to AP
-void connectOk()
-{
+//void connectOk()
+//{
 //	debugf("Connect to AP successful");
 //	Serial.println("I'm CONNECTED");
 //
@@ -176,11 +178,11 @@ void connectOk()
 //
 //	// Start publishing loop
 //	initTimer.initializeMs(15 * 1000, publishInit).startOnce();
-}
+//}
 
 // Will be called when WiFi station timeout was reached
-void connectFail()
-{
+//void connectFail()
+//{
 //	Serial.println("I'm NOT CONNECTED. Need help :(");
 //	debugf("Connect to AP failed");
 //
@@ -190,7 +192,7 @@ void connectFail()
 //
 //	// start webserver
 //	startWebServer();
-}
+//}
 
 #define say(a) ( Serial.print(a) )
 #define sayln(a) (Serial.println(a))
@@ -199,9 +201,8 @@ void IRAM_ATTR refreshScreen();
 volatile int lastEncoded = 0;
 volatile long encoderValue = 0;
 
-
 long lastencoderValue = 0;
-int lastValue =0;
+int lastValue = -20;
 
 int lastMSB = 0;
 int lastLSB = 0;
@@ -222,11 +223,11 @@ enum DisplayMode
 };
 DisplayMode displayMode = Display_Regular;
 
-//button modes
-boolean clicked = false;
-boolean doubleClicked = false;
-boolean hold = false;
-boolean longHold = false;
+////button modes
+//boolean clicked = false;
+//boolean doubleClicked = false;
+//boolean hold = false;
+//boolean longHold = false;
 
 //should check screen action
 boolean shouldDimScreen = false;
@@ -240,22 +241,14 @@ ButtonActions bAct(encoderSwitchPin, buttonUseEvent);
 
 Menu menu("SousVide");
 
-void IRAM_ATTR updateEncoder(){
-
-  int MSB = digitalRead(encoderPin1); //MSB = most significant bit
-  int LSB = digitalRead(encoderPin2); //LSB = least significant bit
-
-  int encoded = (MSB << 1) |LSB; //converting the 2 pin value to single number
-  int sum  = (lastEncoded << 2) | encoded; //adding it to the previous encoded value
-
-  if(sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011) encoderValue ++;
-  if(sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000) encoderValue --;
-
-  lastEncoded = encoded; //store this value for next time
-}
-
 void setupMenu()
 {
+//	MenuPage *pidSettings = new MenuPage("PID Tuning");
+//	pidSettings->createItem("Tune SP");
+//	pidSettings->createItem("Tune P");
+//	pidSettings->createItem("Tune I");
+//	pidSettings->createItem("Tune D");
+
 	MenuPage *settings = new MenuPage("Settings");
 	MenuItem *i1 =  new MenuItem("Set Time");
 	MenuItem *i2 = new MenuItem("Set Needed Temp");
@@ -286,6 +279,8 @@ void setupMenu()
 	i2->setLinker(opt);
 	menu.setCurrentItem(i1);
 	menu.setMaxPerPage(5);
+	menu.setRoot(settings);
+	menu.getParams()->highlightMode = HighlightMode::Inverse;
 }
 
 void moveToMenuMode()
@@ -295,15 +290,15 @@ void moveToMenuMode()
 		sayln("Display - move to menu mode");
 //		menu.setCurrentItem(1,1);
 	    displayMode = Display_Menu;
+	    menu.moveToRoot();
+	    refreshScreen();
 	}
 
 //    lastActionTime = SystemClock.now().toUnixTime();
 //	shouldDimScreen = false;
-	refreshScreen();
 }
-
 void handleEncoderInterrupt() {
-	if(lastValue != encoderValue/4) {
+	if(lastValue != encoderValue/4 && (encoderValue %4 == 0)) {
 		if (lastValue > encoderValue/4) {
 			menu.moveUp();
 		}
@@ -315,7 +310,24 @@ void handleEncoderInterrupt() {
 //	    say("encode used");
 	    //move to menu mode
 	    moveToMenuMode();
+	    refreshScreen();
 	  }
+}
+
+void IRAM_ATTR updateEncoder(){
+
+  int MSB = digitalRead(encoderPin1); //MSB = most significant bit
+  int LSB = digitalRead(encoderPin2); //LSB = least significant bit
+
+  int encoded = (MSB << 1) |LSB; //converting the 2 pin value to single number
+  int sum  = (lastEncoded << 2) | encoded; //adding it to the previous encoded value
+
+  if(sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011) encoderValue ++;
+  if(sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000) encoderValue --;
+
+  lastEncoded = encoded; //store this value for next time
+
+  handleEncoderInterrupt();
 }
 
 void IRAM_ATTR checkRotaryBtn()
@@ -324,20 +336,20 @@ void IRAM_ATTR checkRotaryBtn()
 }
 
 void handleClick() {
-	menu.movetolinked();
-	displayMode = Display_Menu;
-	refreshScreen();
 
-//	switch(displayMode)
-//	{
-//		case Display_Menu:
-//
-//			break;
-//		case Display_Regular:
-//			displayMode = DIS_SHOW_DATA;
+	switch(displayMode)
+	{
+		case Display_Menu:
+			menu.movetolinked();
+			displayMode = Display_Menu;
+			refreshScreen();
+			break;
+		case Display_Regular:
+			displayMode = Display_Menu;
+			refreshScreen();
 //			checkDisplayState();
-//			break;
-//	}
+			break;
+	}
 
 }
 
@@ -345,7 +357,6 @@ void handleDoubleClick() {
 	menu.moveUpLevel();
 	refreshScreen();
 }
-
 
 void moveToRegMode()
 {
@@ -415,44 +426,86 @@ void checkDisplayState()
 	}
 }
 
+void highlightRow(int i) {
+	int hight = 8;
+	int start = 10 + hight;
+	int y = (start + (i*hight));
+	display.fillRect(2, y, 121, hight, WHITE);
+}
+
 void IRAM_ATTR showMenuScreen() {
 	sayln(lastValue);
 
 	display.setTextSize(1);
 	display.setTextColor(WHITE);
-	display.setCursor(1, 1);
+	String t = "SousVide by alon24";
+	display.setCursor(getCenterXForString(menu.getParams(), t, 1), 1);
 	display.clearDisplay();
-	display.println("SousVide by alon24 " + String(lastValue));
-	display.setCursor(2,10);
+	display.println(t);
+//	display.setCursor(2,10);
 
 	Vector<BaseMenuElement*> v = menu.getDisplayedItems();
 	BaseMenuElement* cur = menu.getCurrent();
 	BaseMenuElement* p = cur->getParent();
-	display.println(String(p->getId()));
+	t = p->getId();
+	display.setCursor(getCenterXForString(menu.getParams(), t, 1), 10);
+	display.println(t);
 	display.setTextSize(1);
+
+	uint16_t regColor = WHITE;
+	uint16_t highlightColor = (menu.getParams()->highlightMode == HighlightMode::pointer) ? WHITE : BLACK;
+	int hight = 8;
+	int start = 10 + hight;
+
 	for (int i = 0; i < v.size(); ++i) {
 		BaseMenuElement* item = v.elementAt(i);
+		String txt;
 		if(cur == item) {
-//			display.setTextColor(BLACK, WHITE);
-			display.print(">");
+			display.setTextColor(highlightColor);
+			if (menu.getParams()->highlightMode == HighlightMode::pointer) {
+				txt = String(">");
+			}
+			else {
+				int y = (start + (i*hight));
+				display.setCursor(4, y);
+//				txt= String(" ");
+				highlightRow(i);
+			}
 		} else {
-			display.print(" ");
-//			display.setTextColor(WHITE, BLACK);
+			display.setTextColor(regColor);
+			if (menu.getParams()->highlightMode == HighlightMode::pointer) {
+				txt = String(" ");
+			}
+			else
+			{
+				int y = (start + (i*hight));
+				display.setCursor(4, y);
+			}
 		}
-		display.println(item->getId());
+
+		txt += item->getId();
+		display.println(txt);
 	}
-	display.drawRect(0,0,128,64, WHITE);
+	if(menu.getParams()->boxed == true) {
+		display.drawRect(0,0,128,64, WHITE);
+	}
+
 	display.display();
 }
 
 void IRAM_ATTR showRegScreen() {
+	menu.moveto(menu.getRoot());
 	display.clearDisplay();
 	display.setTextSize(1);
 	display.setTextColor(WHITE);
 	display.setCursor(1, 1);
-	display.println("SousVide by alon24 " + String(lastValue));
-	display.setCursor(15, 10);
-	display.print(currentTime);
+	String t= "SousVide";
+	display.println(t);
+	t = currentTime;
+	display.setCursor(getXOnScreenForString(t, 1), 1 );
+	display.print(t);
+//	String t = String(millis()/1000);
+//	display.print(t);
 	display.display();
 }
 
@@ -476,10 +529,14 @@ void refreshTimeForUi()
 	{
 		return;
 	}
-	display.fillRect(15, 10, 80, 30, BLACK);
+	int x = getXOnScreenForString(currentTime, 1);
+	display.fillRect( x, 1, currentTime.length() * 6, 8, BLACK);
 	display.setTextSize(1);
 	display.setTextColor(WHITE);
-	display.setCursor(15, 10);
+	display.setCursor(x, 1 );
+//	display.setCursor(15, 10);
+//	String t = String(millis()/1000);
+//		display.print(t);
 	display.print(currentTime);
 	display.display();
 }
@@ -487,6 +544,8 @@ void refreshTimeForUi()
 void IRAM_ATTR updateTimeTimerAction()
 {
 	currentTime = SystemClock.now().toShortTimeString(true);
+
+//	Serial.println("time=" + currentTime);
 	refreshTimeForUi();
 }
 
@@ -496,6 +555,31 @@ void blink()
 {
 	digitalWrite(relayPin, state);
 	state = !state;
+}
+
+
+// Will be called when WiFi station was connected to AP
+void connectOk()
+{
+	Serial.println("I'm CONNECTED");
+
+//	if (!mqtt)
+//	{
+//		// Run MQTT client
+//		mqtt->start();
+//		mqtt = new mqttHelper("test.mosquitto.org", 1883);
+//	}
+//
+//	// Start publishing loop
+//	procTimer.initializeMs(20 * 1000, publishMessage).start(); // every 20 seconds
+}
+
+// Will be called when WiFi station timeout was reached
+void connectFail()
+{
+	Serial.println("I'm NOT CONNECTED. Need help :(");
+
+	// .. some you code for device configuration ..
 }
 
 void init()
@@ -520,8 +604,8 @@ void init()
 	digitalWrite(encoderPin1, HIGH); //turn pullup resistor on
 	digitalWrite(encoderPin2, HIGH); //turn pullup resistor on
 
-	pinMode(relayPin, OUTPUT);
-	digitalWrite(relayPin, LOW);
+//	pinMode(relayPin, OUTPUT);
+//	digitalWrite(relayPin, LOW);
 //	blinkTimer.initializeMs(1000, blink).start();
 
 	attachInterrupt(encoderPin1, updateEncoder, CHANGE);
@@ -534,7 +618,7 @@ void init()
 	lastActionTime = date.Milliseconds;
 	sayln(lastActionTime);
 
-	procTimer.initializeMs(15, handleEncoderInterrupt).start();
+//	procTimer.initializeMs(15, handleEncoderInterrupt).start();
 	buttonTimer.initializeMs(15, checkRotaryBtn).start();
 
 	refreshScreen();
@@ -542,10 +626,14 @@ void init()
 //	displayTimer.initializeMs(15, handleScreen).start();
 	timeTimer.initializeMs(1000, updateTimeTimerAction).start();
 
+//	mqtt = new mqttHelper("test.mosquitto.org", 1883);
 
-//	WifiStation.config(WIFI_SSID, WIFI_PWD);
+	WifiStation.config(WIFI_SSID, WIFI_PWD);
 	WifiStation.enable(false);
 	WifiAccessPoint.enable(false);
+
+	// Run our method when station was connected to AP (or not connected)
+//	WifiStation.waitConnection(connectOk, 20, connectFail); // We recommend 20+ seconds for connection timeout at start
 }
 
 

@@ -13,16 +13,19 @@
 class mqttHelper
 {
 	// MQTT client
-//	MqttClient mqtt(":1", 2, NULL);
+	MqttClient *mqtt;
 
 public:
 	mqttHelper();
 	mqttHelper(String broker, int port);
 	virtual ~mqttHelper();
-	void onMessageReceived(String topic, String message); // Forward declaration for our callback
+	boolean initWithParams(String broker, int port);
+	void start();
 	void publishMessage(String topic, String payload);
 	void publishInit();
-	void connectOk();
-	void connectFail();
+//	void connectOk();
+//	void connectFail();
+//	void onMessageReceived(String topic, String message); // Forward declaration for our callback
+private:
 };
 #endif /* APP_MQTTHELPER_H_ */
