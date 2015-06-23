@@ -5,17 +5,26 @@
 #include <ButtonActions.cpp>
 #include <mqttHelper.h>
 #include <utils.h>
+#include <AppSettings.h>
+
+//Forward declerations
+//mqtt
+void onMessageReceived(String topic, String message); // Forward declaration for our callback
+
+//wifi
+//void process();
+void connectOk();
+void connectFail();
 
 //encoder code from http://bildr.org/2012/08/rotary-encoder-arduino/
 
-//* For I2C mode:
-// Default I2C pins 0 and 2. Pin 4 - optional reset
+//* SSD1306 - I2C
 Adafruit_SSD1306 display(4);
 
 //Pins used
-#define relayPin 2
 #define sclPin 5
 #define sdaPin 4
+#define relayPin 2
 #define encoderPin1 13
 #define encoderPin2 12
 #define encoderSwitchPin 14 //push button switch
@@ -28,13 +37,15 @@ Timer timeTimer;
 Timer initTimer;
 Timer blinkTimer;
 
-// Put you SSID and Password here
-#define WIFI_SSID ""
-#define WIFI_PWD ""
-
-void onMessageReceived(String topic, String message); // Forward declaration for our callback
 String name;
 String ip;
+
+HttpServer server;
+FTPServer ftp;
+
+BssList networks;
+String network, password;
+Timer connectionTimer;
 
 void setName(String newName)
 {
@@ -582,30 +593,224 @@ void connectFail()
 	// .. some you code for device configuration ..
 }
 
+void onIndex(HttpRequest &request, HttpResponse &response)
+{
+	Serial.println("inside onindex");
+	debugf("inside onindex");
+	if (!fileExist("index.html"))
+	{
+		Serial.println("!fileExist(index)");
+		debugf("!fileExist(index)");
+		fileSetContent("index.html",
+				"<h3>Please connect to FTP and upload files from folder 'web/build' (details in code)</h3>");
+	}
+	else
+	{
+		TemplateFileStream *tmpl = new TemplateFileStream("index.html");
+		auto &vars = tmpl->variables();
+		response.sendTemplate(tmpl); // will be automatically deleted
+	}
+}
+
+void onIpConfig(HttpRequest &request, HttpResponse &response)
+{
+	if (request.getRequestMethod() == RequestMethod::POST)
+	{
+		AppSettings.dhcp = request.getPostParameter("dhcp") == "1";
+		AppSettings.ip = request.getPostParameter("ip");
+		AppSettings.netmask = request.getPostParameter("netmask");
+		AppSettings.gateway = request.getPostParameter("gateway");
+		debugf("Updating IP settings: %d", AppSettings.ip.isNull());
+		AppSettings.save();
+	}
+
+	TemplateFileStream *tmpl = new TemplateFileStream("settings.html");
+	auto &vars = tmpl->variables();
+
+	bool dhcp = WifiStation.isEnabledDHCP();
+	vars["dhcpon"] = dhcp ? "checked='checked'" : "";
+	vars["dhcpoff"] = !dhcp ? "checked='checked'" : "";
+
+	if (!WifiStation.getIP().isNull())
+	{
+		vars["ip"] = WifiStation.getIP().toString();
+		vars["netmask"] = WifiStation.getNetworkMask().toString();
+		vars["gateway"] = WifiStation.getNetworkGateway().toString();
+	}
+	else
+	{
+		vars["ip"] = "192.168.1.77";
+		vars["netmask"] = "255.255.255.0";
+		vars["gateway"] = "192.168.1.1";
+	}
+
+	response.sendTemplate(tmpl); // will be automatically deleted
+}
+
+void onFile(HttpRequest &request, HttpResponse &response)
+{
+	String file = request.getPath();
+	if (file[0] == '/')
+		file = file.substring(1);
+
+	if (file[0] == '.')
+		response.forbidden();
+	else
+	{
+		response.setCache(86400, true); // It's important to use cache for better performance.
+		response.sendFile(file);
+	}
+}
+
+void onAjaxNetworkList(HttpRequest &request, HttpResponse &response)
+{
+	JsonObjectStream* stream = new JsonObjectStream();
+	JsonObject& json = stream->getRoot();
+
+	json["status"] = (bool)true;
+
+	bool connected = WifiStation.isConnected();
+	json["connected"] = connected;
+	if (connected)
+	{
+		// Copy full string to JSON buffer memory
+		json.addCopy("network", WifiStation.getSSID());
+	}
+
+	JsonArray& netlist = json.createNestedArray("available");
+	for (int i = 0; i < networks.count(); i++)
+	{
+		if (networks[i].hidden) continue;
+		JsonObject &item = netlist.createNestedObject();
+		item.add("id", (int)networks[i].getHashId());
+		// Copy full string to JSON buffer memory
+		item.addCopy("title", networks[i].ssid);
+		item.add("signal", networks[i].rssi);
+		item.add("encryption", networks[i].getAuthorizationMethodName());
+	}
+
+	response.setAllowCrossDomainOrigin("*");
+	response.sendJsonObject(stream);
+}
+
+void makeConnection()
+{
+	WifiStation.enable(true);
+	WifiStation.config(network, password);
+
+	AppSettings.ssid = network;
+	AppSettings.password = password;
+	AppSettings.save();
+
+	network = ""; // task completed
+}
+
+void onAjaxConnect(HttpRequest &request, HttpResponse &response)
+{
+	JsonObjectStream* stream = new JsonObjectStream();
+	JsonObject& json = stream->getRoot();
+
+	String curNet = request.getPostParameter("network");
+	String curPass = request.getPostParameter("password");
+
+	bool updating = curNet.length() > 0 && (WifiStation.getSSID() != curNet || WifiStation.getPassword() != curPass);
+	bool connectingNow = WifiStation.getConnectionStatus() == eSCS_Connecting || network.length() > 0;
+
+	if (updating && connectingNow)
+	{
+		debugf("wrong action: %s %s, (updating: %d, connectingNow: %d)", network.c_str(), password.c_str(), updating, connectingNow);
+		json["status"] = (bool)false;
+		json["connected"] = (bool)false;
+	}
+	else
+	{
+		json["status"] = (bool)true;
+		if (updating)
+		{
+			network = curNet;
+			password = curPass;
+			debugf("CONNECT TO: %s %s", network.c_str(), password.c_str());
+			json["connected"] = false;
+			connectionTimer.initializeMs(1200, makeConnection).startOnce();
+		}
+		else
+		{
+			json["connected"] = WifiStation.isConnected();
+			debugf("Network already selected. Current status: %s", WifiStation.getConnectionStatusName());
+		}
+	}
+
+	if (!updating && !connectingNow && WifiStation.isConnectionFailed())
+		json["error"] = WifiStation.getConnectionStatusName();
+
+	response.setAllowCrossDomainOrigin("*");
+	response.sendJsonObject(stream);
+}
+
+void startWebServer()
+{
+	server.listen(80);
+	server.addPath("/", onIndex);
+	server.addPath("/ipconfig", onIpConfig);
+	server.addPath("/ajax/get-networks", onAjaxNetworkList);
+	server.addPath("/ajax/connect", onAjaxConnect);
+	server.setDefaultHandler(onFile);
+}
+
+void startFTP()
+{
+	if (!fileExist("index.html"))
+		fileSetContent("index.html", "<h3>Please connect to FTP and upload files from folder 'web/build' (details in code)</h3>");
+
+	// Start FTP server
+	ftp.listen(21);
+	ftp.addUser("me", "123"); // FTP account
+}
+
+// Will be called when system initialization was completed
+void startServers()
+{
+	Serial.println("Starting servers");
+	startFTP();
+	startWebServer();
+}
+
+void networkScanCompleted(bool succeeded, BssList list)
+{
+	if (succeeded)
+	{
+		for (int i = 0; i < list.count(); i++)
+			if (!list[i].hidden && list[i].ssid.length() > 0)
+				networks.add(list[i]);
+	}
+	networks.sort([](const BssInfo& a, const BssInfo& b){ return b.rssi - a.rssi; } );
+}
+
 void init()
 {
-	Wire.pins(sclPin, sdaPin);
 	Serial.begin(SERIAL_BAUD_RATE); // 74880
+	Serial.systemDebugOutput(true); // Debug output to serial
+	Wire.pins(sclPin, sdaPin);
+
+	debugf("======= SousVide ==========");
 
 	setupMenu();
 
 //	delay(3000);
-	say("======= SousVide ==========");
+//	say("======= SousVide ==========");
 	Serial.println();
 
 	display.begin(SSD1306_SWITCHCAPVCC);
 	display.clearDisplay();
 	display.display();
 
-//	printStatus();
-
 	pinMode(encoderPin1, INPUT);
 	pinMode(encoderPin2, INPUT);
 	digitalWrite(encoderPin1, HIGH); //turn pullup resistor on
 	digitalWrite(encoderPin2, HIGH); //turn pullup resistor on
 
-//	pinMode(relayPin, OUTPUT);
-//	digitalWrite(relayPin, LOW);
+	pinMode(relayPin, OUTPUT);
+	digitalWrite(relayPin, HIGH);
 //	blinkTimer.initializeMs(1000, blink).start();
 
 	attachInterrupt(encoderPin1, updateEncoder, CHANGE);
@@ -626,38 +831,22 @@ void init()
 //	displayTimer.initializeMs(15, handleScreen).start();
 	timeTimer.initializeMs(1000, updateTimeTimerAction).start();
 
-//	mqtt = new mqttHelper("test.mosquitto.org", 1883);
+	AppSettings.load();
 
-	WifiStation.config(WIFI_SSID, WIFI_PWD);
-	WifiStation.enable(false);
-	WifiAccessPoint.enable(false);
+	WifiStation.enable(true);
+	if (AppSettings.exist())
+	{
+		WifiStation.config(AppSettings.ssid, AppSettings.password);
+		if (!AppSettings.dhcp && !AppSettings.ip.isNull())
+			WifiStation.setIP(AppSettings.ip, AppSettings.netmask, AppSettings.gateway);
+	}
+	WifiStation.startScan(networkScanCompleted);
 
-	// Run our method when station was connected to AP (or not connected)
-//	WifiStation.waitConnection(connectOk, 20, connectFail); // We recommend 20+ seconds for connection timeout at start
+	// Start AP for configuration
+	WifiAccessPoint.enable(true);
+	WifiAccessPoint.config("Sming Configuration", "", AUTH_OPEN);
+
+	// Run WEB server on system ready
+	System.onReady(startServers);
 }
 
-
-
-//#include <user_config.h>
-//#include <SmingCore/SmingCore.h>
-//
-//#define LED_PIN 2 // GPIO2
-//
-//Timer procTimer;
-//bool state = true;
-//int freeMemory;
-//void blink()
-//{
-//    digitalWrite(LED_PIN, state);
-//    state = !state;
-//
-//}
-//
-//void init()
-//{
-//    pinMode(LED_PIN, OUTPUT);
-//    procTimer.initializeMs(1000, blink).start();
-//    Serial.println("flashmem: " + String(flashmem_get_size_bytes()));
-//    freeMemory = system_get_free_heap_size();
-//    Serial.println(freeMemory);
-//}

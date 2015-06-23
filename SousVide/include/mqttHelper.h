@@ -10,10 +10,44 @@
 
 #include <SmingCore/SmingCore.h>
 
+
+
+class ReconnctingMqttClient2: public MqttClient{
+      using MqttClient::MqttClient; // Inherit Base's constructors.
+
+    void onError(err_t err)  {
+        close();
+        connect(mqttName());
+        subscribe(commandTopic());
+        return;
+    }
+
+    String mqttName(){
+        String name;
+        int id = system_get_chip_id();
+        name = "SmartController-";
+        name  += id;
+        return name;
+    }
+
+
+    String commandTopic(){
+        String topic;
+        int id = system_get_chip_id();
+        topic = "/smart_plug_work/SmartPlug-";
+        topic  = topic + id;
+        return topic;
+    }
+
+};
+//// MQTT client
+//// For quickly check you can use: http://www.hivemq.com/demos/websocket-client/ (Connection= test.mosquitto.org:8080)
+//ReconnctingMqttClient2 mqtt("dmarkey.com", 8000, onMessageReceived);
+
 class mqttHelper
 {
 	// MQTT client
-	MqttClient *mqtt;
+	ReconnctingMqttClient2 *mqtt;
 
 public:
 	mqttHelper();

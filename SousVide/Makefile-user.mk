@@ -2,6 +2,9 @@
 ## Parameters configured here will override default and ENV values.
 ## Uncomment and change examples:
 
+#Add your source directories here separated by space
+MODULES = app
+
 ## ESP_HOME sets the path where ESP tools and SDK are located.
 ## Windows:
 # ESP_HOME = c:/Espressif
@@ -24,5 +27,4 @@
 # COM_PORT = /dev/tty.usbserial
 
 # Com port speed
-#COM_SPEED	= 512000
-#COM_SPEED	= 921600
+# COM_SPEED	= 115200

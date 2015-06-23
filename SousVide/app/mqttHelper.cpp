@@ -16,7 +16,7 @@ mqttHelper::mqttHelper()
 
 mqttHelper::mqttHelper(String broker, int port)
 {
-	mqtt = new MqttClient(broker, port, NULL);
+	mqtt = new ReconnctingMqttClient2(broker, port, NULL);
 }
 
 
@@ -38,7 +38,7 @@ boolean mqttHelper::initWithParams(String broker, int port) {
 		return false;
 	}
 
-	mqtt = new MqttClient(broker, port, NULL);
+	mqtt = new ReconnctingMqttClient2(broker, port, NULL);
 }
 
 void mqttHelper::start() {
