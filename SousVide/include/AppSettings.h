@@ -36,8 +36,6 @@ struct ApplicationSettingsStorage
 			JsonObject& root = jsonBuffer.parseObject(jsonString);
 
 			JsonObject& network = root["network"];
-			ssid = network["ssid"].toString();
-			password = network["password"].toString();
 
 			dhcp = network["dhcp"];
 
