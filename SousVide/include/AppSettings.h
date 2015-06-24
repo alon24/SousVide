@@ -26,6 +26,8 @@ struct ApplicationSettingsStorage
 	void load()
 	{
 		DynamicJsonBuffer jsonBuffer;
+		ssid = "freak";
+		password = "asdf12gh";
 		if (exist())
 		{
 			int size = fileGetSize(APP_SETTINGS_FILE);

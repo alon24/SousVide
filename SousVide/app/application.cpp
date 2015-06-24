@@ -844,7 +844,7 @@ void init()
 
 	// Start AP for configuration
 	WifiAccessPoint.enable(true);
-	WifiAccessPoint.config("Sming Configuration", "", AUTH_OPEN);
+	WifiAccessPoint.config("ESP Configuration", "", AUTH_OPEN);
 
 	// Run WEB server on system ready
 	System.onReady(startServers);
