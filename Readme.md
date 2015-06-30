@@ -8,3 +8,6 @@ http://www.ebay.com/itm/291347112498?_trksid=p2057872.m2749.l2649&var=5904673269
 
 This is based on https://learn.adafruit.com/sous-vide-powered-by-arduino-the-sous-viduino?view=all
 
+Video
+https://www.youtube.com/watch?v=fo02opoEktk
+
