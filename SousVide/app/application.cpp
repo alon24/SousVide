@@ -16,18 +16,27 @@ void onMessageReceived(String topic, String message); // Forward declaration for
 void connectOk();
 void connectFail();
 
+void handleCommands(String commands);
+void updateWebUI();
+
 //encoder code from http://bildr.org/2012/08/rotary-encoder-arduino/
 
 //* SSD1306 - I2C
 Adafruit_SSD1306 display(4);
 
 //Pins used
-#define sclPin 5
-#define sdaPin 4
-#define relayPin 2
+#define sclPin 0
+#define sdaPin 2
+#define relayPin 5
 #define encoderPin1 13
 #define encoderPin2 12
 #define encoderSwitchPin 14 //push button switch
+
+// If you want, you can define WiFi settings globally in Eclipse Environment Variables
+#ifndef WIFI_SSID
+	#define WIFI_SSID "PleaseEnterSSID" // Put you SSID and Password here
+	#define WIFI_PWD "PleaseEnterPass"
+#endif
 
 //Timers
 Timer procTimer;
@@ -37,8 +46,15 @@ Timer timeTimer;
 Timer initTimer;
 Timer blinkTimer;
 
+time_t lastActionTime =0;
+String currentTime = "00:00:00";
+
+int totalActiveSockets = 0;
+
 String name;
 String ip;
+
+int currentScreenIndex = 0;
 
 HttpServer server;
 FTPServer ftp;
@@ -46,6 +62,71 @@ FTPServer ftp;
 BssList networks;
 String network, password;
 Timer connectionTimer;
+
+bool relayState = false;
+
+////Web Sockets ///////
+
+void wsConnected(WebSocket& socket)
+{
+	totalActiveSockets++;
+
+	// Notify everybody about new connection
+	WebSocketsList &clients = server.getActiveWebSockets();
+	for (int i = 0; i < clients.count(); i++) {
+		clients[i].sendString("New friend arrived! Total: " + String(totalActiveSockets));
+	}
+	updateWebUI();
+}
+
+void wsMessageReceived(WebSocket& socket, const String& message)
+{
+	Serial.printf("WebSocket message received:\r\n%s\r\n", message.c_str());
+//	String response = "Echo: " + message;
+//	socket.sendString(response);
+	handleCommands(message);
+}
+
+void updateWebUI() {
+	WebSocketsList &clients = server.getActiveWebSockets();
+	for (int i = 0; i < clients.count(); i++) {
+		Serial.println("updateWebUI::relayState:" + String(relayState == true ? "true" : "false"));
+		clients[i].sendString("relayState:" + String(relayState == true ? "true" : "false"));
+		clients[i].sendString("updatetime:" + currentTime);
+	}
+}
+
+
+void handleCommands(String commands) {
+	Serial.println("now handling " + commands);
+
+	if (commands.startsWith("toggleRelay")) {
+		String state = commands.substring(12);
+		Serial.println("handleCommands::toggeled relay " + String(state));
+		relayState = state.equals("true") ? true : false;
+		Serial.println("handleCommand:: (state.equals(true)=" + String(state.equals("true")));
+		digitalWrite(relayPin, (state.equals("true") ? HIGH : LOW));
+
+		updateWebUI();
+	}
+}
+
+void wsBinaryReceived(WebSocket& socket, uint8_t* data, size_t size)
+{
+	Serial.printf("wsBinaryReceived::Websocket binary data recieved, size: %d\r\n", size);
+}
+
+void wsDisconnected(WebSocket& socket)
+{
+	totalActiveSockets--;
+
+	// Notify everybody about lost connection
+	WebSocketsList &clients = server.getActiveWebSockets();
+	for (int i = 0; i < clients.count(); i++)
+		clients[i].sendString("We lost our friend :( Total: " + String(totalActiveSockets));
+}
+
+////Web Sockets ///////
 
 void setName(String newName)
 {
@@ -242,9 +323,6 @@ DisplayMode displayMode = Display_Regular;
 
 //should check screen action
 boolean shouldDimScreen = false;
-
-time_t lastActionTime =0;
-String currentTime = "00:00:00";
 
 void buttonUseEvent(ButtonUseEvent used);
 
@@ -504,6 +582,17 @@ void IRAM_ATTR showMenuScreen() {
 	display.display();
 }
 
+void writeToScreen(int index) {
+	if (index == 0) {
+		display.setCursor(1, 10);
+		display.print("sc1 ");
+	}
+	else if (index == 1) {
+		display.setCursor(1, 15);
+		display.print("sc2 ");
+	}
+}
+
 void IRAM_ATTR showRegScreen() {
 	menu.moveto(menu.getRoot());
 	display.clearDisplay();
@@ -515,8 +604,9 @@ void IRAM_ATTR showRegScreen() {
 	t = currentTime;
 	display.setCursor(getXOnScreenForString(t, 1), 1 );
 	display.print(t);
-//	String t = String(millis()/1000);
-//	display.print(t);
+
+	writeToScreen(currentScreenIndex);
+
 	display.display();
 }
 
@@ -550,6 +640,7 @@ void refreshTimeForUi()
 //		display.print(t);
 	display.print(currentTime);
 	display.display();
+	updateWebUI();
 }
 
 void IRAM_ATTR updateTimeTimerAction()
@@ -693,6 +784,26 @@ void onAjaxNetworkList(HttpRequest &request, HttpResponse &response)
 	response.sendJsonObject(stream);
 }
 
+bool flipRelay(){
+	relayState = !relayState;
+	digitalWrite(relayPin, relayState ? HIGH : LOW);
+	return relayState;
+}
+
+void onDoCommand(HttpRequest &request, HttpResponse &response)
+{
+	Serial.println("onDoCommand");
+	JsonObjectStream* stream = new JsonObjectStream();
+	JsonObject& json = stream->getRoot();
+
+
+//	if (response.)
+	json["relayState"] = flipRelay();
+
+	response.setAllowCrossDomainOrigin("*");
+	response.sendJsonObject(stream);
+}
+
 void makeConnection()
 {
 	WifiStation.enable(true);
@@ -754,7 +865,16 @@ void startWebServer()
 	server.addPath("/ipconfig", onIpConfig);
 	server.addPath("/ajax/get-networks", onAjaxNetworkList);
 	server.addPath("/ajax/connect", onAjaxConnect);
+//	server.addPath("/ajax/doCommand", onDoCommand);
 	server.setDefaultHandler(onFile);
+
+	// Web Sockets configuration
+	server.enableWebSockets(true);
+	server.setWebSocketConnectionHandler(wsConnected);
+	server.setWebSocketMessageHandler(wsMessageReceived);
+	server.setWebSocketBinaryHandler(wsBinaryReceived);
+	server.setWebSocketDisconnectionHandler(wsDisconnected);
+
 }
 
 void startFTP()
@@ -771,7 +891,7 @@ void startFTP()
 void startServers()
 {
 	Serial.println("Starting servers");
-	startFTP();
+//	startFTP();
 	startWebServer();
 }
 
@@ -810,7 +930,7 @@ void init()
 	digitalWrite(encoderPin2, HIGH); //turn pullup resistor on
 
 	pinMode(relayPin, OUTPUT);
-	digitalWrite(relayPin, HIGH);
+	digitalWrite(relayPin, LOW);
 //	blinkTimer.initializeMs(1000, blink).start();
 
 	attachInterrupt(encoderPin1, updateEncoder, CHANGE);
@@ -833,15 +953,17 @@ void init()
 
 	AppSettings.load();
 
-	WifiStation.enable(true);
-	if (AppSettings.exist())
-	{
-		WifiStation.config(AppSettings.ssid, AppSettings.password);
-		if (!AppSettings.dhcp && !AppSettings.ip.isNull())
-			WifiStation.setIP(AppSettings.ip, AppSettings.netmask, AppSettings.gateway);
-	}
-	WifiStation.startScan(networkScanCompleted);
+//	WifiStation.enable(true);
+//	if (AppSettings.exist())
+//	{
+//		WifiStation.config(AppSettings.ssid, AppSettings.password);
+//		if (!AppSettings.dhcp && !AppSettings.ip.isNull())
+//			WifiStation.setIP(AppSettings.ip, AppSettings.netmask, AppSettings.gateway);
+//	}
 
+	WifiStation.config(WIFI_SSID, WIFI_PWD);
+	WifiStation.startScan(networkScanCompleted);
+//
 	// Start AP for configuration
 	WifiAccessPoint.enable(true);
 	WifiAccessPoint.config("ESP Configuration", "", AUTH_OPEN);

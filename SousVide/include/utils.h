@@ -33,5 +33,4 @@ int getCenterXForString(MenuParams *params, String t, int textSize) {
 	int x = (128 - width)/2 + (params->boxed ? 1 : 0);
 	return x;
 }
-
 #endif /* INCLUDE_UTILS_H_ */

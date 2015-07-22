@@ -21,10 +21,16 @@ MODULES = app
 
 ## COM port parameter is reqruied to flash firmware correctly.
 ## Windows: 
-# COM_PORT = COM3
+# COM_PORT = COM4
 
 # MacOS / Linux:
 # COM_PORT = /dev/tty.usbserial
 
 # Com port speed
-# COM_SPEED	= 115200
+# COM_SPEED	= 921600
+
+SPI_SIZE ?= 4M
+SPI_MODE ?= qio
+SPI_SPEED ?= 80
+#
+COM_SPEED_ESPTOOL = 230400

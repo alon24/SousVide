@@ -16,7 +16,7 @@ enum MenuActionEnum
 };
 enum class Type
 {
-	Base = 0, Item = 1, Page = 2, Menu = 3
+	Base = 0, Item = 1, Page = 2, Menu = 3, MainScreenItem = 4,
 };
 
 enum class HighlightMode
@@ -116,6 +116,8 @@ class Menu: public BaseMenuElement
 {
 	BaseMenuElement* m_currentItem = NULL;
 	BaseMenuElement *m_root;
+
+	Vector<BaseMenuElement*> currentDisplayedElements;
 	int m_maxPerPage = 2;
 
 	MenuParams* m_params;
@@ -187,6 +189,22 @@ public:
 
 private:
 	void moveto(int pn, int itn);
+};
+
+
+
+class Screen : public BaseMenuElement
+{
+	MenuParams* m_params;
+
+public:
+	Screen(String id) :
+			BaseMenuElement(id, Type::Menu)
+	{
+		m_params = new MenuParams();
+	}
+	;
+
 };
 
 #endif /* INCLUDE_MENUES_H_ */

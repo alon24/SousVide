@@ -18,3 +18,6 @@ endif
 
 # Include main Sming Makefile
 include $(SMING_HOME)/Makefile-project.mk
+
+#WIFI_SSID = "asd"
+#WIFI_PWD = "asdd"
