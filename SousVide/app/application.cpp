@@ -9,7 +9,7 @@
 
 //Forward declerations
 //mqtt
-void onMessageReceived(String topic, String message); // Forward declaration for our callback
+//void onMessageReceived(String topic, String message); // Forward declaration for our callback
 
 //wifi
 //void process();
@@ -32,11 +32,11 @@ Adafruit_SSD1306 display(4);
 #define encoderPin2 12
 #define encoderSwitchPin 14 //push button switch
 
-// If you want, you can define WiFi settings globally in Eclipse Environment Variables
-#ifndef WIFI_SSID
-	#define WIFI_SSID "PleaseEnterSSID" // Put you SSID and Password here
-	#define WIFI_PWD "PleaseEnterPass"
-#endif
+//// If you want, you can define WiFi settings globally in Eclipse Environment Variables
+//#ifndef WIFI_SSID
+//	#define WIFI_SSID "PleaseEnterSSID" // Put you SSID and Password here
+//	#define WIFI_PWD "PleaseEnterPass"
+//#endif
 
 //Timers
 Timer procTimer;
@@ -144,18 +144,18 @@ String getName()
 
 mqttHelper *mqtt;
 
-// Publish our message
-void publishMessage(String topic, String payload)
-{
-	Serial.println("Let's publish message now! t=" + topic + ", p=" + payload);
-	mqtt->publishMessage("dood/" + topic, payload); // or publishWithQoS
-}
-
-void publishInit()
-{
-	String payload = "{\"mac\":\"esp-" + WifiAccessPoint.getMAC() + "\"}";
-	publishMessage("init", payload);
-}
+//// Publish our message
+//void publishMessage(String topic, String payload)
+//{
+//	Serial.println("Let's publish message now! t=" + topic + ", p=" + payload);
+//	mqtt->publishMessage("dood/" + topic, payload); // or publishWithQoS
+//}
+//
+//void publishInit()
+//{
+//	String payload = "{\"mac\":\"esp-" + WifiAccessPoint.getMAC() + "\"}";
+//	publishMessage("init", payload);
+//}
 
 String getValue(String data, char separator, int index)
 {
@@ -180,7 +180,7 @@ void onMessageReceived(String topic, String message)
 	Serial.print(":\r\n\t"); // Prettify alignment for printing
 	Serial.println(message);
 	//msg to all client
-	if (topic.compareTo("dood") == 0){
+	if (topic.compareTo(MQTT_MAIN_TOPIC) == 0){
 		    int start = 0;
 		    int end = 0;
 		    while (end <= message.length())
@@ -659,22 +659,27 @@ void blink()
 	state = !state;
 }
 
+void doInit() {
+	mqtt->publishInit();
+}
 
 // Will be called when WiFi station was connected to AP
 void connectOk()
 {
 	Serial.println("I'm CONNECTED");
 
-//	if (!mqtt)
-//	{
-//		// Run MQTT client
-//		mqtt->start();
-//		mqtt = new mqttHelper("test.mosquitto.org", 1883);
-//	}
-//
-//	// Start publishing loop
-//	procTimer.initializeMs(20 * 1000, publishMessage).start(); // every 20 seconds
+	if (!mqtt)
+	{
+		// Run MQTT client
+		mqtt = new mqttHelper("test.mosquitto.org", 1883, onMessageReceived);
+		mqtt->start();
+	}
+
+	// Start publishing loop
+	procTimer.initializeMs(20 * 1000, doInit).startOnce(); // every 20 seconds
 }
+
+
 
 // Will be called when WiFi station timeout was reached
 void connectFail()
@@ -963,6 +968,7 @@ void init()
 
 	WifiStation.config(WIFI_SSID, WIFI_PWD);
 	WifiStation.startScan(networkScanCompleted);
+
 //
 	// Start AP for configuration
 	WifiAccessPoint.enable(true);
@@ -970,5 +976,7 @@ void init()
 
 	// Run WEB server on system ready
 	System.onReady(startServers);
+
+	WifiStation.waitConnection(connectOk, 20, connectFail); // We recommend 20+ seconds for connection timeout at start
 }
 
