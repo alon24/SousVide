@@ -7,6 +7,8 @@
 #include <utils.h>
 #include <AppSettings.h>
 
+#include <Libraries/OneWire/OneWire.h>
+
 //Forward declerations
 //mqtt
 //void onMessageReceived(String topic, String message); // Forward declaration for our callback
@@ -27,9 +29,10 @@ Adafruit_SSD1306 display(4);
 //Pins used
 #define sclPin 0
 #define sdaPin 2
+#define dsTempPin 4
 #define relayPin 5
-#define encoderPin1 13
-#define encoderPin2 12
+#define encoderA 13
+#define encoderB 12
 #define encoderSwitchPin 14 //push button switch
 
 //// If you want, you can define WiFi settings globally in Eclipse Environment Variables
@@ -286,6 +289,7 @@ void onMessageReceived(String topic, String message)
 //	startWebServer();
 //}
 
+///// Display //////////////
 #define say(a) ( Serial.print(a) )
 #define sayln(a) (Serial.println(a))
 void IRAM_ATTR refreshScreen();
@@ -307,6 +311,8 @@ struct displayMode
 		Menu=2
 	};
 };
+
+InfoPages* infos = new InfoPages("SousVide");
 
 enum DisplayMode
 {
@@ -343,10 +349,10 @@ void setupMenu()
 	MenuItem *i2 = new MenuItem("Set Needed Temp");
 	settings->addChild(i1);
 	settings->addChild(i2);
-	settings->createItem("t3");
-	settings->createItem("t4");
-	settings->createItem("t5");
-	settings->createItem("t6");
+//	settings->createItem("t3");
+//	settings->createItem("t4");
+//	settings->createItem("t5");
+//	settings->createItem("t6");
 	menu.addChild(settings);
 
 	MenuPage* time = new MenuPage("Time");
@@ -370,6 +376,11 @@ void setupMenu()
 	menu.setMaxPerPage(5);
 	menu.setRoot(settings);
 	menu.getParams()->highlightMode = HighlightMode::Inverse;
+}
+
+void setupInfos() {
+	InfoPage* p1 = infos->createPage("1", "D1");
+	p1->createInfo("1", "text1");
 }
 
 void moveToMenuMode()
@@ -405,8 +416,8 @@ void handleEncoderInterrupt() {
 
 void IRAM_ATTR updateEncoder(){
 
-  int MSB = digitalRead(encoderPin1); //MSB = most significant bit
-  int LSB = digitalRead(encoderPin2); //LSB = least significant bit
+  int MSB = digitalRead(encoderA); //MSB = most significant bit
+  int LSB = digitalRead(encoderB); //LSB = least significant bit
 
   int encoded = (MSB << 1) |LSB; //converting the 2 pin value to single number
   int sum  = (lastEncoded << 2) | encoded; //adding it to the previous encoded value
@@ -911,6 +922,132 @@ void networkScanCompleted(bool succeeded, BssList list)
 	networks.sort([](const BssInfo& a, const BssInfo& b){ return b.rssi - a.rssi; } );
 }
 
+//Temp
+OneWire ds(dsTempPin);
+Timer readTempTimer;
+
+void checkTempTriggerRelay(float temp) {
+	int trigger = (int)28;
+	if((int)temp >= trigger && !relayState ) {
+		Serial.println("temp is >= " + String(trigger) + ", starting relay");
+		handleCommands("toggleRelay:true");
+	} else if((int)temp < trigger && relayState){
+		Serial.println("temp is <  " + String(trigger) + ",stopping relay");
+		handleCommands("toggleRelay:false");
+	}
+}
+
+void readData()
+{
+
+	byte i;
+	byte present = 0;
+	byte type_s;
+	byte data[12];
+	byte addr[8];
+	float celsius, fahrenheit;
+
+	ds.reset_search();
+	if (!ds.search(addr))
+	{
+		Serial.println("No addresses found.");
+		Serial.println();
+		ds.reset_search();
+		delay(250);
+		return;
+	}
+
+	Serial.print("Thermometer ROM =");
+	for( i = 0; i < 8; i++)
+	{
+		Serial.write(' ');
+		Serial.print(addr[i], HEX);
+	}
+
+	if (OneWire::crc8(addr, 7) != addr[7])
+	{
+	  Serial.println("CRC is not valid!");
+	  return;
+	}
+	Serial.println();
+
+	// the first ROM byte indicates which chip
+	switch (addr[0]) {
+	case 0x10:
+	  Serial.println("  Chip = DS18S20");  // or old DS1820
+	  type_s = 1;
+	  break;
+	case 0x28:
+	  Serial.println("  Chip = DS18B20");
+	  type_s = 0;
+	  break;
+	case 0x22:
+	  Serial.println("  Chip = DS1822");
+	  type_s = 0;
+	  break;
+	default:
+	  Serial.println("Device is not a DS18x20 family device.");
+	  return;
+	}
+
+	ds.reset();
+	ds.select(addr);
+	ds.write(0x44, 1);        // start conversion, with parasite power on at the end
+
+	delay(1000);     // maybe 750ms is enough, maybe not
+	// we might do a ds.depower() here, but the reset will take care of it.
+
+	present = ds.reset();
+	ds.select(addr);
+	ds.write(0xBE);         // Read Scratchpad
+
+	Serial.print("  Data = ");
+	Serial.print(present, HEX);
+	Serial.print(" ");
+	for ( i = 0; i < 9; i++)
+	{
+		// we need 9 bytes
+		data[i] = ds.read();
+		Serial.print(data[i], HEX);
+		Serial.print(" ");
+	}
+	Serial.print(" CRC=");
+	Serial.print(OneWire::crc8(data, 8), HEX);
+	Serial.println();
+
+	// Convert the data to actual temperature
+	// because the result is a 16 bit signed integer, it should
+	// be stored to an "int16_t" type, which is always 16 bits
+	// even when compiled on a 32 bit processor.
+	int16_t raw = (data[1] << 8) | data[0];
+	if (type_s)
+	{
+		raw = raw << 3; // 9 bit resolution default
+		if (data[7] == 0x10)
+		{
+		  // "count remain" gives full 12 bit resolution
+		  raw = (raw & 0xFFF0) + 12 - data[6];
+		}
+	} else {
+		byte cfg = (data[4] & 0x60);
+		// at lower res, the low bits are undefined, so let's zero them
+		if (cfg == 0x00) raw = raw & ~7;  // 9 bit resolution, 93.75 ms
+		else if (cfg == 0x20) raw = raw & ~3; // 10 bit res, 187.5 ms
+		else if (cfg == 0x40) raw = raw & ~1; // 11 bit res, 375 ms
+		//// default is 12 bit resolution, 750 ms conversion time
+	}
+
+	celsius = (float)raw / 16.0;
+	fahrenheit = celsius * 1.8 + 32.0;
+	Serial.print("  Temperature = ");
+	Serial.print(celsius);
+	Serial.print(" Celsius, ");
+	Serial.println(" Fahrenheit");
+	Serial.println();
+
+	checkTempTriggerRelay(celsius);
+}
+
 void init()
 {
 	Serial.begin(SERIAL_BAUD_RATE); // 74880
@@ -920,6 +1057,7 @@ void init()
 	debugf("======= SousVide ==========");
 
 	setupMenu();
+	setupInfos();
 
 //	delay(3000);
 //	say("======= SousVide ==========");
@@ -929,17 +1067,17 @@ void init()
 	display.clearDisplay();
 	display.display();
 
-	pinMode(encoderPin1, INPUT);
-	pinMode(encoderPin2, INPUT);
-	digitalWrite(encoderPin1, HIGH); //turn pullup resistor on
-	digitalWrite(encoderPin2, HIGH); //turn pullup resistor on
+	pinMode(encoderA, INPUT);
+	pinMode(encoderB, INPUT);
+	digitalWrite(encoderA, HIGH); //turn pullup resistor on
+	digitalWrite(encoderB, HIGH); //turn pullup resistor on
 
 	pinMode(relayPin, OUTPUT);
 	digitalWrite(relayPin, LOW);
 //	blinkTimer.initializeMs(1000, blink).start();
 
-	attachInterrupt(encoderPin1, updateEncoder, CHANGE);
-	attachInterrupt(encoderPin2, updateEncoder, CHANGE);
+	attachInterrupt(encoderA, updateEncoder, CHANGE);
+	attachInterrupt(encoderB, updateEncoder, CHANGE);
 
 	pinMode(encoderSwitchPin, INPUT);
 	digitalWrite(encoderSwitchPin, HIGH); //turn pullup resistor on
@@ -957,6 +1095,10 @@ void init()
 	timeTimer.initializeMs(1000, updateTimeTimerAction).start();
 
 	AppSettings.load();
+
+	ds.begin(); // It's required for one-wire initialization!
+
+	readTempTimer.initializeMs(3000, readData).start();
 
 //	WifiStation.enable(true);
 //	if (AppSettings.exist())

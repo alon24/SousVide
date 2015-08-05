@@ -207,4 +207,89 @@ public:
 
 };
 
+class InfoPageElemet
+{
+	String m_id;
+	String m_text;
+	int m_textSize;
+	Vector<String*> params;
+public:
+	InfoPageElemet(String id, String text, int size = 1)
+	{
+		m_id = id;
+		m_text = text;
+		if (size != 1) {
+			m_textSize = size;
+		} else {
+			m_textSize = 1;
+		}
+	};
+
+	String getId();
+	int getTextSize(){
+		return m_textSize;
+	};
+
+	String getText() {
+		return m_text;
+	}
+};
+
+class InfoPage {
+	Vector<InfoPageElemet*> m_elements;
+	String m_header;
+	String mID;
+public:
+	InfoPage(String id, String header) {
+		mID = id;
+		m_header = header;
+	};
+
+	InfoPageElemet* createInfo(String id, String text) {
+		InfoPageElemet* el =  new InfoPageElemet(id, text, 1);
+		addElemenet(el);
+		return el;
+	}
+
+	void addElemenet(InfoPageElemet* el){
+		m_elements.add(el);
+	};
+
+	InfoPageElemet* itemAt(int index) {
+		return m_elements.get(index);
+	};
+
+	Vector<InfoPageElemet*> getItems()
+	{
+		return m_elements;
+	};
+};
+
+class InfoPages{
+	String mId;
+	int mCurrent = 0;
+	Vector<InfoPage*> mChildern;
+public:
+	InfoPages(String id) {
+		mId = id;
+	}
+
+	InfoPage* createPage(String id, String header){
+		InfoPage* el = new InfoPage(id, header);
+		mChildern.add(el);
+		return el;
+	}
+
+	void addPage(InfoPage* page) {
+		mChildern.add(page);
+	}
+
+	InfoPage* get(int index) {
+		if (mChildern.size() >index) {
+			return mChildern.get(index);
+		}
+		return NULL;
+	}
+};
+
 #endif /* INCLUDE_MENUES_H_ */
