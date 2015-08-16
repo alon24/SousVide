@@ -1,6 +1,7 @@
 #include <user_config.h>
 #include <SmingCore/SmingCore.h>
-#include <Libraries/Adafruit_SSD1306/Adafruit_SSD1306.h>
+//#include <Libraries/Adafruit_SSD1306/Adafruit_SSD1306.h>
+#include <ilan1306.h>
 #include <menues.h>
 #include <ButtonActions.cpp>
 #include <mqttHelper.h>
@@ -20,26 +21,28 @@ void connectFail();
 
 void handleCommands(String commands);
 void updateWebUI();
+void setRelayState(boolean state);
 
 //encoder code from http://bildr.org/2012/08/rotary-encoder-arduino/
 
 //* SSD1306 - I2C
-Adafruit_SSD1306 display(4);
+//Adafruit_SSD1306 display(4);
+ilan1306 display(4);
 
 //Pins used
-#define sclPin 0
-#define sdaPin 2
+#define sclPin 2
+#define sdaPin 0
 #define dsTempPin 4
 #define relayPin 5
 #define encoderA 13
 #define encoderB 12
 #define encoderSwitchPin 14 //push button switch
 
-//// If you want, you can define WiFi settings globally in Eclipse Environment Variables
-//#ifndef WIFI_SSID
-//	#define WIFI_SSID "PleaseEnterSSID" // Put you SSID and Password here
-//	#define WIFI_PWD "PleaseEnterPass"
-//#endif
+// If you want, you can define WiFi settings globally in Eclipse Environment Variables
+#ifndef WIFI_SSID
+	#define WIFI_SSID "PleaseEnterSSID" // Put you SSID and Password here
+	#define WIFI_PWD "PleaseEnterPass"
+#endif
 
 //Timers
 Timer procTimer;
@@ -93,6 +96,7 @@ void wsMessageReceived(WebSocket& socket, const String& message)
 void updateWebUI() {
 	WebSocketsList &clients = server.getActiveWebSockets();
 	for (int i = 0; i < clients.count(); i++) {
+
 		Serial.println("updateWebUI::relayState:" + String(relayState == true ? "true" : "false"));
 		clients[i].sendString("relayState:" + String(relayState == true ? "true" : "false"));
 		clients[i].sendString("updatetime:" + currentTime);
@@ -105,11 +109,13 @@ void handleCommands(String commands) {
 
 	if (commands.startsWith("toggleRelay")) {
 		String state = commands.substring(12);
-		Serial.println("handleCommands::toggeled relay " + String(state));
-		relayState = state.equals("true") ? true : false;
-		Serial.println("handleCommand:: (state.equals(true)=" + String(state.equals("true")));
-		digitalWrite(relayPin, (state.equals("true") ? HIGH : LOW));
+		setRelayState(state.equals("true"));
 
+//		Serial.println("handleCommands::toggeled relay " + String(state));
+//		relayState = state.equals("true") ? true : false;
+//		digitalWrite(relayPin, (state.equals("true") ? HIGH : LOW));
+
+		Serial.println("handleCommand:: state.equals(true)==" + String(state.equals("true")));
 		updateWebUI();
 	}
 }
@@ -207,87 +213,8 @@ void onMessageReceived(String topic, String message)
 		        }
 //		        break;
 		    }
-
-//		    std::cout << s.substr(start, end);
-
-
-//		String val = getValue(message,':',0);
-//
-//		Serial.println("tok: " + val);
-//		Vector<int> splits;
-//		splitString(message, ',', splits);
-//		for (int i = 0; i < splits.size(); i++)
-//		{
-//			Serial.print(":\r\n\t"); // Prettify alignment for printing
-//			const char* ss = ((const char*)splits.elementAt(i));
-//			String *str = new String(ss);
-//			Serial.println("tok: " + *str);
-//		}
-//		message.splitString();
-//		if (messag) {
-//
-//		}
-
-//		DynamicJsonBuffer jsonBuffer;
-//
-//		char* jsonString = strcpy((char*)malloc(message.length()+1), message.c_str());
-//		Serial.println("111");
-////		char * jsonString = message.c_str();
-//		JsonObject& root = jsonBuffer.parseObject(jsonString);
-//		Serial.println("222");
-//		JsonObject& payload = root["payload"];
-//		Serial.println("333");
-//		String com = String((const char*)payload["command"]);
-//		Serial.println("444");
-//		Serial.println(" commmmm = " + com);
-////		JsonObject jo = JsonBuffer.pa
-//
-//		free(jsonString);
 	}
 }
-
-// Will be called when WiFi station was connected to AP
-//void connectOk()
-//{
-//	debugf("Connect to AP successful");
-//	Serial.println("I'm CONNECTED");
-//
-//	// disable softAP mode
-//	WifiAccessPoint.enable(false);
-//
-////	// start webserver
-////	startWebServer();
-//
-//	setName("esp" + WifiAccessPoint.getMAC() );
-//	// Run MQTT client
-//	mqtt.connect("esp-" + WifiAccessPoint.getMAC());
-//	mqtt.subscribe("dood/#");
-//
-//	display.setTextSize(1);
-//	display.setTextColor(WHITE);
-//	display.setCursor(0, 9);
-//	display.println(WifiStation.getIP().toString());
-//	display.setCursor(0, 18);
-//	display.println("Connecting to mqtt");
-//	display.display();
-//
-//	// Start publishing loop
-//	initTimer.initializeMs(15 * 1000, publishInit).startOnce();
-//}
-
-// Will be called when WiFi station timeout was reached
-//void connectFail()
-//{
-//	Serial.println("I'm NOT CONNECTED. Need help :(");
-//	debugf("Connect to AP failed");
-//
-//	// config softAP mode
-//	WifiAccessPoint.config(SOFTAP_SSID, "", AUTH_OPEN);
-//	WifiAccessPoint.enable(true);
-//
-//	// start webserver
-//	startWebServer();
-//}
 
 ///// Display //////////////
 #define say(a) ( Serial.print(a) )
@@ -349,10 +276,8 @@ void setupMenu()
 	MenuItem *i2 = new MenuItem("Set Needed Temp");
 	settings->addChild(i1);
 	settings->addChild(i2);
-//	settings->createItem("t3");
-//	settings->createItem("t4");
-//	settings->createItem("t5");
-//	settings->createItem("t6");
+	settings->createItem("t3");
+	settings->createItem("t4");
 	menu.addChild(settings);
 
 	MenuPage* time = new MenuPage("Time");
@@ -533,15 +458,30 @@ void highlightRow(int i) {
 	display.fillRect(2, y, 121, hight, WHITE);
 }
 
+int getCenterXForString(MenuParams *params, String t, int textSize) {
+	int width = t.length() * (textSize == 1 ? 6 : 6);
+	int x = (128 - width)/2 + (params->boxed ? 1 : 0);
+	return x;
+}
+
+void printxy() {
+	int x = display.getCursorX();
+	int y = display.getCursorY();
+	Serial.print("x,y=" +String(x) + ","+ String(y));
+}
 void IRAM_ATTR showMenuScreen() {
 	sayln(lastValue);
 
+	display.dim(false);
 	display.setTextSize(1);
 	display.setTextColor(WHITE);
 	String t = "SousVide by alon24";
 	display.setCursor(getCenterXForString(menu.getParams(), t, 1), 1);
 	display.clearDisplay();
 	display.println(t);
+//	display.get
+//	display.get
+//	Serial.println("xC=" + String(display.cursor_x) + ", yC=" +String(display.cursor_y) );
 //	display.setCursor(2,10);
 
 	Vector<BaseMenuElement*> v = menu.getDisplayedItems();
@@ -586,6 +526,7 @@ void IRAM_ATTR showMenuScreen() {
 		txt += item->getId();
 		display.println(txt);
 	}
+
 	if(menu.getParams()->boxed == true) {
 		display.drawRect(0,0,128,64, WHITE);
 	}
@@ -635,6 +576,8 @@ void IRAM_ATTR refreshScreen()
 	}
 }
 
+textRect lastTimeRect;
+
 void refreshTimeForUi()
 {
 	if (displayMode == Display_Menu)
@@ -642,14 +585,25 @@ void refreshTimeForUi()
 		return;
 	}
 	int x = getXOnScreenForString(currentTime, 1);
-	display.fillRect( x, 1, currentTime.length() * 6, 8, BLACK);
+	if(lastTimeRect.x = -1) {
+		display.fillRect( x, 1, currentTime.length() * 6, 8, BLACK);
+	}
+	else {
+		display.fillRect( x, 1, currentTime.length() * 6, 8, BLACK);
+	}
+
+//	Serial.printf("computed rect time =x %i, y %i, w %i\n", x, 1, currentTime.length() * 6);
 	display.setTextSize(1);
 	display.setTextColor(WHITE);
 	display.setCursor(x, 1 );
 //	display.setCursor(15, 10);
 //	String t = String(millis()/1000);
 //		display.print(t);
-	display.print(currentTime);
+	lastTimeRect = display.printI(currentTime);
+	Serial.printf("current time =x %i, y %i, w %i\n", lastTimeRect.x, lastTimeRect.y, lastTimeRect.w);
+//	display.print(currentTime);
+//	display.get;
+//	Serial.println("xC=" + String(display.cursor_x) + ", yC=" +String(display.cursor_y) );
 	display.display();
 	updateWebUI();
 }
@@ -677,17 +631,17 @@ void doInit() {
 // Will be called when WiFi station was connected to AP
 void connectOk()
 {
-	Serial.println("I'm CONNECTED");
-
-	if (!mqtt)
-	{
-		// Run MQTT client
-		mqtt = new mqttHelper("test.mosquitto.org", 1883, onMessageReceived);
-		mqtt->start();
-	}
-
-	// Start publishing loop
-	procTimer.initializeMs(20 * 1000, doInit).startOnce(); // every 20 seconds
+//	Serial.println("I'm CONNECTED");
+//
+//	if (!mqtt)
+//	{
+//		// Run MQTT client
+//		mqtt = new mqttHelper("test.mosquitto.org", 1883, onMessageReceived);
+//		mqtt->start();
+//	}
+//
+//	// Start publishing loop
+//	procTimer.initializeMs(20 * 1000, doInit).startOnce(); // every 20 seconds
 }
 
 
@@ -881,7 +835,7 @@ void startWebServer()
 	server.addPath("/ipconfig", onIpConfig);
 	server.addPath("/ajax/get-networks", onAjaxNetworkList);
 	server.addPath("/ajax/connect", onAjaxConnect);
-//	server.addPath("/ajax/doCommand", onDoCommand);
+////	server.addPath("/ajax/doCommand", onDoCommand);
 	server.setDefaultHandler(onFile);
 
 	// Web Sockets configuration
@@ -907,7 +861,7 @@ void startFTP()
 void startServers()
 {
 	Serial.println("Starting servers");
-//	startFTP();
+////	startFTP();
 	startWebServer();
 }
 
@@ -920,6 +874,13 @@ void networkScanCompleted(bool succeeded, BssList list)
 				networks.add(list[i]);
 	}
 	networks.sort([](const BssInfo& a, const BssInfo& b){ return b.rssi - a.rssi; } );
+}
+
+void setRelayState(boolean state) {
+	if (state != relayState) {
+		relayState = state;
+		digitalWrite(relayPin, (relayState ? HIGH : LOW));
+	}
 }
 
 //Temp
@@ -936,6 +897,8 @@ void checkTempTriggerRelay(float temp) {
 		handleCommands("toggleRelay:false");
 	}
 }
+
+
 
 void readData()
 {
@@ -957,32 +920,32 @@ void readData()
 		return;
 	}
 
-	Serial.print("Thermometer ROM =");
-	for( i = 0; i < 8; i++)
-	{
-		Serial.write(' ');
-		Serial.print(addr[i], HEX);
-	}
+//	Serial.print("Thermometer ROM =");
+//	for( i = 0; i < 8; i++)
+//	{
+//		Serial.write(' ');
+//		Serial.print(addr[i], HEX);
+//	}
 
 	if (OneWire::crc8(addr, 7) != addr[7])
 	{
 	  Serial.println("CRC is not valid!");
 	  return;
 	}
-	Serial.println();
+//	Serial.println();
 
 	// the first ROM byte indicates which chip
 	switch (addr[0]) {
 	case 0x10:
-	  Serial.println("  Chip = DS18S20");  // or old DS1820
+//	  Serial.println("  Chip = DS18S20");  // or old DS1820
 	  type_s = 1;
 	  break;
 	case 0x28:
-	  Serial.println("  Chip = DS18B20");
+//	  Serial.println("  Chip = DS18B20");
 	  type_s = 0;
 	  break;
 	case 0x22:
-	  Serial.println("  Chip = DS1822");
+//	  Serial.println("  Chip = DS1822");
 	  type_s = 0;
 	  break;
 	default:
@@ -994,26 +957,26 @@ void readData()
 	ds.select(addr);
 	ds.write(0x44, 1);        // start conversion, with parasite power on at the end
 
-	delay(1000);     // maybe 750ms is enough, maybe not
+	delay(750);     // maybe 750ms is enough, maybe not
 	// we might do a ds.depower() here, but the reset will take care of it.
 
 	present = ds.reset();
 	ds.select(addr);
 	ds.write(0xBE);         // Read Scratchpad
 
-	Serial.print("  Data = ");
-	Serial.print(present, HEX);
-	Serial.print(" ");
+//	Serial.print("  Data = ");
+//	Serial.print(present, HEX);
+//	Serial.print(" ");
 	for ( i = 0; i < 9; i++)
 	{
 		// we need 9 bytes
 		data[i] = ds.read();
-		Serial.print(data[i], HEX);
-		Serial.print(" ");
+//		Serial.print(data[i], HEX);
+//		Serial.print(" ");
 	}
-	Serial.print(" CRC=");
-	Serial.print(OneWire::crc8(data, 8), HEX);
-	Serial.println();
+//	Serial.print(" CRC=");
+//	Serial.print(OneWire::crc8(data, 8), HEX);
+//	Serial.println();
 
 	// Convert the data to actual temperature
 	// because the result is a 16 bit signed integer, it should
@@ -1043,7 +1006,7 @@ void readData()
 	Serial.print(celsius);
 	Serial.print(" Celsius, ");
 	Serial.println(" Fahrenheit");
-	Serial.println();
+//	Serial.println();
 
 	checkTempTriggerRelay(celsius);
 }
@@ -1111,7 +1074,7 @@ void init()
 	WifiStation.config(WIFI_SSID, WIFI_PWD);
 	WifiStation.startScan(networkScanCompleted);
 
-//
+
 	// Start AP for configuration
 	WifiAccessPoint.enable(true);
 	WifiAccessPoint.config("ESP Configuration", "", AUTH_OPEN);

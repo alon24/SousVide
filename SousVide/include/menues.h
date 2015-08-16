@@ -9,6 +9,9 @@
 #define INCLUDE_MENUES_H_
 
 #include <SmingCore/SmingCore.h>
+//#include <Libraries/Adafruit_SSD1306/Adafruit_SSD1306.h>
+#include <ilan1306.h>
+//#include <utils.h>
 
 enum MenuActionEnum
 {
@@ -213,7 +216,9 @@ class InfoPageElemet
 	String m_text;
 	int m_textSize;
 	Vector<String*> params;
+
 public:
+	int mX, mY, mWidth;
 	InfoPageElemet(String id, String text, int size = 1)
 	{
 		m_id = id;
@@ -233,10 +238,42 @@ public:
 	String getText() {
 		return m_text;
 	}
+
+	void setUpdateRect(int x, int y, int w) {
+		mX = x;
+		mY = y;
+		mWidth = w;
+	}
+
+	void print(ilan1306 display){
+		display.setTextSize(m_textSize);
+		display.print(getText());
+
+		for (int s = 0; s < params.size(); ++s) {
+			String* param = params.get(s);
+//			int preX = display.getCursorX();
+//			int preY = display.getCursorY();
+//			int w = param.length() * 6;
+//			 display.print(*param);
+			textRect t = display.printI(*param);
+			Serial.printf("x %i, y %i, w %i\n", t.x, t.y, t.w);
+//			display.print(param);
+			display.println();
+		}
+	}
+
+	void updateData(ilan1306 display, String data) {
+//		display.fillRect( mX, mY, data.length() * 6, 8, BLACK);
+//		display.setTextSize(1);
+//		display.setTextColor(WHITE);
+//		display.setCursor(mX, mY );
+//		display.print(data);
+//		display.display();
+	}
 };
 
 class InfoPage {
-	Vector<InfoPageElemet*> m_elements;
+	Vector<InfoPageElemet*> mChildren;
 	String m_header;
 	String mID;
 public:
@@ -252,17 +289,24 @@ public:
 	}
 
 	void addElemenet(InfoPageElemet* el){
-		m_elements.add(el);
+		mChildren.add(el);
 	};
 
 	InfoPageElemet* itemAt(int index) {
-		return m_elements.get(index);
+		return mChildren.get(index);
 	};
 
 	Vector<InfoPageElemet*> getItems()
 	{
-		return m_elements;
+		return mChildren;
 	};
+
+	void print(ilan1306 display) {
+		for(int i=0; i< mChildren.size(); i++){
+			InfoPageElemet* child = mChildren.get(i);
+			child->print(display);
+		}
+	}
 };
 
 class InfoPages{
@@ -289,6 +333,12 @@ public:
 			return mChildern.get(index);
 		}
 		return NULL;
+	}
+
+
+	void print(int pIndex, ilan1306 display) {
+		InfoPage* p = get(pIndex);
+		p->print(display);
 	}
 };
 

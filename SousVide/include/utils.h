@@ -8,7 +8,9 @@
 #ifndef INCLUDE_UTILS_H_
 #define INCLUDE_UTILS_H_
 
-#include <menues.h>
+//#include <Libraries/Adafruit_SSD1306/Adafruit_SSD1306.h>
+
+//#include <menues.h>
 
 // If you want, you can define WiFi settings globally in Eclipse Environment Variables
 #ifndef WIFI_SSID
@@ -31,12 +33,6 @@ byte degree[8] = // define the degree symbol
 int getXOnScreenForString(String t, int textSize) {
 	int width = t.length() * (textSize == 1 ? 6 : 6);
 	int x = 123 - width -1;
-	return x;
-}
-
-int getCenterXForString(MenuParams *params, String t, int textSize) {
-	int width = t.length() * (textSize == 1 ? 6 : 6);
-	int x = (128 - width)/2 + (params->boxed ? 1 : 0);
 	return x;
 }
 
