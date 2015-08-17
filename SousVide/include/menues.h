@@ -210,12 +210,17 @@ public:
 
 };
 
+struct paramStruct {
+	textRect t;
+	String text;
+};
+
 class InfoPageElemet
 {
 	String m_id;
 	String m_text;
 	int m_textSize;
-	Vector<String*> params;
+	Vector<paramStruct*> params;
 
 public:
 	int mX, mY, mWidth;
@@ -250,12 +255,15 @@ public:
 		display.print(getText());
 
 		for (int s = 0; s < params.size(); ++s) {
-			String* param = params.get(s);
+			paramStruct* param = params.get(s);
+			String str = param->text;
 //			int preX = display.getCursorX();
 //			int preY = display.getCursorY();
 //			int w = param.length() * 6;
 //			 display.print(*param);
-			textRect t = display.printI(*param);
+//			if()
+
+			textRect t = display.printI(str);
 			Serial.printf("x %i, y %i, w %i\n", t.x, t.y, t.w);
 //			display.print(param);
 			display.println();

@@ -586,10 +586,10 @@ void refreshTimeForUi()
 	}
 	int x = getXOnScreenForString(currentTime, 1);
 	if(lastTimeRect.x = -1) {
-		display.fillRect( x, 1, currentTime.length() * 6, 8, BLACK);
+//		display.fillRect( x, 1, currentTime.length() * 6, 8, BLACK);
 	}
 	else {
-		display.fillRect( x, 1, currentTime.length() * 6, 8, BLACK);
+		display.fillRect( lastTimeRect.x, lastTimeRect.y, lastTimeRect.w, lastTimeRect.h, BLACK);
 	}
 
 //	Serial.printf("computed rect time =x %i, y %i, w %i\n", x, 1, currentTime.length() * 6);
