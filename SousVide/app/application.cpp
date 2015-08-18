@@ -1,7 +1,7 @@
 #include <user_config.h>
 #include <SmingCore/SmingCore.h>
 //#include <Libraries/Adafruit_SSD1306/Adafruit_SSD1306.h>
-#include <ilan1306.h>
+#include <Extended_SSD1306.h>
 #include <menues.h>
 #include <ButtonActions.cpp>
 #include <mqttHelper.h>
@@ -27,7 +27,7 @@ void setRelayState(boolean state);
 
 //* SSD1306 - I2C
 //Adafruit_SSD1306 display(4);
-ilan1306 display(4);
+Extended_SSD1306 display(4);
 
 //Pins used
 #define sclPin 2
@@ -304,7 +304,12 @@ void setupMenu()
 }
 
 void setupInfos() {
-	InfoPage* p1 = infos->createPage("1", "D1");
+	InfoPage* p1 = infos->createPage("Main", "Main");
+	InfoPageElemet* el = p1->createInfo("header", "SousVide");
+	el->addParam("00:00:00");
+
+//	InfoPageElemet* header = new InfoPageElemet();
+
 	p1->createInfo("1", "text1");
 }
 
@@ -599,7 +604,7 @@ void refreshTimeForUi()
 //	display.setCursor(15, 10);
 //	String t = String(millis()/1000);
 //		display.print(t);
-	lastTimeRect = display.printI(currentTime);
+	lastTimeRect = display.print(currentTime);
 	Serial.printf("current time =x %i, y %i, w %i\n", lastTimeRect.x, lastTimeRect.y, lastTimeRect.w);
 //	display.print(currentTime);
 //	display.get;

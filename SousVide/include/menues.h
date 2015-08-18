@@ -10,7 +10,7 @@
 
 #include <SmingCore/SmingCore.h>
 //#include <Libraries/Adafruit_SSD1306/Adafruit_SSD1306.h>
-#include <ilan1306.h>
+#include <Extended_SSD1306.h>
 //#include <utils.h>
 
 enum MenuActionEnum
@@ -221,7 +221,7 @@ class InfoPageElemet
 	String m_text;
 	int m_textSize;
 	Vector<paramStruct*> params;
-
+	bool initialized = false;
 public:
 	int mX, mY, mWidth;
 	InfoPageElemet(String id, String text, int size = 1)
@@ -235,7 +235,10 @@ public:
 		}
 	};
 
-	String getId();
+	String getId() {
+		return m_id;
+	}
+
 	int getTextSize(){
 		return m_textSize;
 	};
@@ -244,39 +247,51 @@ public:
 		return m_text;
 	}
 
-	void setUpdateRect(int x, int y, int w) {
-		mX = x;
-		mY = y;
-		mWidth = w;
+	paramStruct* addParam(String text) {
+		paramStruct* ret = new paramStruct();
+		ret->text = text;
+		ret->t.x = -1;
+		ret->t.y = -1;
+		ret->t.h = -1;
+		ret->t.w = -1;
+
+		return ret;
 	}
 
-	void print(ilan1306 display){
+	paramStruct* addParam(String text, textRect initial) {
+		paramStruct* ret = addParam(text);
+		ret->t.x = initial.x;
+		ret->t.y = initial.y;
+		ret->t.h = initial.h;
+		ret->t.w = initial.w;
+		return ret;
+	}
+
+	//prints the element
+	void print(Extended_SSD1306 display){
 		display.setTextSize(m_textSize);
 		display.print(getText());
+		int y = display.getCursorY();
 
 		for (int s = 0; s < params.size(); ++s) {
 			paramStruct* param = params.get(s);
 			String str = param->text;
-//			int preX = display.getCursorX();
-//			int preY = display.getCursorY();
-//			int w = param.length() * 6;
-//			 display.print(*param);
-//			if()
-
-			textRect t = display.printI(str);
+			if(param->t.x != -1) {
+				display.setCursor(param->t.x, y);
+			}
+			textRect t = display.print(str);
+			param->t = t;
 			Serial.printf("x %i, y %i, w %i\n", t.x, t.y, t.w);
-//			display.print(param);
-			display.println();
 		}
+
+		display.println();
 	}
 
-	void updateData(ilan1306 display, String data) {
-//		display.fillRect( mX, mY, data.length() * 6, 8, BLACK);
-//		display.setTextSize(1);
-//		display.setTextColor(WHITE);
-//		display.setCursor(mX, mY );
-//		display.print(data);
-//		display.display();
+	void updateData(Extended_SSD1306 display, int index, String newData) {
+		paramStruct* p = params.get(index);
+		textRect ntr = display.writeover(p->t, newData);
+		p->text = newData;
+		display.display();
 	}
 };
 
@@ -309,7 +324,7 @@ public:
 		return mChildren;
 	};
 
-	void print(ilan1306 display) {
+	void print(Extended_SSD1306 display) {
 		for(int i=0; i< mChildren.size(); i++){
 			InfoPageElemet* child = mChildren.get(i);
 			child->print(display);
@@ -344,7 +359,7 @@ public:
 	}
 
 
-	void print(int pIndex, ilan1306 display) {
+	void print(int pIndex, Extended_SSD1306 display) {
 		InfoPage* p = get(pIndex);
 		p->print(display);
 	}
