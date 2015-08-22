@@ -52,15 +52,19 @@ Timer timeTimer;
 Timer initTimer;
 Timer blinkTimer;
 
+//textRect lastTimeRect;
+
 time_t lastActionTime =0;
 String currentTime = "00:00:00";
+
+float currentTemp = 0;
 
 int totalActiveSockets = 0;
 
 String name;
 String ip;
 
-int currentScreenIndex = 0;
+int currentInfoScreenIndex = 0;
 
 HttpServer server;
 FTPServer ftp;
@@ -303,14 +307,21 @@ void setupMenu()
 	menu.getParams()->highlightMode = HighlightMode::Inverse;
 }
 
+/**
+ * setup infoscreens moved by the rotary
+ */
 void setupInfos() {
-	InfoPage* p1 = infos->createPage("Main", "Main");
-	InfoPageElemet* el = p1->createInfo("header", "SousVide");
-	el->addParam("00:00:00");
+	InfoScreen* p1 = infos->createScreen("Main", "Main");
+	InfoScreenLine* el = p1->createLine("header", "SousVide");
+	paramStruct* t = el->addParam("time", currentTime);
+	t->t.x = getXOnScreenForString(t->text, 1);
 
-//	InfoPageElemet* header = new InfoPageElemet();
+	InfoScreenLine* el2 = p1->createLine("2", "temp: ");
+	el2->addParam("temp", String(currentTemp, 3));
+	p1->createLine("3", "text1");
 
-	p1->createInfo("1", "text1");
+	InfoScreen* p2 = infos->createScreen("Data", "Data");
+	InfoScreenLine* p2e1 = p2->createLine("header", "Ilan is here");
 }
 
 void moveToMenuMode()
@@ -550,21 +561,34 @@ void writeToScreen(int index) {
 	}
 }
 
-void IRAM_ATTR showRegScreen() {
+void IRAM_ATTR showInfoScreen() {
 	menu.moveto(menu.getRoot());
-	display.clearDisplay();
-	display.setTextSize(1);
-	display.setTextColor(WHITE);
-	display.setCursor(1, 1);
-	String t= "SousVide";
-	display.println(t);
-	t = currentTime;
-	display.setCursor(getXOnScreenForString(t, 1), 1 );
-	display.print(t);
 
-	writeToScreen(currentScreenIndex);
+//	display.clearDisplay();
+	sayln("showing info screen 0 ");
+//	InfoScreen* iPage = infos->get(0);
+	String t = currentTime;
+	//TODO:ilan
+//	iPage->itemAt(0)->updateData(display, 0, t);
+//	iPage->print(display);
 
-	display.display();
+	infos->print(currentInfoScreenIndex, display);
+
+//	//update lasttimerect with alue
+//	lastTimeRect = iPage->itemAt(0)->getParam(0)->t;
+
+//	display.setTextSize(1);
+//	display.setTextColor(WHITE);
+//	display.setCursor(1, 1);
+	String x= "SousVide";
+	display.println(x);
+//	t = currentTime;
+//	display.setCursor(getXOnScreenForString(t, 1), 1 );
+//	display.print(t);
+//
+//	writeToScreen(currentScreenIndex);
+//
+//	display.display();
 }
 
 void IRAM_ATTR refreshScreen()
@@ -576,12 +600,10 @@ void IRAM_ATTR refreshScreen()
 		showMenuScreen();
 		break;
 	case Display_Regular:
-		showRegScreen();
+		showInfoScreen();
 		break;
 	}
 }
-
-textRect lastTimeRect;
 
 void refreshTimeForUi()
 {
@@ -589,27 +611,51 @@ void refreshTimeForUi()
 	{
 		return;
 	}
-	int x = getXOnScreenForString(currentTime, 1);
-	if(lastTimeRect.x = -1) {
-//		display.fillRect( x, 1, currentTime.length() * 6, 8, BLACK);
-	}
-	else {
-		display.fillRect( lastTimeRect.x, lastTimeRect.y, lastTimeRect.w, lastTimeRect.h, BLACK);
-	}
 
-//	Serial.printf("computed rect time =x %i, y %i, w %i\n", x, 1, currentTime.length() * 6);
-	display.setTextSize(1);
-	display.setTextColor(WHITE);
-	display.setCursor(x, 1 );
-//	display.setCursor(15, 10);
-//	String t = String(millis()/1000);
-//		display.print(t);
-	lastTimeRect = display.print(currentTime);
-	Serial.printf("current time =x %i, y %i, w %i\n", lastTimeRect.x, lastTimeRect.y, lastTimeRect.w);
-//	display.print(currentTime);
-//	display.get;
-//	Serial.println("xC=" + String(display.cursor_x) + ", yC=" +String(display.cursor_y) );
+//	int x = getXOnScreenForString(currentTime, 1);
+//	if(lastTimeRect.x = -1) {
+////		display.fillRect( x, 1, currentTime.length() * 6, 8, BLACK);
+//	}
+//	else {
+//		display.fillRect( lastTimeRect.x, lastTimeRect.y, lastTimeRect.w, lastTimeRect.h, BLACK);
+//	}
+//
+////	Serial.printf("computed rect time =x %i, y %i, w %i\n", x, 1, currentTime.length() * 6);
+//	display.setTextSize(1);
+//	display.setTextColor(WHITE);
+//	display.setCursor(x, 1 );
+////	display.setCursor(15, 10);
+////	String t = String(millis()/1000);
+////		display.print(t);
+//	lastTimeRect = display.print(currentTime);
+//	Serial.printf("current time =x %i, y %i, w %i\n", lastTimeRect.x, lastTimeRect.y, lastTimeRect.w);
+////	display.print(currentTime);
+////	display.get;
+////	Serial.println("xC=" + String(display.cursor_x) + ", yC=" +String(display.cursor_y) );
+//	display.display();
+
+	//need to update the time param on screen if shown
+
+
+	//TODO:ilan
+	InfoScreen* iScreen = infos->get(currentInfoScreenIndex);
+	iScreen->updateParam("time", currentTime, display);
 	display.display();
+
+//	Vector<InfoScreenLine*>* lines = iScreen->getAllLinesParamsForId("time");
+//
+//	//update all params with the "time" id
+//	if (lines->size() > 0) {
+//		String t = currentTime;
+//		for (int i = 0; i < lines->size(); ++i) {
+//			lines->elementAt(i)->updateDataForId(display, "time", currentTime);
+//		}
+////		iPage->itemAt(0)->updateData(display, 0, t);
+////		iPage->print(display);
+////		//update lasttimerect with alue
+////		lastTimeRect = iPage->itemAt(0)->getParam(0)->t;
+//	}
+
 	updateWebUI();
 }
 
@@ -903,11 +949,8 @@ void checkTempTriggerRelay(float temp) {
 	}
 }
 
-
-
-void readData()
+void readTempData()
 {
-
 	byte i;
 	byte present = 0;
 	byte type_s;
@@ -1013,6 +1056,12 @@ void readData()
 	Serial.println(" Fahrenheit");
 //	Serial.println();
 
+	currentTemp = celsius;
+
+	//TODO:ilan
+	InfoScreen* iScreen = infos->get(currentInfoScreenIndex);
+	iScreen->updateParam("temp", String(currentTemp, 3), display);
+	display.display();
 	checkTempTriggerRelay(celsius);
 }
 
@@ -1024,8 +1073,6 @@ void init()
 
 	debugf("======= SousVide ==========");
 
-	setupMenu();
-	setupInfos();
 
 //	delay(3000);
 //	say("======= SousVide ==========");
@@ -1033,7 +1080,16 @@ void init()
 
 	display.begin(SSD1306_SWITCHCAPVCC);
 	display.clearDisplay();
-	display.display();
+
+	display.setTextSize(1);
+	display.setTextColor(WHITE);
+//	display.print("ilan1\n");
+//	display.print("ilan23\n");
+//
+//	display.display();
+
+	setupMenu();
+	setupInfos();
 
 	pinMode(encoderA, INPUT);
 	pinMode(encoderB, INPUT);
@@ -1066,7 +1122,7 @@ void init()
 
 	ds.begin(); // It's required for one-wire initialization!
 
-	readTempTimer.initializeMs(3000, readData).start();
+	readTempTimer.initializeMs(3000, readTempData).start();
 
 //	WifiStation.enable(true);
 //	if (AppSettings.exist())

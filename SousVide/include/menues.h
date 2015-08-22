@@ -213,20 +213,30 @@ public:
 struct paramStruct {
 	textRect t;
 	String text;
+	String id;
+
+	void init(String id, String text, textRect t) {
+		this->id = id;
+		this->text = text;
+		this->t = t;
+	}
 };
 
-class InfoPageElemet
+
+class InfoScreenLine
 {
-	String m_id;
+	String id;
 	String m_text;
 	int m_textSize;
-	Vector<paramStruct*> params;
 	bool initialized = false;
+	Vector<paramStruct*> params;
+
 public:
+
 	int mX, mY, mWidth;
-	InfoPageElemet(String id, String text, int size = 1)
+	InfoScreenLine(String id, String text, int size = 1)
 	{
-		m_id = id;
+		this->id = id;
 		m_text = text;
 		if (size != 1) {
 			m_textSize = size;
@@ -236,7 +246,7 @@ public:
 	};
 
 	String getId() {
-		return m_id;
+		return id;
 	}
 
 	int getTextSize(){
@@ -247,7 +257,7 @@ public:
 		return m_text;
 	}
 
-	paramStruct* addParam(String text) {
+	paramStruct* addParam(String id, String text) {
 		paramStruct* ret = new paramStruct();
 		ret->text = text;
 		ret->t.x = -1;
@@ -255,11 +265,13 @@ public:
 		ret->t.h = -1;
 		ret->t.w = -1;
 
+		ret->id = id;
+		params.add(ret);
 		return ret;
 	}
 
-	paramStruct* addParam(String text, textRect initial) {
-		paramStruct* ret = addParam(text);
+	paramStruct* addParam(String id, String text, textRect initial) {
+		paramStruct* ret = addParam(id, text);
 		ret->t.x = initial.x;
 		ret->t.y = initial.y;
 		ret->t.h = initial.h;
@@ -268,99 +280,177 @@ public:
 	}
 
 	//prints the element
-	void print(Extended_SSD1306 display){
-		display.setTextSize(m_textSize);
-		display.print(getText());
+	void print(Extended_SSD1306 &display){
+		textRect *t = display.print(getText());
 		int y = display.getCursorY();
-
+		Serial.print("printing " + m_textSize);
+		Serial.println(" at y= " + String(y));
 		for (int s = 0; s < params.size(); ++s) {
 			paramStruct* param = params.get(s);
 			String str = param->text;
 			if(param->t.x != -1) {
 				display.setCursor(param->t.x, y);
 			}
-			textRect t = display.print(str);
-			param->t = t;
-			Serial.printf("x %i, y %i, w %i\n", t.x, t.y, t.w);
+//			else {
+//				display.setCursor(display.getCursorX(), y);
+//			}
+
+			textRect* t = display.print(str);
+			param->t = *t;
+			Serial.printf("x %i, y %i, w %i\n", t->x, t->y, t->w);
 		}
 
 		display.println();
+		Serial.printf("line end: %s, %s\n", String(t->x).c_str(), String(display.getCursorY()).c_str());
 	}
 
-	void updateData(Extended_SSD1306 display, int index, String newData) {
+	textRect* updateData(Extended_SSD1306 display, paramStruct* param, String newData) {
+		textRect* ntr = display.writeover(&param->t, newData);
+		param->text = newData;
+		param->t = *ntr;
+		return ntr;
+	}
+
+	textRect* updateData(Extended_SSD1306 display, int index, String newData) {
 		paramStruct* p = params.get(index);
-		textRect ntr = display.writeover(p->t, newData);
-		p->text = newData;
-		display.display();
+		textRect* ntr = this->updateData(display, p, newData);
+		return ntr;
+	}
+
+	textRect* updateDataForId(Extended_SSD1306 display, String id, String newData) {
+		paramStruct* p = getParamById(id);
+		if (p != NULL) {
+			textRect* ntr = this->updateData(display, p, newData);
+			return ntr;
+		}
+
+		return NULL;
+	}
+
+	paramStruct* getParam(int index) {
+		return params.get(index);
+	}
+
+	paramStruct* getParamById(String id) {
+		for (int i = 0; i < params.size(); ++i) {
+			if(params.get(i)->id == id) {
+				return params.get(i);
+			}
+		}
+		return NULL;
 	}
 };
 
-class InfoPage {
-	Vector<InfoPageElemet*> mChildren;
+class InfoScreen {
+	Vector<InfoScreenLine*> mChildren;
 	String m_header;
-	String mID;
+	String id;
 public:
-	InfoPage(String id, String header) {
-		mID = id;
+	InfoScreen(String id, String header) {
+		this->id = id;
 		m_header = header;
 	};
 
-	InfoPageElemet* createInfo(String id, String text) {
-		InfoPageElemet* el =  new InfoPageElemet(id, text, 1);
+	/**
+	 * creates and adds to parent
+	 */
+	InfoScreenLine* createLine(String id, String text) {
+		InfoScreenLine* el =  new InfoScreenLine(id, text, 1);
 		addElemenet(el);
 		return el;
 	}
 
-	void addElemenet(InfoPageElemet* el){
+	void addElemenet(InfoScreenLine* el){
 		mChildren.add(el);
 	};
 
-	InfoPageElemet* itemAt(int index) {
+	InfoScreenLine* itemAt(int index) {
 		return mChildren.get(index);
 	};
 
-	Vector<InfoPageElemet*> getItems()
+	Vector<InfoScreenLine*> getItems()
 	{
 		return mChildren;
 	};
 
+	InfoScreenLine* getChildById(String id) {
+		for (int i = 0; i < mChildren.size(); ++i) {
+			if(mChildren.get(i)->getId() == id) {
+				return mChildren.get(i);
+			}
+		}
+		return NULL;
+	}
+
+	//Does NOT call display.display();
+	void updateParam( String id, String newVal, Extended_SSD1306 display) {
+		Vector<InfoScreenLine*> ret = getAllLinesParamsForId(id);
+		for (int z = 0; z < ret.size(); ++z) {
+			ret.elementAt(z)->updateDataForId(display, id, newVal);
+		}
+	}
+
+	void updateAllParams( Vector<String> ids, Vector<String> newVals, Extended_SSD1306 display) {
+		for (int i = 0; i < ids.size(); ++i) {
+			updateParam(ids.elementAt(i), newVals.elementAt(i), display);
+		}
+
+		display.display();
+	}
+
+	Vector<InfoScreenLine*> getAllLinesParamsForId(String id) {
+		Vector<InfoScreenLine*> ret;
+		for (int i = 0; i < mChildren.size(); ++i) {
+			InfoScreenLine* l = mChildren.elementAt(i);
+			if (l->getParamById(id) != NULL) {
+				ret.add(l);
+			}
+		}
+
+		return ret;
+	}
+
 	void print(Extended_SSD1306 display) {
+		display.clearDisplay();
+//		display.setCursor(0,0);
 		for(int i=0; i< mChildren.size(); i++){
-			InfoPageElemet* child = mChildren.get(i);
+			InfoScreenLine* child = mChildren.get(i);
 			child->print(display);
 		}
+
+		display.display();
 	}
 };
 
 class InfoPages{
 	String mId;
 	int mCurrent = 0;
-	Vector<InfoPage*> mChildern;
+	Vector<InfoScreen*> mChildern;
 public:
 	InfoPages(String id) {
 		mId = id;
 	}
 
-	InfoPage* createPage(String id, String header){
-		InfoPage* el = new InfoPage(id, header);
+	InfoScreen* createScreen(String id, String header){
+		InfoScreen* el = new InfoScreen(id, header);
 		mChildern.add(el);
 		return el;
 	}
 
-	void addPage(InfoPage* page) {
+	void addPage(InfoScreen* page) {
 		mChildern.add(page);
 	}
 
-	InfoPage* get(int index) {
+	InfoScreen* get(int index) {
 		if (mChildern.size() >index) {
 			return mChildern.get(index);
 		}
 		return NULL;
 	}
 
-
 	void print(int pIndex, Extended_SSD1306 display) {
-		InfoPage* p = get(pIndex);
+		Serial.println("Printing index = " +String(pIndex));
+		InfoScreen* p = get(pIndex);
 		p->print(display);
 	}
 };
