@@ -283,18 +283,12 @@ public:
 	void print(Extended_SSD1306 &display){
 		textRect *t = display.print(getText());
 		int y = display.getCursorY();
-		Serial.print("printing " + m_textSize);
-		Serial.println(" at y= " + String(y));
 		for (int s = 0; s < params.size(); ++s) {
 			paramStruct* param = params.get(s);
 			String str = param->text;
 			if(param->t.x != -1) {
 				display.setCursor(param->t.x, y);
 			}
-//			else {
-//				display.setCursor(display.getCursorX(), y);
-//			}
-
 			textRect* t = display.print(str);
 			param->t = *t;
 			Serial.printf("x %i, y %i, w %i\n", t->x, t->y, t->w);
@@ -304,27 +298,32 @@ public:
 		Serial.printf("line end: %s, %s\n", String(t->x).c_str(), String(display.getCursorY()).c_str());
 	}
 
-	textRect* updateData(Extended_SSD1306 display, paramStruct* param, String newData) {
-		textRect* ntr = display.writeover(&param->t, newData);
+	void updateData(Extended_SSD1306 display, paramStruct* param, String newData) {
+//		uint32_t free = system_get_free_heap_size();
+//		int ff = (int)free;
+//		Serial.printf("free1= %i", ff );
+
+		display.writeover(param->t, newData);
+//		free = system_get_free_heap_size();
+//		ff = (int)free;
+//		Serial.printf(", 2= %i", ff );
+
 		param->text = newData;
-		param->t = *ntr;
-		return ntr;
+//		free = system_get_free_heap_size();
+//		ff = (int)free;
+//		Serial.printf(", 3= %i\n", ff );
 	}
 
-	textRect* updateData(Extended_SSD1306 display, int index, String newData) {
+	void updateData(Extended_SSD1306 display, int index, String newData) {
 		paramStruct* p = params.get(index);
-		textRect* ntr = this->updateData(display, p, newData);
-		return ntr;
+		this->updateData(display, p, newData);
 	}
 
-	textRect* updateDataForId(Extended_SSD1306 display, String id, String newData) {
+	void updateDataForId(Extended_SSD1306 display, String id, String newData) {
 		paramStruct* p = getParamById(id);
 		if (p != NULL) {
-			textRect* ntr = this->updateData(display, p, newData);
-			return ntr;
+			this->updateData(display, p, newData);
 		}
-
-		return NULL;
 	}
 
 	paramStruct* getParam(int index) {
