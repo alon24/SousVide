@@ -388,6 +388,8 @@ public:
 		for (int z = 0; z < ret.size(); ++z) {
 			ret.elementAt(z)->updateDataForId(display, id, newVal);
 		}
+
+		ret.removeAllElements();
 	}
 
 	void updateAllParams( Vector<String> ids, Vector<String> newVals, Extended_SSD1306 display) {

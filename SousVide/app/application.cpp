@@ -340,19 +340,24 @@ void moveToMenuMode()
 }
 void handleEncoderInterrupt() {
 	if(lastValue != encoderValue/4 && (encoderValue %4 == 0)) {
-		if (lastValue > encoderValue/4) {
-			menu.moveUp();
+		if (displayMode == Display_Menu) {
+			if (lastValue > encoderValue/4) {
+				menu.moveUp();
+			}
+			else
+			{
+				menu.moveDown();
+			}
+			lastValue = encoderValue/4;
+	//	    say("encode used");
+			//move to menu mode
+			moveToMenuMode();
+			refreshScreen();
 		}
-		else
-		{
-			menu.moveDown();
-		}
-	    lastValue = encoderValue/4;
-//	    say("encode used");
-	    //move to menu mode
-	    moveToMenuMode();
-	    refreshScreen();
 	  }
+	else {
+		//TODO: add code to move to next info page
+	}
 }
 
 void IRAM_ATTR updateEncoder(){
@@ -382,11 +387,12 @@ void handleClick() {
 	{
 		case Display_Menu:
 			menu.movetolinked();
-			displayMode = Display_Menu;
+			displayMode = Display_Regular;
 			refreshScreen();
 			break;
 		case Display_Regular:
-			displayMode = Display_Menu;
+			moveToMenuMode();
+//			displayMode = Display_Menu;
 			refreshScreen();
 //			checkDisplayState();
 			break;
@@ -563,7 +569,7 @@ void writeToScreen(int index) {
 
 void IRAM_ATTR showInfoScreen() {
 	menu.moveto(menu.getRoot());
-
+	display.clearDisplay();
 //	display.clearDisplay();
 	sayln("showing info screen 0 ");
 //	InfoScreen* iPage = infos->get(0);
@@ -580,8 +586,10 @@ void IRAM_ATTR showInfoScreen() {
 //	display.setTextSize(1);
 //	display.setTextColor(WHITE);
 //	display.setCursor(1, 1);
-	String x= "SousVide";
-	display.println(x);
+
+//	String x= "SousVide";
+//	display.println(x);
+
 //	t = currentTime;
 //	display.setCursor(getXOnScreenForString(t, 1), 1 );
 //	display.print(t);
@@ -1005,7 +1013,7 @@ void readTempData()
 	ds.select(addr);
 	ds.write(0x44, 1);        // start conversion, with parasite power on at the end
 
-	delay(750);     // maybe 750ms is enough, maybe not
+	delay(1000);     // maybe 750ms is enough, maybe not
 	// we might do a ds.depower() here, but the reset will take care of it.
 
 	present = ds.reset();
@@ -1121,7 +1129,6 @@ void init()
 	AppSettings.load();
 
 	ds.begin(); // It's required for one-wire initialization!
-
 	readTempTimer.initializeMs(3000, readTempData).start();
 
 //	WifiStation.enable(true);
