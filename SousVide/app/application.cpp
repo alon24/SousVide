@@ -318,7 +318,12 @@ void initInfoScreens() {
 
 	InfoPageLine* el2 = p1->createLine("2", "temp: ");
 	el2->addParam("temp", String(currentTemp, 3));
-	p1->createLine("3", "text1");
+
+	InfoPageLine* el3 = p1->createLine("3", "ap: ");
+	el3->addParam("ap", "0.0.0.0");
+
+	InfoPageLine* el4 = p1->createLine("4", "sta:");
+	el4->addParam("station", "0.0.0.0");
 
 	InfoScreenPage* p2 = infos->createScreen("Data", "Data");
 	InfoPageLine* p2e1 = p2->createLine("header", "Ilan is here");
@@ -679,7 +684,7 @@ void refreshTimeForUi()
 //void IRAM_ATTR updateTimeTimerAction()
 void updateTimeTimerAction()
 {
-	unsigned long start = millis();
+//	unsigned long start = millis();
 	currentTime = SystemClock.now().toShortTimeString(true);
 	debugf("%s", currentTime.c_str());
 	debugf("mem %d",system_get_free_heap_size());
@@ -687,8 +692,8 @@ void updateTimeTimerAction()
 
 	//TODO:ilan
 	refreshTimeForUi();
-	unsigned long end = millis();
-	debugf("Time took %lu",  (long)(end- start));
+//	unsigned long end = millis();
+//	debugf("Time took %lu",  (long)(end- start));
 }
 
 bool state = true;
@@ -706,6 +711,7 @@ void doInit() {
 // Will be called when WiFi station was connected to AP
 void connectOk()
 {
+	infos->updateParamValue("station", WifiStation.getIP().toString(), display);
 //	Serial.println("I'm CONNECTED");
 //
 //	if (!mqtt)
@@ -725,7 +731,7 @@ void connectOk()
 void connectFail()
 {
 	Serial.println("I'm NOT CONNECTED. Need help :(");
-
+	infos->updateParamValue("station", "Unknown", display);
 	// .. some you code for device configuration ..
 }
 
@@ -935,6 +941,7 @@ void startFTP()
 // Will be called when system initialization was completed
 void startServers()
 {
+	infos->updateParamValue("ap", WifiAccessPoint.getIP().toString(), display);
 	Serial.println("Starting servers");
 ////	startFTP();
 	startWebServer();
@@ -945,8 +952,10 @@ void networkScanCompleted(bool succeeded, BssList list)
 	if (succeeded)
 	{
 		for (int i = 0; i < list.count(); i++)
-			if (!list[i].hidden && list[i].ssid.length() > 0)
+			if (!list[i].hidden && list[i].ssid.length() > 0) {
 				networks.add(list[i]);
+				debugf("Network found %s", list[i].ssid.c_str());
+			}
 	}
 	networks.sort([](const BssInfo& a, const BssInfo& b){ return b.rssi - a.rssi; } );
 }
@@ -975,7 +984,7 @@ void checkTempTriggerRelay(float temp) {
 
 void readTempData()
 {
-	unsigned long start = millis();
+//	unsigned long start = millis();
 	byte i;
 	byte present = 0;
 	byte type_s;
@@ -1096,8 +1105,8 @@ void readTempData()
 
 	checkTempTriggerRelay(celsius);
 
-	unsigned long end = millis();
-	debugf("Temp took %lu",  (long)(end- start));
+//	unsigned long end = millis();
+//	debugf("Temp took %lu",  (long)(end- start));
 }
 
 void init()
@@ -1162,14 +1171,14 @@ void init()
 	ds.begin(); // It's required for one-wire initialization!
 	readTempTimer.initializeMs(3000, readTempData).start();
 
-//	WifiStation.enable(true);
+	WifiStation.enable(true);
 //	if (AppSettings.exist())
 //	{
 //		WifiStation.config(AppSettings.ssid, AppSettings.password);
 //		if (!AppSettings.dhcp && !AppSettings.ip.isNull())
 //			WifiStation.setIP(AppSettings.ip, AppSettings.netmask, AppSettings.gateway);
 //	}
-
+	debugf("net=%s, pass=%s", WIFI_SSID, WIFI_PWD);
 	WifiStation.config(WIFI_SSID, WIFI_PWD);
 	WifiStation.startScan(networkScanCompleted);
 
@@ -1181,6 +1190,6 @@ void init()
 	// Run WEB server on system ready
 	System.onReady(startServers);
 
-	WifiStation.waitConnection(connectOk, 20, connectFail); // We recommend 20+ seconds for connection timeout at start
+	WifiStation.waitConnection(connectOk, 30, connectFail); // We recommend 20+ seconds for connection timeout at start
 }
 
