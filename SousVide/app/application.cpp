@@ -3,6 +3,7 @@
 //#include <Libraries/Adafruit_SSD1306/Adafruit_SSD1306.h>
 #include <Extended_SSD1306.h>
 #include <menues.h>
+#include <InfoScreens.h>
 #include <ButtonActions.cpp>
 #include <mqttHelper.h>
 #include <utils.h>
@@ -100,7 +101,6 @@ void wsMessageReceived(WebSocket& socket, const String& message)
 void updateWebUI() {
 	WebSocketsList &clients = server.getActiveWebSockets();
 	for (int i = 0; i < clients.count(); i++) {
-
 		Serial.println("updateWebUI::relayState:" + String(relayState == true ? "true" : "false"));
 		clients[i].sendString("relayState:" + String(relayState == true ? "true" : "false"));
 		clients[i].sendString("updatetime:" + currentTime);
@@ -243,14 +243,14 @@ struct displayMode
 	};
 };
 
-InfoPages* infos = new InfoPages("SousVide");
+InfoScreens* infos = new InfoScreens("SousVide");
 
 enum DisplayMode
 {
-	Display_Regular=1,
+	Display_Info=1,
 	Display_Menu=2
 };
-DisplayMode displayMode = Display_Regular;
+DisplayMode currentDisplayMode = Display_Info;
 
 ////button modes
 //boolean clicked = false;
@@ -267,7 +267,7 @@ ButtonActions bAct(encoderSwitchPin, buttonUseEvent);
 
 Menu menu("SousVide");
 
-void setupMenu()
+void initMenu()
 {
 //	MenuPage *pidSettings = new MenuPage("PID Tuning");
 //	pidSettings->createItem("Tune SP");
@@ -310,27 +310,28 @@ void setupMenu()
 /**
  * setup infoscreens moved by the rotary
  */
-void setupInfos() {
-	InfoScreen* p1 = infos->createScreen("Main", "Main");
-	InfoScreenLine* el = p1->createLine("header", "SousVide");
+void initInfoScreens() {
+	InfoScreenPage* p1 = infos->createScreen("Main", "Main");
+	InfoPageLine* el = p1->createLine("header", "SousVide");
 	paramStruct* t = el->addParam("time", currentTime);
-	t->t.x = getXOnScreenForString(t->text, 1);
+	t->t.x = getXOnScreenForString(currentTime, 1);
 
-	InfoScreenLine* el2 = p1->createLine("2", "temp: ");
+	InfoPageLine* el2 = p1->createLine("2", "temp: ");
 	el2->addParam("temp", String(currentTemp, 3));
 	p1->createLine("3", "text1");
 
-	InfoScreen* p2 = infos->createScreen("Data", "Data");
-	InfoScreenLine* p2e1 = p2->createLine("header", "Ilan is here");
+	InfoScreenPage* p2 = infos->createScreen("Data", "Data");
+	InfoPageLine* p2e1 = p2->createLine("header", "Ilan is here");
 }
 
 void moveToMenuMode()
 {
-	if (displayMode == Display_Regular)
+	if (currentDisplayMode == Display_Info)
 	{
+		infos->setCanUpdateDisplay(false);
+	    currentDisplayMode = Display_Menu;
 		sayln("Display - move to menu mode");
 //		menu.setCurrentItem(1,1);
-	    displayMode = Display_Menu;
 	    menu.moveToRoot();
 	    refreshScreen();
 	}
@@ -340,7 +341,7 @@ void moveToMenuMode()
 }
 void handleEncoderInterrupt() {
 	if(lastValue != encoderValue/4 && (encoderValue %4 == 0)) {
-		if (displayMode == Display_Menu) {
+		if (currentDisplayMode == Display_Menu) {
 			if (lastValue > encoderValue/4) {
 				menu.moveUp();
 			}
@@ -350,8 +351,10 @@ void handleEncoderInterrupt() {
 			}
 			lastValue = encoderValue/4;
 	//	    say("encode used");
+
 			//move to menu mode
-			moveToMenuMode();
+//			moveToMenuMode();
+
 			refreshScreen();
 		}
 	  }
@@ -383,14 +386,14 @@ void IRAM_ATTR checkRotaryBtn()
 
 void handleClick() {
 
-	switch(displayMode)
+	switch(currentDisplayMode)
 	{
 		case Display_Menu:
 			menu.movetolinked();
-			displayMode = Display_Regular;
+			currentDisplayMode = Display_Info;
 			refreshScreen();
 			break;
-		case Display_Regular:
+		case Display_Info:
 			moveToMenuMode();
 //			displayMode = Display_Menu;
 			refreshScreen();
@@ -401,22 +404,25 @@ void handleClick() {
 }
 
 void handleDoubleClick() {
-	menu.moveUpLevel();
-	refreshScreen();
+	if (currentDisplayMode == Display_Menu) {
+		menu.moveUpLevel();
+		refreshScreen();
+	}
 }
 
 void moveToRegMode()
 {
-	if (displayMode == Display_Menu)
+	if (currentDisplayMode == Display_Menu)
 	{
+		infos->setCanUpdateDisplay(true);
+	    currentDisplayMode = Display_Info;
 		sayln("Display - move to regular mode");
 //		menu.setCurrentItem(1,1);
-	    displayMode = Display_Regular;
+		refreshScreen();
 	}
 
 //    lastActionTime = SystemClock.now().toUnixTime();
 //	shouldDimScreen = false;
-	refreshScreen();
 }
 
 void handleLongClick() {
@@ -570,6 +576,8 @@ void writeToScreen(int index) {
 void IRAM_ATTR showInfoScreen() {
 	menu.moveto(menu.getRoot());
 	display.clearDisplay();
+	infos->showCurrent(display);
+
 //	display.clearDisplay();
 	sayln("showing info screen 0 ");
 //	InfoScreen* iPage = infos->get(0);
@@ -602,20 +610,20 @@ void IRAM_ATTR showInfoScreen() {
 void IRAM_ATTR refreshScreen()
 {
 //	showMenuScreen();
-	switch (displayMode)
+	switch (currentDisplayMode)
 	{
-	case Display_Menu:
-		showMenuScreen();
-		break;
-	case Display_Regular:
-		showInfoScreen();
-		break;
+		case Display_Menu:
+			showMenuScreen();
+			break;
+		case Display_Info:
+			showInfoScreen();
+			break;
 	}
 }
 
 void refreshTimeForUi()
 {
-	if (displayMode == Display_Menu)
+	if (currentDisplayMode == Display_Menu)
 	{
 		return;
 	}
@@ -646,8 +654,9 @@ void refreshTimeForUi()
 
 
 	//TODO:ilan
-	InfoScreen* iScreen = infos->get(currentInfoScreenIndex);
-	iScreen->updateParam("time", currentTime, display);
+	infos->updateParamValue("time", currentTime, display);
+//	InfoScreenPage* iScreen = infos->get(currentInfoScreenIndex);
+//	iScreen->updateParam("time", currentTime, display);
 	display.display();
 
 //	Vector<InfoScreenLine*>* lines = iScreen->getAllLinesParamsForId("time");
@@ -667,12 +676,19 @@ void refreshTimeForUi()
 	updateWebUI();
 }
 
-void IRAM_ATTR updateTimeTimerAction()
+//void IRAM_ATTR updateTimeTimerAction()
+void updateTimeTimerAction()
 {
+	unsigned long start = millis();
 	currentTime = SystemClock.now().toShortTimeString(true);
+	debugf("%s", currentTime.c_str());
+	debugf("mem %d",system_get_free_heap_size());
+//	Serial.println(currentTime);
 
-//	Serial.println("time=" + currentTime);
+	//TODO:ilan
 	refreshTimeForUi();
+	unsigned long end = millis();
+	debugf("Time took %lu",  (long)(end- start));
 }
 
 bool state = true;
@@ -959,6 +975,7 @@ void checkTempTriggerRelay(float temp) {
 
 void readTempData()
 {
+	unsigned long start = millis();
 	byte i;
 	byte present = 0;
 	byte type_s;
@@ -1005,7 +1022,8 @@ void readTempData()
 	  type_s = 0;
 	  break;
 	default:
-	  Serial.println("Device is not a DS18x20 family device.");
+		debugf("Device is not a DS18x20 family device.");
+//	  Serial.println("Device is not a DS18x20 family device.");
 	  return;
 	}
 
@@ -1058,25 +1076,35 @@ void readTempData()
 
 	celsius = (float)raw / 16.0;
 	fahrenheit = celsius * 1.8 + 32.0;
-	Serial.print("  Temperature = ");
-	Serial.print(celsius);
-	Serial.print(" Celsius, ");
-	Serial.println(" Fahrenheit");
+	debugf("  Temperature = %f Celsius ", celsius);
+	debugf("mem %d",system_get_free_heap_size());
+//	Serial.print("  Temperature = ");
+//	Serial.print(celsius);
+//	Serial.print(" Celsius, ");
+//	Serial.println(" Fahrenheit");
 //	Serial.println();
 
 	currentTemp = celsius;
 
 	//TODO:ilan
-	InfoScreen* iScreen = infos->get(currentInfoScreenIndex);
-	iScreen->updateParam("temp", String(currentTemp, 3), display);
-	display.display();
+	if(currentDisplayMode == Display_Info) {
+		infos->updateParamValue("temp", String(currentTemp, 2), display);
+//		InfoScreenPage* iScreen = infos->get(currentInfoScreenIndex);
+//		iScreen->updateParam("temp", String(currentTemp, 3), display);
+		display.display();
+	}
+
 	checkTempTriggerRelay(celsius);
+
+	unsigned long end = millis();
+	debugf("Temp took %lu",  (long)(end- start));
 }
 
 void init()
 {
 	Serial.begin(SERIAL_BAUD_RATE); // 74880
 	Serial.systemDebugOutput(true); // Debug output to serial
+	Serial.printf("System Start Reason : %d\r\n", system_get_rst_info()->reason);
 	Wire.pins(sclPin, sdaPin);
 
 	debugf("======= SousVide ==========");
@@ -1096,8 +1124,8 @@ void init()
 //
 //	display.display();
 
-	setupMenu();
-	setupInfos();
+	initMenu();
+	initInfoScreens();
 
 	pinMode(encoderA, INPUT);
 	pinMode(encoderB, INPUT);
@@ -1107,7 +1135,7 @@ void init()
 	pinMode(relayPin, OUTPUT);
 	digitalWrite(relayPin, LOW);
 //	blinkTimer.initializeMs(1000, blink).start();
-
+//
 	attachInterrupt(encoderA, updateEncoder, CHANGE);
 	attachInterrupt(encoderB, updateEncoder, CHANGE);
 
@@ -1119,15 +1147,18 @@ void init()
 	sayln(lastActionTime);
 
 //	procTimer.initializeMs(15, handleEncoderInterrupt).start();
-	buttonTimer.initializeMs(15, checkRotaryBtn).start();
+	buttonTimer.initializeMs(150, checkRotaryBtn).start();
 
-	refreshScreen();
+	showInfoScreen();
+//	refreshScreen();
 
+	//ilan
 //	displayTimer.initializeMs(15, handleScreen).start();
 	timeTimer.initializeMs(1000, updateTimeTimerAction).start();
 
 	AppSettings.load();
 
+//	//ilan
 	ds.begin(); // It's required for one-wire initialization!
 	readTempTimer.initializeMs(3000, readTempData).start();
 
