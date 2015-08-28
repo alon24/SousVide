@@ -344,9 +344,13 @@ void moveToMenuMode()
 //    lastActionTime = SystemClock.now().toUnixTime();
 //	shouldDimScreen = false;
 }
+
+Timer refreshScreenTimer;
+
 void handleEncoderInterrupt() {
 	if(lastValue != encoderValue/4 && (encoderValue %4 == 0)) {
 		if (currentDisplayMode == Display_Menu) {
+//			debugf("Display_Menu");
 			if (lastValue > encoderValue/4) {
 				menu.moveUp();
 			}
@@ -360,11 +364,13 @@ void handleEncoderInterrupt() {
 			//move to menu mode
 //			moveToMenuMode();
 
-			refreshScreen();
+			refreshScreenTimer.initializeMs(10, refreshScreen).startOnce();
+//			refreshScreen();
 		}
-	  }
-	else {
-		//TODO: add code to move to next info page
+		else {
+//			debugf("!Display_Menu");
+			//TODO: add code to move to next info page
+		}
 	}
 }
 
@@ -380,7 +386,6 @@ void IRAM_ATTR updateEncoder(){
   if(sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000) encoderValue --;
 
   lastEncoded = encoded; //store this value for next time
-
   handleEncoderInterrupt();
 }
 
@@ -395,7 +400,7 @@ void handleClick() {
 	{
 		case Display_Menu:
 			menu.movetolinked();
-			currentDisplayMode = Display_Info;
+//			currentDisplayMode = Display_Info;
 			refreshScreen();
 			break;
 		case Display_Info:
@@ -503,7 +508,7 @@ void printxy() {
 	Serial.print("x,y=" +String(x) + ","+ String(y));
 }
 void IRAM_ATTR showMenuScreen() {
-	sayln(lastValue);
+//	sayln(lastValue);
 
 	display.dim(false);
 	display.setTextSize(1);
@@ -581,6 +586,7 @@ void writeToScreen(int index) {
 void IRAM_ATTR showInfoScreen() {
 	menu.moveto(menu.getRoot());
 	display.clearDisplay();
+	display.setCursor(0,0);
 	infos->showCurrent(display);
 
 //	display.clearDisplay();
@@ -614,6 +620,8 @@ void IRAM_ATTR showInfoScreen() {
 
 void IRAM_ATTR refreshScreen()
 {
+	debugf("Refresh Screen called");
+
 //	showMenuScreen();
 	switch (currentDisplayMode)
 	{
@@ -686,8 +694,8 @@ void updateTimeTimerAction()
 {
 //	unsigned long start = millis();
 	currentTime = SystemClock.now().toShortTimeString(true);
-	debugf("%s", currentTime.c_str());
-	debugf("mem %d",system_get_free_heap_size());
+//	debugf("%s", currentTime.c_str());
+//	debugf("mem %d",system_get_free_heap_size());
 //	Serial.println(currentTime);
 
 	//TODO:ilan
@@ -1037,7 +1045,7 @@ void readAfterWait() {
 	float celsius = (float)raw / 16.0;
 //	fahrenheit = celsius * 1.8 + 32.0;
 	debugf("  Temperature = %f Celsius ", celsius);
-	debugf("mem %d",system_get_free_heap_size());
+//	debugf("mem %d",system_get_free_heap_size());
 //	Serial.print("  Temperature = ");
 //	Serial.print(celsius);
 //	Serial.print(" Celsius, ");
@@ -1144,10 +1152,10 @@ void init()
 	initMenu();
 	initInfoScreens();
 
-	pinMode(encoderA, INPUT);
-	pinMode(encoderB, INPUT);
-	digitalWrite(encoderA, HIGH); //turn pullup resistor on
-	digitalWrite(encoderB, HIGH); //turn pullup resistor on
+//	pinMode(encoderA, INPUT_PULLUP);
+//	pinMode(encoderB, INPUT_PULLUP);
+//	digitalWrite(encoderA, HIGH); //turn pullup resistor on
+//	digitalWrite(encoderB, HIGH); //turn pullup resistor on
 
 	pinMode(relayPin, OUTPUT);
 	digitalWrite(relayPin, LOW);
@@ -1170,7 +1178,6 @@ void init()
 
 	AppSettings.load();
 
-//	//ilan
 	ds.begin(); // It's required for one-wire initialization!
 	readTempTimer.initializeMs(1000, readTempData).startOnce();
 
@@ -1181,7 +1188,9 @@ void init()
 //		if (!AppSettings.dhcp && !AppSettings.ip.isNull())
 //			WifiStation.setIP(AppSettings.ip, AppSettings.netmask, AppSettings.gateway);
 //	}
-	debugf("net=%s, pass=%s", WIFI_SSID, WIFI_PWD);
+
+//	debugf("net=%s, pass=%s", WIFI_SSID, WIFI_PWD);
+
 	WifiStation.config(WIFI_SSID, WIFI_PWD);
 	WifiStation.startScan(networkScanCompleted);
 
