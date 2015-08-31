@@ -31,8 +31,8 @@ void setRelayState(boolean state);
 Extended_SSD1306 display(4);
 
 //Pins used
-#define sclPin 2
-#define sdaPin 0
+#define sclPin 0
+#define sdaPin 2
 #define dsTempPin 4
 #define relayPin 5
 #define encoderA 13
@@ -1152,10 +1152,10 @@ void init()
 	initMenu();
 	initInfoScreens();
 
-//	pinMode(encoderA, INPUT_PULLUP);
-//	pinMode(encoderB, INPUT_PULLUP);
-//	digitalWrite(encoderA, HIGH); //turn pullup resistor on
-//	digitalWrite(encoderB, HIGH); //turn pullup resistor on
+	pinMode(encoderA, INPUT_PULLUP);
+	pinMode(encoderB, INPUT_PULLUP);
+	digitalWrite(encoderA, HIGH); //turn pullup resistor on
+	digitalWrite(encoderB, HIGH); //turn pullup resistor on
 
 	pinMode(relayPin, OUTPUT);
 	digitalWrite(relayPin, LOW);
