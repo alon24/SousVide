@@ -11,6 +11,10 @@
 
 #include <Libraries/OneWire/OneWire.h>
 
+//#include <PID_v1.h>
+//#include <PID_AutoTune_v0.h>
+#include <MyPID.h>
+
 //Forward declerations
 //mqtt
 //void onMessageReceived(String topic, String message); // Forward declaration for our callback
@@ -104,6 +108,7 @@ void updateWebUI() {
 		Serial.println("updateWebUI::relayState:" + String(relayState == true ? "true" : "false"));
 		clients[i].sendString("relayState:" + String(relayState == true ? "true" : "false"));
 		clients[i].sendString("updatetime:" + currentTime);
+		clients[i].sendString("temp:" + String(currentTemp));
 	}
 }
 
@@ -999,16 +1004,12 @@ byte type_s;
 void readAfterWait() {
 	byte present = 0;
 
-//	delay(1000);     // maybe 750ms is enough, maybe not
 	// we might do a ds.depower() here, but the reset will take care of it.
 
 	present = ds.reset();
 	ds.select(addr);
 	ds.write(0xBE);         // Read Scratchpad
 
-//	Serial.print("  Data = ");
-//	Serial.print(present, HEX);
-//	Serial.print(" ");
 	for ( int i = 0; i < 9; i++)
 	{
 		// we need 9 bytes
@@ -1016,9 +1017,6 @@ void readAfterWait() {
 //		Serial.print(data[i], HEX);
 //		Serial.print(" ");
 	}
-//	Serial.print(" CRC=");
-//	Serial.print(OneWire::crc8(data, 8), HEX);
-//	Serial.println();
 
 	// Convert the data to actual temperature
 	// because the result is a 16 bit signed integer, it should
@@ -1045,20 +1043,10 @@ void readAfterWait() {
 	float celsius = (float)raw / 16.0;
 //	fahrenheit = celsius * 1.8 + 32.0;
 	debugf("  Temperature = %f Celsius ", celsius);
-//	debugf("mem %d",system_get_free_heap_size());
-//	Serial.print("  Temperature = ");
-//	Serial.print(celsius);
-//	Serial.print(" Celsius, ");
-//	Serial.println(" Fahrenheit");
-//	Serial.println();
-
 	currentTemp = celsius;
 
-	//TODO:ilan
 	if(currentDisplayMode == Display_Info) {
 		infos->updateParamValue("temp", String(currentTemp, 2), display);
-//		InfoScreenPage* iScreen = infos->get(currentInfoScreenIndex);
-//		iScreen->updateParam("temp", String(currentTemp, 3), display);
 		display.display();
 	}
 
@@ -1067,6 +1055,7 @@ void readAfterWait() {
 //	unsigned long end = millis();
 //	debugf("Temp took %lu",  (long)(end- start));
 
+	updateWebUI();
 	readTempTimer.initializeMs(1000, readTempData).startOnce();
 }
 
@@ -1133,6 +1122,34 @@ void readTempData()
 	oneTempReadTimer.initializeMs(1000, readAfterWait).startOnce();
 }
 
+//ThingSpeak
+HttpClient thingSpeak;
+void onDataSent(HttpClient& client, bool successful)
+{
+	if (successful)
+		Serial.println("Success sent");
+	else
+		Serial.println("Failed");
+
+	String response = client.getResponseString();
+	Serial.println("Server response: '" + response + "'");
+	if (response.length() > 0)
+	{
+		int intVal = response.toInt();
+
+		if (intVal == 0)
+			Serial.println("Sensor value wasn't accepted. May be we need to wait a little?");
+	}
+}
+
+void sendData(int field, String data)
+{
+	if (thingSpeak.isProcessing())
+		return; // We need to wait while request processing was completed
+	thingSpeak.downloadString("https://api.thingspeak.com/update?api_key=NSOR6ZIK3WLWY4PIY&field" + String(1) + "=" + String(currentTemp), onDataSent);
+//	thingSpeak.downloadString("http://api.thingspeak.com/update?key=7XXUJWCWYTMXKN3L&field1=" + String(sensorValue), onDataSent);
+}
+
 void init()
 {
 	Serial.begin(SERIAL_BAUD_RATE); // 115200
@@ -1169,7 +1186,7 @@ void init()
 	lastActionTime = date.Milliseconds;
 	sayln(lastActionTime);
 
-	buttonTimer.initializeMs(150, checkRotaryBtn).start();
+	buttonTimer.initializeMs(80, checkRotaryBtn).start();
 
 	showInfoScreen();
 
