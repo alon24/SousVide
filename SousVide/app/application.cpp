@@ -23,7 +23,6 @@
 //void process();
 void connectOk();
 void connectFail();
-
 void handleCommands(String commands);
 void updateWebUI();
 void setRelayState(boolean state);
@@ -33,6 +32,8 @@ void setRelayState(boolean state);
 //* SSD1306 - I2C
 //Adafruit_SSD1306 display(4);
 Extended_SSD1306 display(4);
+
+MySousVideController *sousController;
 
 //Pins used
 #define sclPin 0
@@ -280,14 +281,19 @@ void initMenu()
 //	pidSettings->createItem("Tune I");
 //	pidSettings->createItem("Tune D");
 
-	MenuPage *settings = new MenuPage("Settings");
-	MenuItem *i1 =  new MenuItem("Set Time");
-	MenuItem *i2 = new MenuItem("Set Needed Temp");
-	settings->addChild(i1);
-	settings->addChild(i2);
-	settings->createItem("t3");
-	settings->createItem("t4");
-	menu.addChild(settings);
+	MenuPage *settings = menu.createPage("Settings");
+	MenuItem *i1 = settings->createItem("Set Time");
+	MenuItem *i2 = settings->createItem("Sous Work");
+
+	MenuPage* sous = menu.createPage("Sous Options");
+	sous->createItem("SetPidStartTime");
+	sous->createItem("SetPidOffTime");
+	sous->createItem("off");
+	sous->createItem("Tune P");
+	sous->createItem("Tune I");
+	sous->createItem("Tune D");
+	sous->createItem("Run");
+	sous->createItem("Tune SP");
 
 	MenuPage* time = new MenuPage("Time");
 	MenuItem* hh = new MenuItem("HH");
@@ -295,17 +301,9 @@ void initMenu()
 	time->addChild(hh);
 	time->addChild(mm);
 	menu.addChild(time);
-//
-	MenuPage* opt = new MenuPage("Options");
-	MenuItem* o1 = new MenuItem("opt1");
-	MenuItem* o2 = new MenuItem("opt2");
-	opt->addChild(o1);
-	opt->addChild(o2);
-	menu.addChild(opt);
 
-//	BaseMenuElement e = MenuItem("Asd");
 	i1->setLinker(time);
-	i2->setLinker(opt);
+	i2->setLinker(sous);
 	menu.setCurrentItem(i1);
 	menu.setMaxPerPage(5);
 	menu.setRoot(settings);

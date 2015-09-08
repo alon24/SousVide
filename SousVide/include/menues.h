@@ -15,8 +15,9 @@
 
 enum MenuActionEnum
 {
-	MNU_MOVE = 1, MNU_VALUES = 2
+	MNU_MOVE = 1, MNU_VALUES = 2, SELECT =3
 };
+
 enum class Type
 {
 	Base = 0, Item = 1, Page = 2, Menu = 3, MainScreenItem = 4,
@@ -76,6 +77,10 @@ public:
 //	{
 //		m_actionEnum = act;
 //	}
+
+	void setDelegate() {
+
+	}
 
 	void setLinker(BaseMenuElement* itm)
 	{
@@ -141,6 +146,11 @@ public:
 	Vector<BaseMenuElement*> getDisplayedItems();
 	BaseMenuElement* getCurrent();
 	MenuPage* getCurrentPage();
+	MenuPage* createPage(String id) {
+		MenuPage* p = new MenuPage(id);
+		addChild(p);
+	}
+
 //	void setCurrentItem(int pn, int itn);
 	void setCurrentItem(BaseMenuElement* cur);
 	void setMaxPerPage(int max);
