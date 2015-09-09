@@ -13,6 +13,6 @@ Video
 [![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/fo02opoEktk/0.jpg)](https://www.youtube.com/watch?v=fo02opoEktk)
 
 
-[Inside the Box](images/InsideTheBox.png)
+![alt tag](images/InsideTheBox.png)
 
 
