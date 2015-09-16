@@ -1,102 +1,219 @@
-<!DOCTYPE html>
-<html>
-    
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <!-- <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script> -->
-        <script type="text/javascript" src="jquery.js"></script>
-        <script type="text/javascript" src="bootstrap.min.js"></script>
-        <script type="text/javascript" src="main.js"></script>
-        <link href="http://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.3.0/css/font-awesome.min.css"
-        rel="stylesheet" type="text/css">
-        <link href="bootstrap.css" rel="stylesheet" type="text/css">
-        <link href="main.css" rel="stylesheet" type="text/css">
-        <!-- The main CSS file -->
-        <!-- <link href="style.css" rel="stylesheet"> -->
-    </head>
-    
-    <body>
-        <div class="navbar navbar-default navbar-inverse navbar-static-top">
-            <div class="container-fluid">
-                <div class="navbar-header">
-                    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-ex-collapse">
-                        <span class="sr-only">Toggle navigation</span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                    </button>
-                    <a class="navbar-brand" href="#"><span>alon</span><span>24 - esp8266 connected device</span><br></a>
-                </div>
-                <div class="collapse navbar-collapse" id="navbar-ex-collapse">
-                    <ul class="nav navbar-nav navbar-right">
-                        <li class="active">
-                            <a href="#">Home</a>
-                        </li>
-                        <li>
-                            <a href="settings.html">Settings<br></a>
-                        </li>
-                        <li>
-                            <a href="#">About<br></a>
-                        </li>
-                    </ul>
-                </div>
+<html><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Include jQuery Mobile stylesheets -->
+    <link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
+    <!-- Include the jQuery library -->
+    <script src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
+    <!-- Include the jQuery Mobile library -->
+    <script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+    <script type="text/javascript" src="bootstrap.min.js"></script>
+    <script type="text/javascript" src="main.js"></script>
+    <link href="http://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+    <link href="bootstrap.css" rel="stylesheet" type="text/css">
+    <link href="main.css" rel="stylesheet" type="text/css">
+    <!-- <script src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-mobile/1.4.5/jquery.mobile.css" />
+     > -->
+    <!-- The main CSS file -->
+    <!-- <link href="style.css" rel="stylesheet"> -->
+  </head><body>
+    <div class="navbar navbar-default navbar-inverse navbar-static-top">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-ex-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#"><span>alon</span><span>24 - esp8266 connected device</span><br></a>
+        </div>
+        <div class="collapse navbar-collapse" id="navbar-ex-collapse">
+          <ul class="nav navbar-nav navbar-right">
+            <li class="active">
+              <a href="#">Home</a>
+            </li>
+            <li>
+              <a href="settings.html">Settings<br></a>
+            </li>
+            <li>
+              <a href="#">About<br></a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-6 text-center">
+            <div class="page-header text-danger text-left">
+              <h1 class="text-left">SousVide:</h1>
+              <div id="currentTime">Current Time is:
+                <span class="hour" id="hour">hh</span>
+                <span class="time_sep">:</span>
+                <span class="min" id="min">mm</span>
+                <span class="time_sep">:</span>
+                <span class="sec" id="sec">ss</span>
+              </div>
+              <div id="temp">Current Temp is:
+                <span class="temperature" id="temperature">Unknown</span>
+                <span class="temp_type">celcious</span>
+              </div>
             </div>
+          </div>
         </div>
-        <div class="section">
-            <div class="container">
-                <div class="row">
-                    <div class="col-md-6 text-center">
-                        <div class="page-header text-danger">
-                            <h1 class="text-left">SousVide:</h1>
-                            <div id="currentTime">
-                            	Current Time is:
-                                <span class="hour" id="hour">hh</span>
-                                <span class="time_sep">:</span>
-                                <span class="min" id="min">mm</span>
-                                <span class="time_sep">:</span>
-                                <span class="sec" id="sec">ss</span>
-                            </div>
-                            <div id="temp">
-                            	Current Temp is: 
-                                <span class="temperature" id="temperature">Unknown</span>
-                                <span class="temp_type">celcious</span>
-                            </div>
-                        </div>
-                    </div>
+      </div>
+      <div class="section">
+        <div class="container">
+          <div class="row">
+            <div class="col-md-12">
+              <fieldset>
+                <div data-role="fieldcontain">
+                    <label for="Sousvide_state_switch">Sousvide state</label>
+                    <select id="Sousvide_state_switch" data-role="flipswitch">
+                      <option value="leave">Off</option>
+                      <option value="arrive">On</option>
+                    </select>
                 </div>
+                <div class="containing-element">
+                	<label for="flip-min">Flip switch:</label>
+                	<select name="flip-min" id="flip-min" data-role="slider">
+                		<option value="off">Switch Off</option>
+                		<option value="on">Switch On</option>
+                	</select>
+                </div>
+                <div data-role="fieldcontain">
+                	<label for="flip-3">Flip switch:</label>
+                	<select name="flip-3" id="flip-3" data-role="slider" data-theme="a">
+                		<option value="no">No</option>
+                		<option value="yes">Yes</option>
+                	</select>
+                </div>
+              </fieldset>
             </div>
-        </div>
-        <div class="section">
-            <div class="container">
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="jumbotron">
-                            <h1>GPIO control</h1>
-                            <p>Set the current state of the Sousvide</p>
-                            <div class="switch">
-                                <input id="relay1" class="cmn-toggle cmn-toggle-yes-no" type="checkbox">
-                                <label for="relay1" data-on="ON" data-off="OFF"></label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Actions and vaules</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="tr_1">
+                    <td>Needed temp</td>
+                    <td>
+                      <input type="range" id="needed_temp" min="0" max="100" value="0" step="1" onchange="showValue(this.value)">
+                    </td>
+                  </tr>
+                  <tr class="tr_1">
+                    <td>Current Temp</td>
+                    <td>
+                      <span id="svid_current_temp">Unknown</span>
+                    </td>
+                  </tr>
+                  <tr class="tr_1">
+                    <td>Is heating right now?</td>
+                    <td>
+                      <span id="svid_heating_now">NO</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-        </div>
-        <div class="section">
-            <footer class="section section-primary text-center">
-                <div class="container">
-                    <div class="row">
-                        <div class="col-sm-12">
-                            <p>All this and for what? Just a SousVide, but nope, this is the making of
-                                a connected house
-                                <br>
-                            </p>
-                        </div>
-                    </div>
+            <div class="col-md-6">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Sousvide param</th>
+                    <th>Value</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td draggable="true">Proportional</td>
+                    <td>
+                      <input id="p_setting" type="range" min="0" max="100" value="0" step="1" onchange="showValue(this.value)">
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Integral</td>
+                    <td>
+                      <input id="i_steeting" type="range" min="0" max="100" value="0" step="1" onchange="showValue(this.value)">
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Derivative</td>
+                    <td>
+                      <input id="d_setting" type="range" min="0" max="100" value="0" step="1" onchange="showValue(this.value)">
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <fieldset>
+                <div data-role="fieldcontain">
+                    <label for="enable_manual_gpio_control">Enable manual GPIO</label>
+                    <select id="enable_manual_gpio_control" data-role="flipswitch">
+                      <option value="leave">Off</option>
+                      <option value="arrive">On</option>
+                    </select>
                 </div>
-            </footer>
+              </fieldset>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <fieldset>
+                <div data-role="fieldcontain">
+                    <label for="manual_gpio_state">Relay is </label>
+                    <select id="manual_gpio_state" data-role="flipswitch">
+                      <option value="leave">Off</option>
+                      <option value="arrive">On</option>
+                    </select>
+                </div>
+              </fieldset>
+            </div>
+          </div>
         </div>
-    </body>
+      </div>
+      <div class="section">
+        <div class="container">
+          <div class="row">
+            <div class="col-md-12">
+              <div class="jumbotron">
+                <h1>GPIO control</h1>
+                <p>Set the current state of the Sousvide</p>
+                <div class="switch">
+                  <input id="relay1" class="cmn-toggle cmn-toggle-yes-no" type="checkbox">
+                  <label for="relay1" data-on="ON" data-off="OFF"></label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="section">
+        <footer class="section section-primary text-center">
+          <div class="container">
+            <div class="row">
+              <div class="col-sm-12">
+                <p>All this and for what? Just a SousVide, but nope, this is the making of
+                  a connected house
+                  <br>
+                </p>
+              </div>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </div>
 
-</html>
+
+</body></html>

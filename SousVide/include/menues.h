@@ -60,6 +60,8 @@ public:
 	BaseMenuElement* elementAt(int index);
 };
 
+//typedef void (*cb_use)(ButtonUseEvent);
+
 class MenuItem: public BaseMenuElement
 {
 	MenuActionEnum m_actionEnum;

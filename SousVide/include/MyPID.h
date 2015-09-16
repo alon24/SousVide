@@ -96,27 +96,8 @@ public:
 	void Off()
 	{
 	   myPID->SetMode(MANUAL);
-	//   lcd.setBacklight(0);
-
-	//   digitalWrite(RelayPin, LOW);  // make sure it is off
-
-	//   lcd.print(F("    Adafruit"));
-	//   lcd.setCursor(0, 1);
-	//   lcd.print(F("   Sous Vide!"));
-	//   uint8_t buttons = 0;
-
-	//   while(!(buttons & (BUTTON_RIGHT)))
-	//   {
-	//      buttons = ReadButtons();
-	//   }
-	//
-	//   // Prepare to transition to the RUN state
-	//   sensors.requestTemperatures(); // Start an asynchronous temperature reading
-
-	   //turn the PID on
-	   myPID->SetMode(AUTOMATIC);
-	   windowStartTime = millis();
-	   opState = RUN; // start control
+	   debugf("Selected OFF state");
+	   opState = OFF;
 	};
 
 	void Tune_Sp()
@@ -335,75 +316,72 @@ public:
 	// ************************************************
 	void Run()
 	{
-	//   // set up the LCD's number of rows and columns:
-	//   lcd.print(F("Sp: "));
-	//   lcd.print(Setpoint);
-	//   lcd.write(1);
-	//   lcd.print(F("C : "));
-	//
-	//   SaveParameters();
-	//   myPID.SetTunings(Kp,Ki,Kd);
-	//
-	//   uint8_t buttons = 0;
-	//   while(true)
-	//   {
-	//      setBacklight();  // set backlight based on state
-	//
-	//      buttons = ReadButtons();
-	//      if ((buttons & BUTTON_SHIFT)
-	//         && (buttons & BUTTON_RIGHT)
-	//         && (abs(Input - Setpoint) < 0.5))  // Should be at steady-state
-	//      {
-	//         StartAutoTune();
-	//      }
-	//      else if (buttons & BUTTON_RIGHT)
-	//      {
-	//        opState = SETP;
-	//        return;
-	//      }
-	//      else if (buttons & BUTTON_LEFT)
-	//      {
-	//        opState = OFF;
-	//        return;
-	//      }
-	//
-	//      DoControl();
-	//
-	//      lcd.setCursor(0,1);
-	//      lcd.print(Input);
-	//      lcd.write(1);
-	//      lcd.print(F("C : "));
-	//
-	//      float pct = map(Output, 0, WindowSize, 0, 1000);
-	//      lcd.setCursor(10,1);
-	//      lcd.print(F("      "));
-	//      lcd.setCursor(10,1);
-	//      lcd.print(pct/10);
-	//      //lcd.print(Output);
-	//      lcd.print("%");
-	//
-	//      lcd.setCursor(15,0);
-	//      if (tuning)
-	//      {
-	//        lcd.print("T");
-	//      }
-	//      else
-	//      {
-	//        lcd.print(" ");
-	//      }
-	//
-	//      // periodically log to serial port in csv format
-	//      if (millis() - lastLogTime > logInterval)
-	//      {
-	//        Serial.print(Input);
-	//        Serial.print(",");
-	//        Serial.println(Output);
-	//      }
-	//
-	//      delay(100);
-	//   }
+	   //turn the PID on
+	   myPID->SetMode(AUTOMATIC);
+	   windowStartTime = millis();
+	   opState = RUN; // start control
+
+//	   SaveParameters();
+//	   myPID.SetTunings(Kp,Ki,Kd);
+//
+//	   //periodically log to serial port in csv format
+//	  if (millis() - lastLogTime > logInterval)
+//	  {
+//		Serial.print(Input);
+//		Serial.print(",");
+//		Serial.println(Output);
+//	  }
+	}
+private:
+	// ************************************************
+	// Called by ISR every 15ms to drive the output
+	// ************************************************
+	void DriveOutput()
+	{
+	//  long now = millis();
+	//  // Set the output
+	//  // "on time" is proportional to the PID output
+	//  if(now - windowStartTime>WindowSize)
+	//  { //time to shift the Relay Window
+	//     windowStartTime += WindowSize;
+	//  }
+	//  if((onTime > 100) && (onTime > (now - windowStartTime)))
+	//  {
+	//     digitalWrite(RelayPin,HIGH);
+	//  }
+	//  else
+	//  {
+	//     digitalWrite(RelayPin,LOW);
+	//  }
 	}
 
+	// ************************************************
+	// Execute the control loop
+	// ************************************************
+	void DoControl()
+	{
+	//  // Read the input:
+	//  if (sensors.isConversionAvailable(0))
+	//  {
+	//    Input = sensors.getTempC(tempSensor);
+	//    sensors.requestTemperatures(); // prime the pump for the next one - but don't wait
+	//  }
+	//
+	//  if (tuning) // run the auto-tuner
+	//  {
+	//     if (aTune.Runtime()) // returns 'true' when done
+	//     {
+	//        FinishAutoTune();
+	//     }
+	//  }
+	//  else // Execute control algorithm
+	//  {
+	//     myPID.Compute();
+	//  }
+	//
+	//  // Time Proportional relay state is updated regularly via timer interrupt.
+	//  onTime = Output;
+	}
 };
 
 //Forward Refs
