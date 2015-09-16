@@ -11,3 +11,8 @@ This is based on https://learn.adafruit.com/sous-vide-powered-by-arduino-the-sou
 Video
 
 [![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/fo02opoEktk/0.jpg)](https://www.youtube.com/watch?v=fo02opoEktk)
+
+
+![alt tag](images/InsideTheBox.png)
+
+
