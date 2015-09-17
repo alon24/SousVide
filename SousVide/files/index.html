@@ -47,22 +47,29 @@
     <div class="section">
       <div class="container">
         <div class="row">
-          <div class="col-md-6 text-center">
+          <div class="col-md-12 text-center">
             <div class="page-header text-danger text-left">
-              <h1 class="text-left">SousVide:</h1>
-              <div id="currentTime">Current Time is:
+              <h1 class="text-center">SousVide Actions</h1>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-4 text-center">
+              <div id="temp" align="left">Temp:
+                <span class="temperature" id="temperature">Unknown</span>
+                <span class="temp_type">celcious</span>
+              </div>
+            </div>
+            <div class="col-md-4 text-center">
+            </div>
+            <div class="col-md-4 text-center">
+              <div id="currentTime" align="right" textSize="20em">
                 <span class="hour" id="hour">hh</span>
                 <span class="time_sep">:</span>
                 <span class="min" id="min">mm</span>
                 <span class="time_sep">:</span>
                 <span class="sec" id="sec">ss</span>
               </div>
-              <div id="temp">Current Temp is:
-                <span class="temperature" id="temperature">Unknown</span>
-                <span class="temp_type">celcious</span>
-              </div>
             </div>
-          </div>
         </div>
       </div>
       <div class="section">
@@ -81,7 +88,7 @@
             </div>
           </div>
           <div class="row">
-            <div class="col-md-6">
+            <div class="col-md-6 sousActions">
               <table class="table">
                 <thead>
                   <tr>
@@ -110,7 +117,7 @@
                 </tbody>
               </table>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-6 sousActions2">
               <table class="table">
                 <thead>
                   <tr>
@@ -119,7 +126,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
+                  <tr class="tr_1">
                     <td draggable="true">Proportional</td>
                     <td>
                       <input id="p_setting" type="range" min="0" max="100" value="0" step="1" onchange="showValue(this.value)">
