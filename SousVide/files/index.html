@@ -13,7 +13,9 @@
     <link href="bootstrap.css" rel="stylesheet" type="text/css">
     <link href="main.css" rel="stylesheet" type="text/css">
     <!-- <script src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
+
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-mobile/1.4.5/jquery.mobile.css" />
+
      > -->
     <!-- The main CSS file -->
     <!-- <link href="style.css" rel="stylesheet"> -->
@@ -46,6 +48,11 @@
     </div>
     <div class="section">
       <div class="container">
+        <div class="row"></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="container">
         <div class="row">
           <div class="col-md-12 text-center">
             <div class="page-header text-danger text-left">
@@ -53,160 +60,138 @@
             </div>
           </div>
           <div class="row">
-            <div class="col-md-4 text-center">
-              <div id="temp" align="left">Temp:
-                <span class="temperature" id="temperature">Unknown</span>
-                <span class="temp_type">celcious</span>
-              </div>
-            </div>
-            <div class="col-md-4 text-center">
-            </div>
-            <div class="col-md-4 text-center">
-              <div id="currentTime" align="right" textSize="20em">
+            <div class="col-md-12 text-left">
+              <div id="currentTime" align="left" textsize="20em">Time:
                 <span class="hour" id="hour">hh</span>
                 <span class="time_sep">:</span>
                 <span class="min" id="min">mm</span>
                 <span class="time_sep">:</span>
                 <span class="sec" id="sec">ss</span>
               </div>
-            </div>
-        </div>
-      </div>
-      <div class="section">
-        <div class="container">
-          <div class="row">
-            <div class="col-md-12">
-              <fieldset>
-                <div data-role="fieldcontain">
-                    <label for="Sousvide_state_switch">Sousvide state</label>
-                    <select id="Sousvide_state_switch" data-role="flipswitch">
-                      <option value="leave">Off</option>
-                      <option value="arrive">On</option>
-                    </select>
-                </div>
-              </fieldset>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-6 sousActions">
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th>Actions and vaules</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr class="tr_1">
-                    <td>Needed temp</td>
-                    <td>
-                      <input type="range" id="needed_temp" min="0" max="100" value="0" step="1" onchange="showValue(this.value)">
-                    </td>
-                  </tr>
-                  <tr class="tr_1">
-                    <td>Current Temp</td>
-                    <td>
-                      <span id="svid_current_temp">Unknown</span>
-                    </td>
-                  </tr>
-                  <tr class="tr_1">
-                    <td>Is heating right now?</td>
-                    <td>
-                      <span id="svid_heating_now">NO</span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <div class="col-md-6 sousActions2">
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th>Sousvide param</th>
-                    <th>Value</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr class="tr_1">
-                    <td draggable="true">Proportional</td>
-                    <td>
-                      <input id="p_setting" type="range" min="0" max="100" value="0" step="1" onchange="showValue(this.value)">
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Integral</td>
-                    <td>
-                      <input id="i_setting" type="range" min="0" max="100" value="0" step="1" onchange="showValue(this.value)">
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Derivative</td>
-                    <td>
-                      <input id="d_setting" type="range" min="0" max="100" value="0" step="1" onchange="showValue(this.value)">
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-12">
-              <fieldset>
-                <div data-role="fieldcontain">
-                    <label for="enable_manual_gpio_control">Enable manual GPIO</label>
-                    <select id="enable_manual_gpio_control" data-role="flipswitch">
-                      <option value="leave">Off</option>
-                      <option value="arrive">On</option>
-                    </select>
-                </div>
-              </fieldset>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-12">
-              <fieldset>
-                <div data-role="fieldcontain">
-                    <label for="manual_gpio_state">Relay is </label>
-                    <select id="manual_gpio_state" data-role="flipswitch">
-                      <option value="leave">Off</option>
-                      <option value="arrive">On</option>
-                    </select>
-                </div>
-              </fieldset>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="section">
-        <div class="container">
-          <div class="row">
-            <div class="col-md-12">
-              <div class="jumbotron">
-                <h1>GPIO control</h1>
-                <p>Set the current state of the Sousvide</p>
-                <div class="switch">
-                  <input id="relay1" class="cmn-toggle cmn-toggle-yes-no" type="checkbox">
-                  <label for="relay1" data-on="ON" data-off="OFF"></label>
-                </div>
+              <div id="temp" align="left">Temp:
+                <span class="temperature" id="temperature">Unknown</span>
+                <span class="temp_type">celcious</span>
               </div>
             </div>
           </div>
         </div>
-      </div>
-      <div class="section">
-        <footer class="section section-primary text-center">
+        <div class="section">
           <div class="container">
             <div class="row">
-              <div class="col-sm-12">
-                <p>All this and for what? Just a SousVide, but nope, this is the making of
-                  a connected house
-                  <br>
-                </p>
+              <div class="col-md-12 text-center">
+                <fieldset>
+                  <div data-role="fieldcontain">
+                    <label for="flip_sous_state">Sousvide monitoring</label>
+                    <select id="flip_sous_state" data-role="flipswitch">
+                      <option value="leave">Off</option>
+                      <option value="arrive">On</option>
+                    </select>
+                  </div>
+                </fieldset>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-6 sousActions" colspan="2">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Actions and vaules</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr class="tr_1">
+                      <td>Needed temp</td>
+                      <td>
+                        <input type="range" id="needed_temp" min="0" max="100" value="28" step="1" onchange="sendValueChanged('needed_temp', this.value)">
+                      </td>
+                    </tr>
+                    <tr class="tr_1">
+                      <td>Current Temp</td>
+                      <td>
+                        <span id="svid_current_temp">Unknown</span>
+                      </td>
+                    </tr>
+                    <tr class="tr_1">
+                      <td>Is heating on now?</td>
+                      <td>
+                        <span id="svid_heating_now">NO</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="col-md-6 sousActions">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>PID Setting</th>
+                      <th>Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr class="tr_1">
+                      <td>Proportional</td>
+                      <td>
+                        <input type="range" id="p" min="0" max="10" value="0" step="0.1" onchange="sendValueChanged('needed_temp', this.value)">
+                      </td>
+                    </tr>
+                    <tr class="tr_1">
+                      <td>Integral</td>
+                      <td>
+                        <input type="range" id="i" min="0" max="10" value="0" step="0.1" onchange="sendValueChanged('needed_temp', this.value)">
+                      </td>
+                    </tr>
+                    <tr class="tr_1">
+                      <td>Derivative</td>
+                      <td>
+                        <input type="range" id="d" min="0" max="10" value="0" step="0.1" onchange="sendValueChanged('needed_temp', this.value)">
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-12 text-center">
+                <!-- <div data-role="fieldcontain" id="div-sliderPrincipleAmnt">
+                  <label for="slider1">Amount:</label>
+                  <input type="range" name="slider1" id="slider-PrincipleAmnt" value="100" min="20" max="999" data-highlight="true">
+                </div> -->
+                <a class="active btn btn-lg btn-warning">Save settings to flash</a>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-12">
+                <fieldset>
+                  <div data-role="fieldcontain">Current Relay state:
+                    <select id="relay1_state" data-role="flipswitch">
+                      <option value="leave">Off</option>
+                      <option value="arrive">On</option>
+                    </select>
+                  </div>
+                </fieldset>
               </div>
             </div>
           </div>
-        </footer>
+        </div>
+        
+        <div class="section">
+          <footer class="section section-primary text-center">
+            <div class="container">
+              <div class="row">
+                <div class="col-sm-12">
+                  <p contenteditable="true">All this and for what? Just a Sousvide, but nope, this is the making of
+                    a connected house
+                    <br>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </footer>
+        </div>
       </div>
     </div>
+
 
 
 </body></html>
