@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configurationDescriptor version="95">
+  <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
+    <df root="." name="0">
+      <df name="app">
+        <df name="pid">
+          <in>PID_AutoTune_v0.cpp</in>
+          <in>PID_v1.cpp</in>
+        </df>
+        <in>ButtonActions.cpp</in>
+        <in>application.cpp</in>
+        <in>menues.cpp</in>
+        <in>mqttHelper.cpp</in>
+      </df>
+      <df name="files">
+      </df>
+      <df name="include">
+        <df name="pid">
+          <in>PID_AutoTune_v0.h</in>
+          <in>PID_v1.h</in>
+        </df>
+        <in>AppSettings.h</in>
+        <in>menues.h</in>
+        <in>mqttHelper.h</in>
+        <in>special_chars.h</in>
+        <in>user_config.h</in>
+        <in>utils.h</in>
+      </df>
+      <df name="out">
+        <df name="build">
+          <df name="app">
+          </df>
+        </df>
+        <df name="firmware">
+          <df name="upgrade">
+          </df>
+        </df>
+      </df>
+      <df name="web">
+        <df name="build123">
+        </df>
+        <df name="build2">
+        </df>
+        <df name="dev">
+        </df>
+        <df name="dev2">
+        </df>
+      </df>
+    </df>
+  </logicalFolder>
+  <projectmakefile>Makefile</projectmakefile>
+  <confs>
+    <conf name="Default" type="0">
+      <toolsSet>
+        <developmentServer>root@192.168.99.100:8122</developmentServer>
+        <platform>2</platform>
+      </toolsSet>
+      <compile>
+        <compiledirpicklist>
+          <compiledirpicklistitem>.</compiledirpicklistitem>
+          <compiledirpicklistitem>${AUTO_FOLDER}</compiledirpicklistitem>
+        </compiledirpicklist>
+        <compiledir>${AUTO_FOLDER}</compiledir>
+        <compilecommandpicklist>
+          <compilecommandpicklistitem>${MAKE} ${ITEM_NAME}.o</compilecommandpicklistitem>
+          <compilecommandpicklistitem>${AUTO_COMPILE}</compilecommandpicklistitem>
+        </compilecommandpicklist>
+        <compilecommand>${AUTO_COMPILE}</compilecommand>
+      </compile>
+      <dbx_gdbdebugger version="1">
+        <gdb_pathmaps>
+        </gdb_pathmaps>
+        <gdb_interceptlist>
+          <gdbinterceptoptions gdb_all="false" gdb_unhandled="true" gdb_unexpected="true"/>
+        </gdb_interceptlist>
+        <gdb_options>
+          <DebugOptions>
+          </DebugOptions>
+        </gdb_options>
+        <gdb_buildfirst gdb_buildfirst_overriden="false" gdb_buildfirst_old="false"/>
+      </dbx_gdbdebugger>
+      <nativedebugger version="1">
+        <engine>gdb</engine>
+      </nativedebugger>
+      <runprofile version="9">
+        <runcommandpicklist>
+          <runcommandpicklistitem>"${OUTPUT_PATH}"</runcommandpicklistitem>
+          <runcommandpicklistitem>"${OUTPUT_PATH}"\make flash</runcommandpicklistitem>
+          <runcommandpicklistitem>"${OUTPUT_PATH}" make flash</runcommandpicklistitem>
+          <runcommandpicklistitem>make flash</runcommandpicklistitem>
+        </runcommandpicklist>
+        <runcommand>make flash</runcommand>
+        <rundir>.</rundir>
+        <buildfirst>false</buildfirst>
+        <terminal-type>0</terminal-type>
+        <remove-instrumentation>0</remove-instrumentation>
+        <environment>
+        </environment>
+      </runprofile>
+    </conf>
+  </confs>
+</configurationDescriptor>

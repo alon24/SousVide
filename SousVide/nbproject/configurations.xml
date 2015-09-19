@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configurationDescriptor version="95">
+  <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
+    <df root="." name="0">
+      <df name="app">
+        <df name="pid">
+          <in>PID_AutoTune_v0.cpp</in>
+          <in>PID_v1.cpp</in>
+        </df>
+        <in>ButtonActions.cpp</in>
+        <in>application.cpp</in>
+        <in>menues.cpp</in>
+        <in>mqttHelper.cpp</in>
+      </df>
+    </df>
+    <logicalFolder name="ExternalFiles"
+                   displayName="Important Files"
+                   projectFiles="false"
+                   kind="IMPORTANT_FILES_FOLDER">
+      <itemPath>Makefile</itemPath>
+    </logicalFolder>
+  </logicalFolder>
+  <sourceFolderFilter>^(nbproject)$</sourceFolderFilter>
+  <sourceRootList>
+    <Elem>.</Elem>
+  </sourceRootList>
+  <projectmakefile>Makefile</projectmakefile>
+  <confs>
+    <conf name="Default" type="0">
+      <toolsSet>
+        <compilerSet>default</compilerSet>
+        <dependencyChecking>false</dependencyChecking>
+        <rebuildPropChanged>false</rebuildPropChanged>
+      </toolsSet>
+      <codeAssistance>
+      </codeAssistance>
+      <makefileType>
+        <makeTool>
+          <buildCommandWorkingDir>.</buildCommandWorkingDir>
+          <buildCommand>${MAKE} -f Makefile</buildCommand>
+          <cleanCommand>${MAKE} -f Makefile clean</cleanCommand>
+          <executablePath></executablePath>
+        </makeTool>
+      </makefileType>
+      <item path="app/ButtonActions.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem>app</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="app/application.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem>app</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="app/menues.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem>app</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="app/mqttHelper.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem>app</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="app/pid/PID_AutoTune_v0.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="app/pid/PID_v1.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <folder path="0/app/pid">
+        <ccTool>
+          <incDir>
+            <pElem>app/pid</pElem>
+          </incDir>
+        </ccTool>
+      </folder>
+    </conf>
+  </confs>
+</configurationDescriptor>
