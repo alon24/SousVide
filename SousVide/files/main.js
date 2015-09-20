@@ -27,13 +27,14 @@ function init() {
       function(){
 //  	        $(this).toggleClass("down");
         // $(this).toggleClass('off');
+        doSend('toggleSousvideOperation:' + (this.value === 'arrive' ? 'true' : 'false') );
         console.log("flip_sous_state clicked " + this.value);
       });
 
     $("#relay1_state").change(
       function(){
         doSend('toggleRelay:' + (this.value === 'arrive' ? 'true' : 'false'));
-        console.log("relay1_state clicked " + this.value);
+        // console.log("relay1_state clicked " + this.value);
       });
 
 
@@ -67,8 +68,13 @@ var sliderChange = function(sliderValue) {
 
 function sendValueChanged(id, value) {
   console.log(id + "="  + value);
+  doSend('change-val-' + id + ':' + value);
 }
 
+function saveSettings() {
+  console.log("save settings");
+  doSend("cmd:saveSettings");
+}
 function testWebSocket() {
   try {
     var wsUri = "ws://" + location.host + "/";
@@ -125,6 +131,18 @@ function handlePayload(payload) {
 		var newTemp = payload.substring('temp'.length + 1);
 		updateTemp(newTemp);
 	}
+  else if (payload.startsWith('pid')) {
+		var pid = payload.substring('pid'.length + 1);
+		updatePID(pid);
+	}
+}
+
+function updatePID(pid) {
+    var pidParts = pid.split(",");
+    $('#p').value=pidParts[0];
+    $('#i').value=pidParts[1];
+    $('#d').value=pidParts[2];
+    console.log(pid);
 }
 
 function updateTime(newTime) {
@@ -148,7 +166,11 @@ function onError(evt) {
 
 function doSend(message) {
 //  writeToScreen("SENT: " + message);
-  websocket.send(message);
+  try {
+    websocket.send(message);
+  } catch (e) {
+    console.log("ws not initialized could not send message " + message);
+  }
 }
 
 function writeToScreen(message) {

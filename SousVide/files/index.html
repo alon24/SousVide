@@ -130,21 +130,21 @@
                   </thead>
                   <tbody>
                     <tr class="tr_1">
-                      <td>Proportional</td>
+                      <td>Proportional - 0 -10, 0.1 steps</td>
                       <td>
-                        <input type="range" id="p" min="0" max="10" value="0" step="0.1" onchange="sendValueChanged('needed_temp', this.value)">
+                        <input type="range" id="p" min="0" max="10" value="0" step="0.1" onchange="sendValueChanged('p', this.value)">
                       </td>
                     </tr>
                     <tr class="tr_1">
-                      <td>Integral</td>
+                      <td>Integral - 0 -10, 0.1 steps</td>
                       <td>
-                        <input type="range" id="i" min="0" max="10" value="0" step="0.1" onchange="sendValueChanged('needed_temp', this.value)">
+                        <input type="range" id="i" min="0" max="10" value="0" step="0.1" onchange="sendValueChanged('i', this.value)">
                       </td>
                     </tr>
                     <tr class="tr_1">
-                      <td>Derivative</td>
+                      <td>Derivative - 0 -10, 0.1 steps</td>
                       <td>
-                        <input type="range" id="d" min="0" max="10" value="0" step="0.1" onchange="sendValueChanged('needed_temp', this.value)">
+                        <input type="range" id="d" min="0" max="10" value="0" step="0.1" onchange="sendValueChanged('d', this.value)">
                       </td>
                     </tr>
                   </tbody>
@@ -157,7 +157,7 @@
                   <label for="slider1">Amount:</label>
                   <input type="range" name="slider1" id="slider-PrincipleAmnt" value="100" min="20" max="999" data-highlight="true">
                 </div> -->
-                <a class="active btn btn-lg btn-warning">Save settings to flash</a>
+                <a class="active btn btn-lg btn-warning" onclick="saveSettings();">Save settings to flash</a>
               </div>
             </div>
             <div class="row">
@@ -174,7 +174,7 @@
             </div>
           </div>
         </div>
-        
+
         <div class="section">
           <footer class="section section-primary text-center">
             <div class="container">
