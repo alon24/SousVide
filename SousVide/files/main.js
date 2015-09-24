@@ -7,6 +7,14 @@ if (typeof String.prototype.startsWith != 'function') {
   };
 }
 
+//change the slider val for id
+function channgeVal(id, val) {
+  // $('#needed_temp').val(val);
+  // $('#needed_temp').slider('refresh');
+
+  $('#' + id).val(val);
+  $('#' + id).slider('refresh');
+}
 
 function init() {
   output = document.getElementById("output");
@@ -99,7 +107,13 @@ function testWebSocket() {
 
 function onOpen(evt) {
   writeToScreen("CONNECTED");
-  doSend("Sming love WebSockets");
+  doSend("Sming love WebSockets");\
+
+  //query sming data
+  //time
+  //pid
+  doSend("query:time,p,i,d,state,needed_temp");
+
 }
 
 function onClose(evt) {

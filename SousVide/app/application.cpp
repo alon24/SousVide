@@ -24,7 +24,7 @@
 void connectOk();
 void connectFail();
 void handleCommands(String commands);
-void updateWebUI();
+void updateWebSockets();
 void setRelayState(boolean state);
 
 //encoder code from http://bildr.org/2012/08/rotary-encoder-arduino/
@@ -92,7 +92,8 @@ void wsConnected(WebSocket& socket)
 	for (int i = 0; i < clients.count(); i++) {
 		clients[i].sendString("New friend arrived! Total: " + String(totalActiveSockets));
 	}
-	updateWebUI();
+	//TODO: ilan need to do a global set so need to set a registry
+//	updateWebSockets();
 }
 
 void wsMessageReceived(WebSocket& socket, const String& message)
@@ -103,30 +104,76 @@ void wsMessageReceived(WebSocket& socket, const String& message)
 	handleCommands(message);
 }
 
-void updateWebUI() {
+void updateWebSockets(String to, String info) {
+
+}
+
+void updateWebSockets(String cmd) {
 	WebSocketsList &clients = server.getActiveWebSockets();
 	for (int i = 0; i < clients.count(); i++) {
-		Serial.println("updateWebUI::relayState:" + String(relayState == true ? "true" : "false"));
-		clients[i].sendString("relayState:" + String(relayState == true ? "true" : "false"));
-		clients[i].sendString("updatetime:" + currentTime);
-		clients[i].sendString("temp:" + String(currentTemp));
+		clients[i].sendString(cmd);
+//		Serial.println("updateWebUI::relayState:" + String(relayState == true ? "true" : "false"));
+//		clients[i].sendString("relayState:" + String(relayState == true ? "true" : "false"));
+//		clients[i].sendString("updatetime:" + currentTime);
+//		clients[i].sendString("temp:" + String(currentTemp));
 	}
 }
 
+//should return the command and make the cmd string hold data only
+String getCommandAndData(String *cmd) {
+	int cmdEnd = cmd->indexOf(":");
+	String cmdS(*cmd);
+	//TODO:
+	Serial.println(cmdS);
+//	debugf("in getCommand:: orig=%s, deli=%i", cmdS, cmdEnd );
+	String retCmd = cmd->substring(0, cmdEnd);
+
+	String data = cmd->substring(cmdEnd+1);
+	cmd = &data;
+//
+//	debugf("in getCommand::retcmd=%s, data=%s", retCmd, cmd);
+}
 
 void handleCommands(String commands) {
 	Serial.println("now handling " + commands);
 
-	if (commands.startsWith("toggleRelay")) {
-		String state = commands.substring(12);
-		setRelayState(state.equals("true"));
+	//iterate over commands
+	Vector<String> commandToken;
+	int numToken = splitString(commands, ';' , commandToken);
 
-//		Serial.println("handleCommands::toggeled relay " + String(state));
-//		relayState = state.equals("true") ? true : false;
-//		digitalWrite(relayPin, (state.equals("true") ? HIGH : LOW));
+	for (int i = 0; i < numToken; ++i) {
+		String command = commandToken.get(i);
+		String parsedCmd = getCommandAndData(&command);
 
-		Serial.println("handleCommand:: state.equals(true)==" + String(state.equals("true")));
-		updateWebUI();
+		//TODO:
+		//command is now the just the data (stripped of the command itself)
+//		debugf("original cmd=%s, parsed=%s, data=%s", command, parsedCmd, command);
+
+		if(parsedCmd.equals("query")) {
+
+		}
+		else if (parsedCmd.equals("toggleRelay")) {
+//			String state = commands.substring(12);
+//			setRelayState(state.equals("true"));
+
+			setRelayState(command.equals("true"));
+
+	//		Serial.println("handleCommands::toggeled relay " + String(state));
+	//		relayState = state.equals("true") ? true : false;
+	//		digitalWrite(relayPin, (state.equals("true") ? HIGH : LOW));
+
+			Serial.println("handleCommand:: state.equals(true)==" + String(command.equals("true")));
+			updateWebSockets("relayState:" + String(relayState == true ? "true" : "false"));
+		}
+	}
+}
+
+void hadleQuery(String items) {
+	Vector<String> commandToken;
+	int numToken = splitString(items, ';' , commandToken);
+
+	for (int i = 0; i < numToken; ++i) {
+
 	}
 }
 
@@ -689,7 +736,7 @@ void refreshTimeForUi()
 ////		lastTimeRect = iPage->itemAt(0)->getParam(0)->t;
 //	}
 
-	updateWebUI();
+	updateWebSockets("updatetime:" + currentTime);
 }
 
 //void IRAM_ATTR updateTimeTimerAction()
@@ -1053,7 +1100,7 @@ void readAfterWait() {
 //	unsigned long end = millis();
 //	debugf("Temp took %lu",  (long)(end- start));
 
-	updateWebUI();
+	updateWebSockets("temp:" + String(currentTemp));
 	readTempTimer.initializeMs(1000, readTempData).startOnce();
 }
 
