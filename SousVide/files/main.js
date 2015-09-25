@@ -107,7 +107,7 @@ function testWebSocket() {
 
 function onOpen(evt) {
   writeToScreen("CONNECTED");
-  doSend("Sming love WebSockets");\
+  doSend("Sming love WebSockets");
 
   //query sming data
   //time
@@ -131,11 +131,17 @@ function handlePayload(payload) {
 	//check if need to change the realy button state
 	if (payload.startsWith('relayState')) {
 		var state = payload.substring('relayState'.length + 1);
-		if (state === 'true') {
-      $("#relay1_state").val("leave").flipswitch('refresh');
-			// $('#relay1').prop('checked', (state === ));
-			// $('#relay1').addClass("ss");
-		}
+
+    if((state == 'true' && $("#relay1_state").val() == 'leave') ||
+        (state == 'false' && $("#relay1_state").val() == 'arrive')) {
+      if (state === 'true') {
+        $("#relay1_state").val('arrive').flipswitch('refresh');
+  		} else {
+        $("#relay1_state").val('leave').flipswitch('refresh');
+
+      }
+    }
+
 	}
 	else if (payload.startsWith('updatetime')) {
 		var newTime = payload.substring('updatetime'.length + 1);

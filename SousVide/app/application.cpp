@@ -120,18 +120,17 @@ void updateWebSockets(String cmd) {
 }
 
 //should return the command and make the cmd string hold data only
-String getCommandAndData(String *cmd) {
-	int cmdEnd = cmd->indexOf(":");
-	String cmdS(*cmd);
-	//TODO:
-	Serial.println(cmdS);
-//	debugf("in getCommand:: orig=%s, deli=%i", cmdS, cmdEnd );
-	String retCmd = cmd->substring(0, cmdEnd);
+String getCommandAndData(String &cmd) {
+	int cmdEnd = cmd.indexOf(":");
+//	debugf("in getCommand:: orig=%s, deli=%i", cmd.c_str(), cmdEnd );
+	String retCmd = cmd.substring(0, cmdEnd);
 
-	String data = cmd->substring(cmdEnd+1);
-	cmd = &data;
-//
-//	debugf("in getCommand::retcmd=%s, data=%s", retCmd, cmd);
+	String data = cmd.substring(cmdEnd+1);
+	cmd = data;
+
+//	debugf("in getCommand::retcmd=%s, data=%s", retCmd.c_str(), cmd.c_str());
+
+	return retCmd;
 }
 
 void handleCommands(String commands) {
@@ -143,11 +142,10 @@ void handleCommands(String commands) {
 
 	for (int i = 0; i < numToken; ++i) {
 		String command = commandToken.get(i);
-		String parsedCmd = getCommandAndData(&command);
+		String parsedCmd = getCommandAndData(command);
 
-		//TODO:
 		//command is now the just the data (stripped of the command itself)
-//		debugf("original cmd=%s, parsed=%s, data=%s", command, parsedCmd, command);
+//		debugf("handleCommands::original cmd=%s, parsed=%s, data=%s", command.c_str(), parsedCmd.c_str(), command.c_str());
 
 		if(parsedCmd.equals("query")) {
 
