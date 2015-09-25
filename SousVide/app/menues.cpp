@@ -16,13 +16,6 @@ struct MenuUseEvent
 typedef void (*cb_change)(MenuChangeEvent);
 typedef void (*cb_use)(MenuUseEvent);
 
-//////////////////////////// BaseMenuElement ///////////////////
-//void BaseMenuElement::setId(String id)
-//{
-//	m_id = id;
-//}
-//;
-
 String BaseMenuElement::getId()
 {
 	return m_id;

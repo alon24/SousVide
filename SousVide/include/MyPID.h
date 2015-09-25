@@ -82,6 +82,22 @@ public:
 		delete(aTune);
 	};
 
+	float getNeededTemp() {
+		return Setpoint;
+	};
+
+	float getKp() {
+		return Kp;
+	};
+
+	float getKi() {
+		return Ki;
+	};
+
+	float getKd() {
+		return Kd;
+	};
+
 	void LoadParameters(){
 
 	};

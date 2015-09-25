@@ -131,17 +131,21 @@ function handlePayload(payload) {
 	//check if need to change the realy button state
 	if (payload.startsWith('relayState')) {
 		var state = payload.substring('relayState'.length + 1);
-
-    if((state == 'true' && $("#relay1_state").val() == 'leave') ||
-        (state == 'false' && $("#relay1_state").val() == 'arrive')) {
-      if (state === 'true') {
-        $("#relay1_state").val('arrive').flipswitch('refresh');
-  		} else {
-        $("#relay1_state").val('leave').flipswitch('refresh');
-
-      }
+    // console.log('state = ' + state + ", relay1 = " + $("#relay1_state").val());
+    if(
+      (state == 'true' && $("#relay1_state").val() == 'leave') ||
+        (state == 'false' && $("#relay1_state").val() == 'arrive')
+      )
+    {
+        if (state == 'true') {
+          $("#relay1_state").val('arrive').flipswitch('refresh');
+    		} else {
+          $("#relay1_state").val('leave').flipswitch('refresh');
+        }
     }
-
+    else {
+    //  console.log('do nothing');
+    }
 	}
 	else if (payload.startsWith('updatetime')) {
 		var newTime = payload.substring('updatetime'.length + 1);

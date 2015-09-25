@@ -8,6 +8,7 @@
 #include <mqttHelper.h>
 #include <utils.h>
 #include <AppSettings.h>
+#include <configuration.h>
 
 #include <Libraries/OneWire/OneWire.h>
 
@@ -38,17 +39,24 @@ MySousVideController *sousController;
 //Pins used
 #define sclPin 0
 #define sdaPin 2
-#define dsTempPin 4
-#define relayPin 5
+//#define dsTempPin 4
+//#define relayPin 5
 #define encoderA 13
 #define encoderB 12
 #define encoderSwitchPin 14 //push button switch
 
-// If you want, you can define WiFi settings globally in Eclipse Environment Variables
-#ifndef WIFI_SSID
-	#define WIFI_SSID "PleaseEnterSSID" // Put you SSID and Password here
-	#define WIFI_PWD "PleaseEnterPass"
-#endif
+//// If you want, you can define WiFi settings globally in Eclipse Environment Variables
+//#ifndef WIFI_SSID
+//	#define WIFI_SSID "PleaseEnterSSID" // Put you SSID and Password here
+//	#define WIFI_PWD "PleaseEnterPass"
+//#endif
+
+//enum class OperationMode
+//{
+//	Manual = 0, Sousvide = 1,
+//};
+
+OperationMode operationMode = Manual;
 
 //Timers
 Timer procTimer;
@@ -373,8 +381,16 @@ void initInfoScreens() {
 	InfoPageLine* el4 = p1->createLine("4", "sta:");
 	el4->addParam("station", "0.0.0.0");
 
-	InfoScreenPage* p2 = infos->createScreen("Data", "Data");
-	InfoPageLine* p2e1 = p2->createLine("header", "Ilan is here");
+	//Sousvide info page params
+	InfoScreenPage* p2 = infos->createScreen("Sousvide", "Sousvide");
+	InfoPageLine* ep2 = p2->createLine("header", "Params");
+	paramStruct* t1 = ep2->addParam("time", currentTime);
+	t1->t.x = getXOnScreenForString(currentTime, 1);
+
+	p2->createLine("2", "Needed_t: ")->addParam("Needed_t", String(sousController->getNeededTemp(), 1));
+	p2->createLine("3", "Kp: ")->addParam("Kp", String(sousController->getKp(), 2));
+	p2->createLine("4", "Ki: ")->addParam("Ki", String(sousController->getKi(), 2));
+	p2->createLine("5", "Kd: ")->addParam("Kd", String(sousController->getKd(), 2));
 }
 
 void moveToMenuMode()
@@ -416,8 +432,14 @@ void handleEncoderInterrupt() {
 //			refreshScreen();
 		}
 		else {
-//			debugf("!Display_Menu");
-			//TODO: add code to move to next info page
+			debugf("handleEncoderInterrupt::!Display_Menu");
+			if (lastValue > encoderValue/4) {
+				infos->moveLeft(display);
+			}
+			else
+			{
+				infos->moveRight(display);
+			}
 		}
 	}
 }
@@ -1028,13 +1050,17 @@ OneWire ds(dsTempPin);
 Timer readTempTimer;
 
 void checkTempTriggerRelay(float temp) {
-	int trigger = (int)28;
-	if((int)temp >= trigger && !relayState ) {
-		Serial.println("temp is >= " + String(trigger) + ", starting relay");
-		handleCommands("toggleRelay:true");
-	} else if((int)temp < trigger && relayState){
-		Serial.println("temp is <  " + String(trigger) + ",stopping relay");
-		handleCommands("toggleRelay:false");
+	//move on thsi only when Sousvide, do not interfere with manual mode
+	if (operationMode == Sousvide)
+	{
+		int trigger = (int)28;
+		if((int)temp >= trigger && !relayState ) {
+			Serial.println("temp is >= " + String(trigger) + ", starting relay");
+			handleCommands("toggleRelay:true");
+		} else if((int)temp < trigger && relayState){
+			Serial.println("temp is <  " + String(trigger) + ",stopping relay");
+			handleCommands("toggleRelay:false");
+		}
 	}
 }
 

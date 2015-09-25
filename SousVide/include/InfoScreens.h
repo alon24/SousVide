@@ -212,6 +212,32 @@ public:
 		showCurrent(display);
 	}
 
+	void moveRight(Extended_SSD1306 display) {
+		if (mCurrent + 1 <= mChildern.size()) {
+			mCurrent++;
+		}
+		else {
+			mCurrent = 0;
+		}
+
+		display.clearDisplay();
+		display.setCursor(0,0);
+		showCurrent(display);
+	}
+
+	void moveLeft(Extended_SSD1306 display) {
+		if (mCurrent - 1 >= 0) {
+			mCurrent--;
+		}
+		else {
+			mCurrent = mChildern.size()-1;
+		}
+
+		display.clearDisplay();
+		display.setCursor(0,0);
+		showCurrent(display);
+	}
+
 //	//Do not print to screen anymore(so no updates to data)
 //	void hide(){
 //		this->updateDisplay = false;
