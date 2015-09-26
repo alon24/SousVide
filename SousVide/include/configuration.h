@@ -32,7 +32,6 @@ enum OperationMode
 	Sousvide = 1,
 };
 
-
 struct SousvideConfig
 {
 	SousvideConfig()

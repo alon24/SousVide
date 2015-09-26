@@ -213,29 +213,30 @@ public:
 	}
 
 	void moveRight(Extended_SSD1306 display) {
-		if (mCurrent + 1 <= mChildern.size()) {
-			mCurrent++;
-		}
-		else {
-			mCurrent = 0;
-		}
-
-		display.clearDisplay();
-		display.setCursor(0,0);
-		showCurrent(display);
+//		if (mCurrent + 1 <= mChildern.size()) {
+//			mCurrent++;
+//		}
+//		else {
+//			mCurrent = 0;
+//		}
+//
+//		display.clearDisplay();
+//		display.setCursor(0,0);
+//		showCurrent(display);
 	}
 
 	void moveLeft(Extended_SSD1306 display) {
-		if (mCurrent - 1 >= 0) {
-			mCurrent--;
-		}
-		else {
-			mCurrent = mChildern.size()-1;
-		}
-
-		display.clearDisplay();
-		display.setCursor(0,0);
-		showCurrent(display);
+//		debugf()
+//		if (mCurrent - 1 >= 0) {
+//			mCurrent--;
+//		}
+//		else {
+//			mCurrent = mChildern.size()-1;
+//		}
+//
+//		display.clearDisplay();
+//		display.setCursor(0,0);
+//		showCurrent(display);
 	}
 
 //	//Do not print to screen anymore(so no updates to data)
@@ -256,7 +257,7 @@ public:
 	}
 
 	InfoScreenPage* get(int index) {
-		if (mChildern.size() >index) {
+		if (mChildern.size() >= index) {
 			return mChildern.get(index);
 		}
 		return NULL;

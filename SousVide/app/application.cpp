@@ -22,11 +22,11 @@
 
 //wifi
 //void process();
-void connectOk();
-void connectFail();
-void handleCommands(String commands);
-void updateWebSockets();
-void setRelayState(boolean state);
+void IRAM_ATTR connectOk();
+void IRAM_ATTR connectFail();
+void IRAM_ATTR handleCommands(String commands);
+void IRAM_ATTR updateWebSockets();
+void IRAM_ATTR setRelayState(boolean state);
 
 //encoder code from http://bildr.org/2012/08/rotary-encoder-arduino/
 
@@ -112,11 +112,11 @@ void wsMessageReceived(WebSocket& socket, const String& message)
 	handleCommands(message);
 }
 
-void updateWebSockets(String to, String info) {
+void IRAM_ATTR updateWebSockets(String to, String info) {
 
 }
 
-void updateWebSockets(String cmd) {
+void IRAM_ATTR updateWebSockets(String cmd) {
 	WebSocketsList &clients = server.getActiveWebSockets();
 	for (int i = 0; i < clients.count(); i++) {
 		clients[i].sendString(cmd);
@@ -141,7 +141,7 @@ String getCommandAndData(String &cmd) {
 	return retCmd;
 }
 
-void handleCommands(String commands) {
+void IRAM_ATTR handleCommands(String commands) {
 	Serial.println("now handling " + commands);
 
 	//iterate over commands
@@ -326,14 +326,8 @@ ButtonActions bAct(encoderSwitchPin, buttonUseEvent);
 
 Menu menu("SousVide");
 
-void initMenu()
+void IRAM_ATTR initMenu()
 {
-//	MenuPage *pidSettings = new MenuPage("PID Tuning");
-//	pidSettings->createItem("Tune SP");
-//	pidSettings->createItem("Tune P");
-//	pidSettings->createItem("Tune I");
-//	pidSettings->createItem("Tune D");
-
 	MenuPage *settings = menu.createPage("Settings");
 	MenuItem *i1 = settings->createItem("Set Time");
 	MenuItem *i2 = settings->createItem("Sous Work");
@@ -366,10 +360,10 @@ void initMenu()
 /**
  * setup infoscreens moved by the rotary
  */
-void initInfoScreens() {
-	InfoScreenPage* p1 = infos->createScreen("Main", "Main");
-	InfoPageLine* el = p1->createLine("header", "SousVide");
-	paramStruct* t = el->addParam("time", currentTime);
+void IRAM_ATTR initInfoScreens() {
+	InfoScreenPage* p1 = infos->createScreen("M", "M");
+	InfoPageLine* el = p1->createLine("h", "SousVide");
+	paramStruct* t = el->addParam("t", currentTime);
 	t->t.x = getXOnScreenForString(currentTime, 1);
 
 	InfoPageLine* el2 = p1->createLine("2", "temp: ");
@@ -382,9 +376,9 @@ void initInfoScreens() {
 	el4->addParam("station", "0.0.0.0");
 
 	//Sousvide info page params
-	InfoScreenPage* p2 = infos->createScreen("Sousvide", "Sousvide");
-	InfoPageLine* ep2 = p2->createLine("header", "Params");
-	paramStruct* t1 = ep2->addParam("time", currentTime);
+	InfoScreenPage* p2 = infos->createScreen("s1", "s1");
+	InfoPageLine* ep2 = p2->createLine("h", "Params");
+	paramStruct* t1 = ep2->addParam("t", currentTime);
 	t1->t.x = getXOnScreenForString(currentTime, 1);
 
 	p2->createLine("2", "Needed_t: ")->addParam("Needed_t", String(sousController->getNeededTemp(), 1));
@@ -393,7 +387,7 @@ void initInfoScreens() {
 	p2->createLine("5", "Kd: ")->addParam("Kd", String(sousController->getKd(), 2));
 }
 
-void moveToMenuMode()
+void IRAM_ATTR moveToMenuMode()
 {
 	if (currentDisplayMode == Display_Info)
 	{
@@ -464,7 +458,7 @@ void IRAM_ATTR checkRotaryBtn()
 	bAct.actOnButton();
 }
 
-void handleClick() {
+void IRAM_ATTR handleClick() {
 
 	switch(currentDisplayMode)
 	{
@@ -657,35 +651,10 @@ void IRAM_ATTR showInfoScreen() {
 	menu.moveto(menu.getRoot());
 	display.clearDisplay();
 	display.setCursor(0,0);
-	infos->showCurrent(display);
-
-//	display.clearDisplay();
-	sayln("showing info screen 0 ");
-//	InfoScreen* iPage = infos->get(0);
-	String t = currentTime;
-	//TODO:ilan
-//	iPage->itemAt(0)->updateData(display, 0, t);
-//	iPage->print(display);
-
-	infos->print(currentInfoScreenIndex, display);
-
-//	//update lasttimerect with alue
-//	lastTimeRect = iPage->itemAt(0)->getParam(0)->t;
-
-//	display.setTextSize(1);
-//	display.setTextColor(WHITE);
-//	display.setCursor(1, 1);
-
-//	String x= "SousVide";
-//	display.println(x);
-
-//	t = currentTime;
-//	display.setCursor(getXOnScreenForString(t, 1), 1 );
-//	display.print(t);
-//
-//	writeToScreen(currentScreenIndex);
-//
-//	display.display();
+//	infos->showCurrent(display);
+	infos->show(1, display);
+	//TODO: why?
+//	infos->print(currentInfoScreenIndex, display);
 }
 
 void IRAM_ATTR refreshScreen()
@@ -787,7 +756,7 @@ void doInit() {
 }
 
 // Will be called when WiFi station was connected to AP
-void connectOk()
+void IRAM_ATTR connectOk()
 {
 	infos->updateParamValue("station", WifiStation.getIP().toString(), display);
 //	Serial.println("I'm CONNECTED");
@@ -806,7 +775,7 @@ void connectOk()
 
 
 // Will be called when WiFi station timeout was reached
-void connectFail()
+void IRAM_ATTR connectFail()
 {
 	Serial.println("I'm NOT CONNECTED. Need help :(");
 	infos->updateParamValue("station", "Unknown", display);
@@ -1038,7 +1007,7 @@ void networkScanCompleted(bool succeeded, BssList list)
 	networks.sort([](const BssInfo& a, const BssInfo& b){ return b.rssi - a.rssi; } );
 }
 
-void setRelayState(boolean state) {
+void IRAM_ATTR setRelayState(boolean state) {
 	if (state != relayState) {
 		relayState = state;
 		digitalWrite(relayPin, (relayState ? HIGH : LOW));
@@ -1219,12 +1188,139 @@ void sendData(int field, String data)
 //	thingSpeak.downloadString("http://api.thingspeak.com/update?key=7XXUJWCWYTMXKN3L&field1=" + String(sensorValue), onDataSent);
 }
 
+void IRAM_ATTR ShowInfo() {
+    Serial.printf("\r\nSDK: v%s\r\n", system_get_sdk_version());
+    Serial.printf("Free Heap: %d\r\n", system_get_free_heap_size());
+    Serial.printf("CPU Frequency: %d MHz\r\n", system_get_cpu_freq());
+    Serial.printf("System Chip ID: %x\r\n", system_get_chip_id());
+    Serial.printf("SPI Flash ID: %x\r\n", spi_flash_get_id());
+    //Serial.printf("SPI Flash Size: %d\r\n", (1 << ((spi_flash_get_id() >> 16) & 0xff)));
+}
+
+void IRAM_ATTR serialCallBack(Stream& stream, char arrivedChar,
+		unsigned short availableCharsCount)
+{
+	if (arrivedChar == '\n')
+	{
+		char str[availableCharsCount];
+		for (int i = 0; i < availableCharsCount; i++)
+		{
+			str[i] = stream.read();
+			if (str[i] == '\r' || str[i] == '\n')
+			{
+				str[i] = '\0';
+			}
+		}
+
+		if (!strcmp(str, "connect"))
+		{
+			// connect to wifi
+			WifiStation.config(WIFI_SSID, WIFI_PWD);
+			WifiStation.enable(true);
+		}
+		else if (!strcmp(str, "ip"))
+		{
+			Serial.printf("ip: %s mac: %s\r\n",
+					WifiStation.getIP().toString().c_str(),
+					WifiStation.getMAC().c_str());
+		}
+		else if (!strcmp(str, "ota"))
+		{
+//			OtaUpdate();
+		}
+		else if (!strcmp(str, "switch"))
+		{
+//			Switch();
+		}
+		else if (!strcmp(str, "restart"))
+		{
+			System.restart();
+		}
+		else if (!strcmp(str, "ls"))
+		{
+			Vector<String> files = fileList();
+			Serial.printf("filecount %d\r\n", files.count());
+			for (unsigned int i = 0; i < files.count(); i++)
+			{
+				Serial.println(files[i]);
+			}
+		}
+		else if (!strcmp(str, "cat"))
+		{
+			Vector<String> files = fileList();
+			if (files.count() > 0)
+			{
+				Serial.printf("dumping file %s:\r\n", files[0].c_str());
+				Serial.println(fileGetContent(files[0]));
+			}
+			else
+			{
+				Serial.println("Empty spiffs!");
+			}
+		}
+		else if (!strcmp(str, "info"))
+		{
+			ShowInfo();
+		}
+		else if (!strcmp(str, "help"))
+		{
+			Serial.println();
+			Serial.println("available commands:");
+			Serial.println("  help - display this message");
+			Serial.println("  ip - show current ip address");
+			Serial.println("  connect - connect to wifi");
+			Serial.println("  restart - restart the esp8266");
+			Serial.println("  switch - switch to the other rom and reboot");
+			Serial.println("  ota - perform ota update, switch rom and reboot");
+			Serial.println("  info - show esp8266 info");
+			#ifndef DISABLE_SPIFFS
+						Serial.println("  ls - list files in spiffs");
+						Serial.println("  cat - show first file in spiffs");
+			#endif
+			Serial.println();
+		}
+		else
+		{
+			Serial.println("unknown command");
+		}
+	}
+
+}
+
 void init()
 {
 	Serial.begin(SERIAL_BAUD_RATE); // 115200
 	Serial.systemDebugOutput(true); // Debug output to serial
-	Serial.printf("System Start Reason : %d\r\n", system_get_rst_info()->reason);
+
+	// mount spiffs
+		int slot = rboot_get_current_rom();
+	#ifndef DISABLE_SPIFFS
+		if (slot == 0) {
+	#ifdef RBOOT_SPIFFS_0
+			debugf("trying to mount spiffs at %x, length %d", RBOOT_SPIFFS_0 + 0x40200000, SPIFF_SIZE);
+			spiffs_mount_manual(RBOOT_SPIFFS_0 + 0x40200000, SPIFF_SIZE);
+	#else
+			debugf("trying to mount spiffs at %x, length %d", 0x40300000, SPIFF_SIZE);
+			spiffs_mount_manual(0x40300000, SPIFF_SIZE);
+	#endif
+		} else {
+	#ifdef RBOOT_SPIFFS_1
+			debugf("trying to mount spiffs at %x, length %d", RBOOT_SPIFFS_1 + 0x40200000, SPIFF_SIZE);
+			spiffs_mount_manual(RBOOT_SPIFFS_1 + 0x40200000, SPIFF_SIZE);
+	#else
+			debugf("trying to mount spiffs at %x, length %d", 0x40500000, SPIFF_SIZE);
+			spiffs_mount_manual(0x40500000, SPIFF_SIZE);
+	#endif
+		}
+	#else
+		debugf("spiffs disabled");
+	#endif
+
 	Wire.pins(sclPin, sdaPin);
+
+	ActiveConfig = loadConfig();
+
+	sousController = new MySousVideController();
 
 	debugf("======= SousVide ==========");
 	Serial.println();
@@ -1253,7 +1349,7 @@ void init()
 
 	DateTime date = SystemClock.now();
 	lastActionTime = date.Milliseconds;
-	sayln(lastActionTime);
+//	sayln(lastActionTime);
 
 	buttonTimer.initializeMs(80, checkRotaryBtn).start();
 
@@ -1289,5 +1385,11 @@ void init()
 	System.onReady(startServers);
 
 	WifiStation.waitConnection(connectOk, 30, connectFail); // We recommend 20+ seconds for connection timeout at start
+
+	Serial.printf("\r\nCurrently running rom %d.\r\n", slot);
+	Serial.println("Type 'help' and press enter for instructions.");
+	Serial.println();
+
+	Serial.setCallback(serialCallBack);
 }
 
