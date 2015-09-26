@@ -91,7 +91,7 @@ bool relayState = false;
 
 ////Web Sockets ///////
 
-void wsConnected(WebSocket& socket)
+void IRAM_ATTR wsConnected(WebSocket& socket)
 {
 	totalActiveSockets++;
 
@@ -363,7 +363,7 @@ void IRAM_ATTR initMenu()
 void IRAM_ATTR initInfoScreens() {
 	InfoScreenPage* p1 = infos->createScreen("M", "M");
 	InfoPageLine* el = p1->createLine("h", "SousVide");
-	paramStruct* t = el->addParam("t", currentTime);
+	paramStruct* t = el->addParam("time", currentTime);
 	t->t.x = getXOnScreenForString(currentTime, 1);
 
 	InfoPageLine* el2 = p1->createLine("2", "temp: ");
@@ -378,13 +378,13 @@ void IRAM_ATTR initInfoScreens() {
 	//Sousvide info page params
 	InfoScreenPage* p2 = infos->createScreen("s1", "s1");
 	InfoPageLine* ep2 = p2->createLine("h", "Params");
-	paramStruct* t1 = ep2->addParam("t", currentTime);
+	paramStruct* t1 = ep2->addParam("time", currentTime);
 	t1->t.x = getXOnScreenForString(currentTime, 1);
 
-	p2->createLine("2", "Needed_t: ")->addParam("Needed_t", String(sousController->getNeededTemp(), 1));
-	p2->createLine("3", "Kp: ")->addParam("Kp", String(sousController->getKp(), 2));
-	p2->createLine("4", "Ki: ")->addParam("Ki", String(sousController->getKi(), 2));
-	p2->createLine("5", "Kd: ")->addParam("Kd", String(sousController->getKd(), 2));
+	p2->createLine("2", "Needed_t: ")->addParam("Needed_t", String(sousController->Setpoint, 1));
+	p2->createLine("3", "Kp: ")->addParam("Kp", String(sousController->Kp, 2));
+	p2->createLine("4", "Ki: ")->addParam("Ki", String(sousController->Ki, 2));
+	p2->createLine("5", "Kd: ")->addParam("Kd", String(sousController->Kd, 2));
 }
 
 void IRAM_ATTR moveToMenuMode()
@@ -426,11 +426,16 @@ void handleEncoderInterrupt() {
 //			refreshScreen();
 		}
 		else {
-			debugf("handleEncoderInterrupt::!Display_Menu");
-			if (lastValue > encoderValue/4) {
+//			debugf("handleEncoderInterrupt::!Display_Menu");
+			if (encoderValue % 16 != 0 ) {
+				return;
+			}
+
+			int i = encoderValue/16;
+			if (lastValue > i) {
 				infos->moveLeft(display);
 			}
-			else
+			else if (lastValue < i)
 			{
 				infos->moveRight(display);
 			}
@@ -975,7 +980,7 @@ void startWebServer()
 
 }
 
-void startFTP()
+void IRAM_ATTR startFTP()
 {
 	if (!fileExist("index.html"))
 		fileSetContent("index.html", "<h3>Please connect to FTP and upload files from folder 'web/build' (details in code)</h3>");
@@ -986,7 +991,7 @@ void startFTP()
 }
 
 // Will be called when system initialization was completed
-void startServers()
+void IRAM_ATTR startServers()
 {
 	infos->updateParamValue("ap", WifiAccessPoint.getIP().toString(), display);
 	Serial.println("Starting servers");
@@ -994,7 +999,7 @@ void startServers()
 	startWebServer();
 }
 
-void networkScanCompleted(bool succeeded, BssList list)
+void IRAM_ATTR networkScanCompleted(bool succeeded, BssList list)
 {
 	if (succeeded)
 	{
@@ -1018,7 +1023,7 @@ void IRAM_ATTR setRelayState(boolean state) {
 OneWire ds(dsTempPin);
 Timer readTempTimer;
 
-void checkTempTriggerRelay(float temp) {
+void IRAM_ATTR checkTempTriggerRelay(float temp) {
 	//move on thsi only when Sousvide, do not interfere with manual mode
 	if (operationMode == Sousvide)
 	{

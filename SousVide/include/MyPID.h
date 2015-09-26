@@ -14,15 +14,6 @@
 class MySousVideController {
 	volatile long onTime = 0;
 
-	//Define Variables we'll be connecting to
-	double Setpoint = 36;
-	double Input;
-	double Output;
-	// pid tuning parameters
-	double Kp =0;
-	double Ki =0;
-	double Kd =0;
-
 	// EEPROM addresses for persisted data
 	const int SpAddress = 0;
 	const int KpAddress = 8;
@@ -71,6 +62,15 @@ protected:
 	}
 public:
 
+	//Define Variables we'll be connecting to
+	double Setpoint = 36;
+	double Input;
+	double Output;
+	// pid tuning parameters
+	double Kp = 0;
+	double Ki = 0;
+	double Kd = 0;
+
 	MySousVideController() {
 		myPID = new PID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
 		aTune = new PID_ATune(&Input, &Output);
@@ -80,23 +80,6 @@ public:
 	~MySousVideController() {
 		delete(myPID);
 		delete(aTune);
-	};
-
-	float getNeededTemp() {
-		Serial.println(this->Setpoint);
-		return this->Setpoint;
-	};
-
-	float getKp() {
-		return (float)this->Kp;
-	};
-
-	float getKi() {
-		return (float)this->Ki;
-	};
-
-	float getKd() {
-		return (float)this->Kd;
 	};
 
 	void LoadParameters(){

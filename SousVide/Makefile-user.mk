@@ -29,14 +29,6 @@ MODULES = app
 # Com port speed
 # COM_SPEED	= 921600
 
-#SPI_SIZE ?= 4M
-#SPI_MODE ?= qio	
-#SPI_SPEED ?= 40
-#
-COM_SPEED_ESPTOOL = 230400
-#COM_SPEED_ESPTOOL = 961000
-#COM_SPEED_ESPTOOL = 460800
-
 #### overridable rBoot options ####
 ## use rboot build mode
 RBOOT_ENABLED ?= 1
@@ -65,3 +57,12 @@ SPIFF_SIZE      ?= 300000
 #ESPTOOL2        ?= esptool2
 ## path to spiffy
 #SPIFFY          ?= spiffy
+
+#SPI_SIZE ?= 4M
+#SPI_MODE ?= qio	
+#SPI_SPEED ?= 40
+#
+#COM_SPEED_ESPTOOL = 230400
+#COM_SPEED_ESPTOOL = 961000
+#COM_SPEED_ESPTOOL = 460800
+
