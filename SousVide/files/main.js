@@ -7,13 +7,13 @@ if (typeof String.prototype.startsWith != 'function') {
   };
 }
 
-//change the slider val for id
-function channgeVal(id, val) {
-  // $('#needed_temp').val(val);
-  // $('#needed_temp').slider('refresh');
-
-  $('#' + id).val(val);
-  $('#' + id).slider('refresh');
+// change the slider val for id
+function updateVal(id, val) {
+	if ($('#' + id).val() == val) {
+		return;
+	}
+	$('#' + id).val(val);
+	$('#' + id).slider('refresh');
 }
 
 function init() {
@@ -44,29 +44,7 @@ function init() {
         doSend('toggleRelay:' + (this.value === 'arrive' ? 'true' : 'false'));
         // console.log("relay1_state clicked " + this.value);
       });
-
-
-//      //put in slider labels
-//      //new an attempt to label the min max values on the loan Amount slider page1
-//      //code found on jquery forum: https://forum.jquery.com/topic/how-do-i-add-text-labels-below-slider
-//      //Note: Use of the theme for the slider induced some issues, so
-//      //had to put in following inline alteration to the text are would show up with a text-shadow:
-//      //text-shadow:none; color:black; font-weight:normal
-//      $.fn.extend({
-//        sliderLabels: function(left,right) {
-//          var $this = $(this);
-//          var $sliderdiv= $this.next("div.ui-slider[role='application']");
-//          //
-//          $sliderdiv
-//          .prepend('<span class="ui-slider-inner-label" style="position: absolute; left:0px; top:20px; text-shadow:none; color:black; font-weight:normal">'+left+ '</span>')
-//          // .append('<span class="ui-slider-inner-label" style="position: absolute; right:0px; bottom:20px; text-shadow:none; color:black; font-weight:normal">'+right+ '</span>');
-//          //
-//        }
-//       });
-//       //
-//      $('#slider-PrincipleAmnt').sliderLabels('Min: $20', 'Max: $999');
-
-  testWebSocket();
+    testWebSocket();
   });
 }
 
@@ -88,16 +66,16 @@ function testWebSocket() {
     var wsUri = "ws://" + location.host + "/";
     websocket = new WebSocket(wsUri);
     websocket.onopen = function(evt) {
-      onOpen(evt)
+      onOpen(evt);
     };
     websocket.onclose = function(evt) {
-      onClose(evt)
+      onClose(evt);
     };
     websocket.onmessage = function(evt) {
-      onMessage(evt)
+      onMessage(evt);
     };
     websocket.onerror = function(evt) {
-      onError(evt)
+      onError(evt);
     };
   }
   catch(err) {
@@ -112,7 +90,7 @@ function onOpen(evt) {
   //query sming data
   //time
   //pid
-  doSend("query:time,p,i,d,state,needed_temp");
+//  doSend("query:time,p,i,d,state,SetPoint");
 
 }
 
@@ -126,44 +104,60 @@ function onMessage(evt) {
   handlePayload(evt.data);
 }
 
+function parseCommand(com) {
+	i = com.indexOf(":");
+	var ret = new Array();
+	ret[0] = com.substring(0, i);
+	ret[1] = com.substring(i+1);
+	return ret;
+}
 
 function handlePayload(payload) {
-	//check if need to change the realy button state
-	if (payload.startsWith('relayState')) {
-		var state = payload.substring('relayState'.length + 1);
-    // console.log('state = ' + state + ", relay1 = " + $("#relay1_state").val());
-    if( (state == 'true' && $("#relay1_state").val() == 'leave') ||
-        (state == 'false' && $("#relay1_state").val() == 'arrive')      )
-    {
-        if (state == 'true') {
-          $("#relay1_state").val('arrive').flipswitch('refresh');
-    		} else {
-          $("#relay1_state").val('leave').flipswitch('refresh');
-        }
-    }
-    else {
-    //  console.log('do nothing');
-    }
-	}
-	else if (payload.startsWith('updatetime')) {
-		var newTime = payload.substring('updatetime'.length + 1);
-		updateTime(newTime);
-	}
-	else if (payload.startsWith('temp')) {
-		var newTemp = payload.substring('temp'.length + 1);
-		updateTemp(newTemp);
-	}
-  else if (payload.startsWith('pid')) {
-		var pid = payload.substring('pid'.length + 1);
-		updatePID(pid);
-	}
+	var commands = payload.split(";");
+	for (var i = 0; i < commands.length; i++) { 
+	    var command = commands[i];
+	    var cmd = parseCommand(command);
+	  //check if need to change the realy button state
+		if (cmd[0].startsWith('relayState')) {
+			var state = payload.substring('relayState'.length + 1);
+		    // console.log('state = ' + state + ", relay1 = " + $("#relay1_state").val());
+		    if( (state == 'true' && $("#relay1_state").val() == 'leave') ||
+		        (state == 'false' && $("#relay1_state").val() == 'arrive')      )
+		    {
+		        if (state == 'true') {
+		          $("#relay1_state").val('arrive').flipswitch('refresh');
+		    		} else {
+		          $("#relay1_state").val('leave').flipswitch('refresh');
+		        }
+		    }
+		    else {
+		    //  console.log('do nothing');
+		    }
+		}
+		else if (cmd[0].startsWith('updatetime')) {
+//			var newTime = payload.substring('updatetime'.length + 1);
+			updateTime(cmd[1]);
+		}
+		else if (cmd[0].startsWith('temp')) {
+//			var newTemp = payload.substring('temp'.length + 1);
+			updateTemp(cmd[1]);
+		}
+		else if (cmd[0].startsWith('updatePID')) {
+//			var pid = payload.substring('pid'.length + 1);
+			updatePID(cmd[1]);
+		}
+		else if (cmd[0].startsWith('updateSetPoint')) {
+//			var set = payload.substring('SetPoint'.length + 1);
+			updateVal("SetPoint", cmd[1]);
+		}
+	}	    
 }
 
 function updatePID(pid) {
     var pidParts = pid.split(",");
-    $('#p').value=pidParts[0];
-    $('#i').value=pidParts[1];
-    $('#d').value=pidParts[2];
+    updateVal("p", pidParts[0]);
+    updateVal("i", pidParts[1]);
+    updateVal("d", pidParts[2]);
     console.log(pid);
 }
 
@@ -173,13 +167,13 @@ function updateTime(newTime) {
     $('#hour').text(timeParts[0]);
     $('#min').text(timeParts[1]);
     $('#sec').text(timeParts[2]);
-    console.log(newTime);
+//    console.log(newTime);
 }
 
 function updateTemp(newTemp) {
     $('#temperature').text(newTemp);
     $('#svid_current_temp').text(newTemp);
-    console.log("temp=" + newTemp);
+//    console.log("temp=" + newTemp);
 }
 
 function onError(evt) {

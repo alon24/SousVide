@@ -25,7 +25,7 @@
 void  connectOk();
 void  connectFail();
 void  handleCommands(String commands);
-void  updateWebSockets();
+void  updateInitWebSockets(WebSocket client);
 void  setRelayState(boolean state);
 
 InfoScreens* infos;
@@ -92,17 +92,16 @@ bool relayState = false;
 
 ////Web Sockets ///////
 
-void  wsConnected(WebSocket& socket)
+void wsConnected(WebSocket& socket)
 {
 	totalActiveSockets++;
 
 	// Notify everybody about new connection
 	WebSocketsList &clients = server.getActiveWebSockets();
 	for (int i = 0; i < clients.count(); i++) {
-		clients[i].sendString("New friend arrived! Total: " + String(totalActiveSockets));
+		updateInitWebSockets(clients[i]);
+//		clients[i].sendString("New friend arrived! Total: " + String(totalActiveSockets));
 	}
-	//TODO: ilan need to do a global set so need to set a registry
-//	updateWebSockets();
 }
 
 void wsMessageReceived(WebSocket& socket, const String& message)
@@ -113,11 +112,13 @@ void wsMessageReceived(WebSocket& socket, const String& message)
 	handleCommands(message);
 }
 
-void IRAM_ATTR updateWebSockets(String to, String info) {
-
+void updateInitWebSockets(WebSocket client) {
+	char buf[1000];
+	sprintf(buf, "udpdatePID:[%lu,%lu,%lu];updateSetpoint:%lu", sousController->Setpoint, sousController->Kp, sousController->Ki, sousController->Kd );
+	client.sendString(String(buf));
 }
 
-void IRAM_ATTR updateWebSockets(String cmd) {
+void updateWebSockets(String cmd) {
 	WebSocketsList &clients = server.getActiveWebSockets();
 	for (int i = 0; i < clients.count(); i++) {
 		clients[i].sendString(cmd);
@@ -143,7 +144,7 @@ String getCommandAndData(String &cmd) {
 }
 
 
-void  handleCommands(String commands) {
+void handleCommands(String commands) {
 	Serial.println("now handling " + commands);
 
 	//iterate over commands
@@ -194,6 +195,11 @@ void  handleCommands(String commands) {
 			infos->updateParamValue("Kd", command);
 		}
 		else if(parsedCmd.equals("saveSettings")) {
+			ActiveConfig.Kp = sousController->Kp;
+			ActiveConfig.Ki = sousController->Ki;
+			ActiveConfig.Kd = sousController->Kd;
+			ActiveConfig.Needed_temp = sousController->Setpoint;
+			saveConfig(ActiveConfig);
 			//TODO: save changes to file
 		}
 	}
