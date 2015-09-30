@@ -11,6 +11,8 @@
 #include <SmingCore/SmingCore.h>
 #include <Extended_SSD1306.h>
 
+#define TIME_BETWEEN_SCREEN_CHANGE 300
+
 struct paramStruct {
 	textRect t;
 //	String text;
@@ -29,12 +31,17 @@ class BaseScreenElement
 protected:
 	String id;
 	BaseScreenElement* parent;
+	Extended_SSD1306* display;
 
 public:
 
 	BaseScreenElement(String id) {
 		this->id = id;
 	};
+
+	void setDisplay(Extended_SSD1306* disp) {
+		this->display = disp;
+	}
 
 	String getId() {
 		return id;
@@ -69,7 +76,7 @@ public:
 	paramStruct* addParam(String id, String text, textRect initial);
 
 	//prints the element
-	void print(Extended_SSD1306 &display);
+	void print();
 //	void updateData(Extended_SSD1306 display, paramStruct* param, String newData);
 //	void updateData(Extended_SSD1306 display, int index, String newData);
 //	void updateDataForId(Extended_SSD1306 display, String id, String newData);
@@ -104,12 +111,14 @@ public:
 	InfoPageLine* createLine(String id, String text) {
 		InfoPageLine* el =  new InfoPageLine(id, text, 1);
 		el->setParent(this);
+		el->setDisplay(&*display);
 		addElemenet(el);
 		return el;
 	}
 
 	void addElemenet(InfoPageLine* el){
 		el->setParent(this);
+		el->setDisplay(&*display);
 		mChildren.add(el);
 	};
 
@@ -167,19 +176,24 @@ public:
 		getParent()->updateParamValue(id, newData);
 	}
 
-	void print(Extended_SSD1306 display) {
+	void print() {
 		if(!canUpdateDisplay()) {
 			Serial.println("Cannot Update display, flag is false");
 			return;
 		}
-		display.clearDisplay();
-//		display.setCursor(0,0);
+//		debugf("print,3.1 ");
+		display->clearDisplay();
+//		debugf("print,3.2 ");
+		display->setCursor(0,0);
 		for(int i=0; i< mChildren.size(); i++){
+//			debugf("print,3.3 - %i ", i);
 			InfoPageLine* child = mChildren.get(i);
-			child->print(display);
+			child->print();
+//			debugf("print,3.4 - %i ", i);
 		}
-
-		display.display();
+//		debugf("print,3.6 ");
+		display->display();
+//		debugf("print,3.7 ");
 	}
 
 	bool canUpdateDisplay() {
@@ -191,28 +205,70 @@ public:
 	}
 };
 
+typedef Delegate<void()> showScreenUpdateDelegate;
+
 class InfoScreens : public BaseScreenElement{
+
+private:
 	int mCurrent = 0;
 	Vector<InfoScreenPage*> mChildern;
 	Vector<paramStruct*> dirtyElements;
 	HashMap<String, String> paramValueMap;
 	bool updateDisplay = false;
+	unsigned long lastUpdateTime = 0;
+	Timer updateNextTimer;
 
 public:
-	InfoScreens(String id) : BaseScreenElement(id) {
+	void handleUpdateTimer() {
+		showCurrent();
 	}
 
-	void showCurrent( Extended_SSD1306 display) {
+//	InfoScreens(String id) : BaseScreenElement(id) {
+//
+//	}
+
+	InfoScreens(String id, Extended_SSD1306 *dis) : BaseScreenElement(id)
+	{
+		this->display = dis;
+		updateNextTimer.setCallback(showScreenUpdateDelegate(&InfoScreens::handleUpdateTimer, this));
+
+		display->print("InfoScreens");
+		Serial.print(display->getCursorY());
+		display->display();
+	}
+
+	void showCurrent() {
+		lastUpdateTime = millis();
+//		debugf("showCurrent,1");
 		this->updateDisplay = true;
-		print(mCurrent, display);
+//		debugf("showCurrent,2");
+		print(mCurrent);
+//		debugf("showCurrent,3");
 	}
 
-	void show(int pNum, Extended_SSD1306 display) {
+	void show(int pNum) {
 		mCurrent = pNum;
-		showCurrent(display);
+//		debugf("show:%i", pNum);
+		showCurrent();
 	}
 
-	void moveRight(Extended_SSD1306 display) {
+	void doMove(boolean ) {
+
+	}
+
+	void moveRight() {
+		if (mChildern.size() == 1) {
+			return;
+		}
+
+		int tmpTime = millis();
+		long mils = tmpTime - lastUpdateTime;
+		if (mils < TIME_BETWEEN_SCREEN_CHANGE) {
+			return;
+		}
+		lastUpdateTime = tmpTime;
+		debugf("moveRight mills=%lu", lastUpdateTime);
+
 		debugf("moveRight mCurrent=%i" , mCurrent);
 		if (mCurrent + 1 < mChildern.size()) {
 			mCurrent++;
@@ -222,14 +278,27 @@ public:
 		}
 		debugf("moveRight mCurrent after=%i" , mCurrent);
 
-		display.clearDisplay();
-		display.setCursor(0,0);
-		showCurrent(display);
+		display->clearDisplay();
+		display->setCursor(0,0);
+		showCurrent();
 	}
 
-	void moveLeft(Extended_SSD1306 display) {
+	void moveLeft() {
+		if (mChildern.size() == 1) {
+			return;
+		}
+
 		debugf("moveLeft mCurrent=%i" , mCurrent);
-//		debugf()
+
+		int tmpTime = millis();
+		long mils = tmpTime - lastUpdateTime;
+		if (mils < TIME_BETWEEN_SCREEN_CHANGE) {
+			return;
+		}
+
+		lastUpdateTime = tmpTime;
+		debugf("moveLeft mills=%lu", lastUpdateTime);
+
 		if (mCurrent - 1 >= 0) {
 			mCurrent--;
 		}
@@ -239,9 +308,9 @@ public:
 
 		debugf("moveLeft mCurrent after=%i" , mCurrent);
 
-		display.clearDisplay();
-		display.setCursor(0,0);
-		showCurrent(display);
+		this->display->clearDisplay();
+		display->setCursor(0,0);
+		showCurrent();
 	}
 
 //	//Do not print to screen anymore(so no updates to data)
@@ -252,12 +321,14 @@ public:
 	InfoScreenPage* createScreen(String id, String header){
 		InfoScreenPage* el = new InfoScreenPage(id, header);
 		el->setParent(this);
+		el->setDisplay(&*display);
 		mChildern.add(el);
 		return el;
 	}
 
 	void addPage(InfoScreenPage* page) {
 		page->setParent(this);
+		page->setDisplay(&*display);
 		mChildern.add(page);
 	}
 
@@ -272,37 +343,35 @@ public:
 		return mChildern.get(mCurrent);
 	}
 
-	void print(int pIndex, Extended_SSD1306 display) {
+	void print(int pIndex) {
 		if(!canUpdateDisplay()) {
 			Serial.println("Cannot Update display, flag is false");
 			return;
 		}
 //		Serial.println("Printing index = " +String(pIndex));
 		InfoScreenPage* p = get(pIndex);
-		p->print(display);
+		debugf("print,3 %s", p->getId().c_str() );
+		p->print();
+		debugf("print, 4");
 	}
 
 	String getParamText(String id) {
 		return paramValueMap[id];
 	}
 
-	//no scren update
+	//no screen update
 	void updateParamValue(String id, String newData) {
 		if (paramValueMap.contains(id)) {
 			paramValueMap.remove(id);
 		}
 
 		paramValueMap[id] = newData;
-	}
 
-	void updateParamValue(String id, String newData, Extended_SSD1306 display) {
-		updateParamValue(id, newData);
 		if (canUpdateDisplay()) {
 			Vector<paramStruct*> params = getCurrent()->getAllParamsForId(id);
 			for (int i = 0; i < params.size(); ++i) {
 				paramStruct* param = params.get(i);
-				display.writeover(param->t, newData);
-//				param->text = newData;
+				display->writeover(param->t, newData);
 			}
 		}
 	}

@@ -46,25 +46,25 @@ function init() {
       });
 
 
-      //put in slider labels
-      //new an attempt to label the min max values on the loan Amount slider page1
-      //code found on jquery forum: https://forum.jquery.com/topic/how-do-i-add-text-labels-below-slider
-      //Note: Use of the theme for the slider induced some issues, so
-      //had to put in following inline alteration to the text are would show up with a text-shadow:
-      //text-shadow:none; color:black; font-weight:normal
-      $.fn.extend({
-        sliderLabels: function(left,right) {
-          var $this = $(this);
-          var $sliderdiv= $this.next("div.ui-slider[role='application']");
-          //
-          $sliderdiv
-          .prepend('<span class="ui-slider-inner-label" style="position: absolute; left:0px; top:20px; text-shadow:none; color:black; font-weight:normal">'+left+ '</span>')
-          // .append('<span class="ui-slider-inner-label" style="position: absolute; right:0px; bottom:20px; text-shadow:none; color:black; font-weight:normal">'+right+ '</span>');
-          //
-        }
-       });
-       //
-      $('#slider-PrincipleAmnt').sliderLabels('Min: $20', 'Max: $999');
+//      //put in slider labels
+//      //new an attempt to label the min max values on the loan Amount slider page1
+//      //code found on jquery forum: https://forum.jquery.com/topic/how-do-i-add-text-labels-below-slider
+//      //Note: Use of the theme for the slider induced some issues, so
+//      //had to put in following inline alteration to the text are would show up with a text-shadow:
+//      //text-shadow:none; color:black; font-weight:normal
+//      $.fn.extend({
+//        sliderLabels: function(left,right) {
+//          var $this = $(this);
+//          var $sliderdiv= $this.next("div.ui-slider[role='application']");
+//          //
+//          $sliderdiv
+//          .prepend('<span class="ui-slider-inner-label" style="position: absolute; left:0px; top:20px; text-shadow:none; color:black; font-weight:normal">'+left+ '</span>')
+//          // .append('<span class="ui-slider-inner-label" style="position: absolute; right:0px; bottom:20px; text-shadow:none; color:black; font-weight:normal">'+right+ '</span>');
+//          //
+//        }
+//       });
+//       //
+//      $('#slider-PrincipleAmnt').sliderLabels('Min: $20', 'Max: $999');
 
   testWebSocket();
   });
@@ -81,7 +81,7 @@ function sendValueChanged(id, value) {
 
 function saveSettings() {
   console.log("save settings");
-  doSend("cmd:saveSettings");
+  doSend("saveSettings:");
 }
 function testWebSocket() {
   try {
@@ -132,10 +132,8 @@ function handlePayload(payload) {
 	if (payload.startsWith('relayState')) {
 		var state = payload.substring('relayState'.length + 1);
     // console.log('state = ' + state + ", relay1 = " + $("#relay1_state").val());
-    if(
-      (state == 'true' && $("#relay1_state").val() == 'leave') ||
-        (state == 'false' && $("#relay1_state").val() == 'arrive')
-      )
+    if( (state == 'true' && $("#relay1_state").val() == 'leave') ||
+        (state == 'false' && $("#relay1_state").val() == 'arrive')      )
     {
         if (state == 'true') {
           $("#relay1_state").val('arrive').flipswitch('refresh');

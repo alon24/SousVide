@@ -57,26 +57,33 @@ paramStruct* InfoPageLine::addParam(String id, String text, textRect initial)
 }
 
 //prints the element
-void InfoPageLine::print(Extended_SSD1306 &display)
+void InfoPageLine::print()
 {
-	textRect *t = display.print(getText());
-	int y = display.getCursorY();
+//	debugf("print,3.3.1 %s, %i", getText().c_str(), this->display->getCursorX());
+	textRect *t = this->display->print(getText());
+//	debugf("print,3.3.2");
+	int y = this->display->getCursorY();
+//	debugf("print,3.3.3");
 	for (int s = 0; s < params.size(); ++s)
 	{
+//		debugf("print,3.3.4 - %i", s);
 		paramStruct* param = params.get(s);
 		String str = getParamText(param->id);
 //		String str = param->text;
 		if (param->t.x != -1)
 		{
-			display.setCursor(param->t.x, y);
+//			debugf("print,3.3.5 - %i", s);
+			this->display->setCursor(param->t.x, y);
+//			debugf("print,3.3.55 - %i", s);
 		}
-		textRect* t = display.print(str);
+		textRect* t = this->display->print(str);
 		param->t = *t;
-		Serial.printf("x %i, y %i, w %i\n", t->x, t->y, t->w);
+//		Serial.printf("x %i, y %i, w %i\n", t->x, t->y, t->w);
 	}
-
-	display.println();
-	Serial.printf("line end: %s, %s\n", String(t->x).c_str(), String(display.getCursorY()).c_str());
+//	debugf("print,3.3.6");
+	this->display->println();
+//	debugf("print,3.3.7");
+//	Serial.printf("line end: %s, %s\n", String(t->x).c_str(), String(display.getCursorY()).c_str());
 }
 
 //void InfoPageLine::updateData(Extended_SSD1306 display, paramStruct* param,

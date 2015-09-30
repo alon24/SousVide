@@ -22,16 +22,17 @@
 
 //wifi
 //void process();
-void IRAM_ATTR connectOk();
-void IRAM_ATTR connectFail();
-void IRAM_ATTR handleCommands(String commands);
-void IRAM_ATTR updateWebSockets();
-void IRAM_ATTR setRelayState(boolean state);
+void  connectOk();
+void  connectFail();
+void  handleCommands(String commands);
+void  updateWebSockets();
+void  setRelayState(boolean state);
+
+InfoScreens* infos;
 
 //encoder code from http://bildr.org/2012/08/rotary-encoder-arduino/
 
 //* SSD1306 - I2C
-//Adafruit_SSD1306 display(4);
 Extended_SSD1306 display(4);
 
 MySousVideController *sousController;
@@ -91,7 +92,7 @@ bool relayState = false;
 
 ////Web Sockets ///////
 
-void IRAM_ATTR wsConnected(WebSocket& socket)
+void  wsConnected(WebSocket& socket)
 {
 	totalActiveSockets++;
 
@@ -141,7 +142,8 @@ String getCommandAndData(String &cmd) {
 	return retCmd;
 }
 
-void IRAM_ATTR handleCommands(String commands) {
+
+void  handleCommands(String commands) {
 	Serial.println("now handling " + commands);
 
 	//iterate over commands
@@ -170,6 +172,29 @@ void IRAM_ATTR handleCommands(String commands) {
 
 			Serial.println("handleCommand:: state.equals(true)==" + String(command.equals("true")));
 			updateWebSockets("relayState:" + String(relayState == true ? "true" : "false"));
+		}
+		else if(parsedCmd.equals("change-val-needed_temp")) {
+			double temp = atof(command.c_str());
+			sousController->Setpoint = temp;
+			infos->updateParamValue("Setpoint", command);
+		}
+		else if(parsedCmd.equals("change-val-p")) {
+			double p = atof(command.c_str());
+			sousController->Kp = p;
+			infos->updateParamValue("Kp", command);
+		}
+		else if(parsedCmd.equals("change-val-i")) {
+			double i = atof(command.c_str());
+			sousController->Ki = i;
+			infos->updateParamValue("Ki", command);
+		}
+		else if(parsedCmd.equals("change-val-d")) {
+			double d = atof(command.c_str());
+			sousController->Kd = d;
+			infos->updateParamValue("Kd", command);
+		}
+		else if(parsedCmd.equals("saveSettings")) {
+			//TODO: save changes to file
 		}
 	}
 }
@@ -282,7 +307,7 @@ void onMessageReceived(String topic, String message)
 ///// Display //////////////
 #define say(a) ( Serial.print(a) )
 #define sayln(a) (Serial.println(a))
-void IRAM_ATTR refreshScreen();
+void  refreshScreen();
 
 volatile int lastEncoded = 0;
 volatile long encoderValue = 0;
@@ -301,8 +326,6 @@ struct displayMode
 		Menu=2
 	};
 };
-
-InfoScreens* infos = new InfoScreens("SousVide");
 
 enum DisplayMode
 {
@@ -326,7 +349,7 @@ ButtonActions bAct(encoderSwitchPin, buttonUseEvent);
 
 Menu menu("SousVide");
 
-void IRAM_ATTR initMenu()
+void  initMenu()
 {
 	MenuPage *settings = menu.createPage("Settings");
 	MenuItem *i1 = settings->createItem("Set Time");
@@ -360,7 +383,7 @@ void IRAM_ATTR initMenu()
 /**
  * setup infoscreens moved by the rotary
  */
-void IRAM_ATTR initInfoScreens() {
+void  initInfoScreens() {
 	InfoScreenPage* p1 = infos->createScreen("M", "M");
 	InfoPageLine* el = p1->createLine("h", "SousVide");
 	paramStruct* t = el->addParam("time", currentTime);
@@ -381,13 +404,13 @@ void IRAM_ATTR initInfoScreens() {
 	paramStruct* t1 = ep2->addParam("time", currentTime);
 	t1->t.x = getXOnScreenForString(currentTime, 1);
 
-	p2->createLine("2", "Needed_t: ")->addParam("Needed_t", String(sousController->Setpoint, 1));
-	p2->createLine("3", "Kp: ")->addParam("Kp", String(sousController->Kp, 2));
-	p2->createLine("4", "Ki: ")->addParam("Ki", String(sousController->Ki, 2));
-	p2->createLine("5", "Kd: ")->addParam("Kd", String(sousController->Kd, 2));
+	p2->createLine("2", "Setpoint: ")->addParam("Setpoint", String(sousController->Setpoint, 1));
+	p2->createLine("3", "Kp: ")->addParam("Kp", String(sousController->Kp, 1));
+	p2->createLine("4", "Ki: ")->addParam("Ki", String(sousController->Ki, 1));
+	p2->createLine("5", "Kd: ")->addParam("Kd", String(sousController->Kd, 1));
 }
 
-void IRAM_ATTR moveToMenuMode()
+void  moveToMenuMode()
 {
 	if (currentDisplayMode == Display_Info)
 	{
@@ -427,23 +450,19 @@ void handleEncoderInterrupt() {
 		}
 		else {
 //			debugf("handleEncoderInterrupt::!Display_Menu");
-			if (encoderValue % 16 != 0 ) {
-				return;
-			}
-
 			int i = encoderValue/16;
 			if (lastValue > i) {
-				infos->moveLeft(display);
+				infos->moveRight();
 			}
 			else if (lastValue < i)
 			{
-				infos->moveRight(display);
+				infos->moveLeft();
 			}
 		}
 	}
 }
 
-void IRAM_ATTR updateEncoder(){
+void  updateEncoder(){
 
   int MSB = digitalRead(encoderA); //MSB = most significant bit
   int LSB = digitalRead(encoderB); //LSB = least significant bit
@@ -458,12 +477,12 @@ void IRAM_ATTR updateEncoder(){
   handleEncoderInterrupt();
 }
 
-void IRAM_ATTR checkRotaryBtn()
+void  checkRotaryBtn()
 {
 	bAct.actOnButton();
 }
 
-void IRAM_ATTR handleClick() {
+void handleClick() {
 
 	switch(currentDisplayMode)
 	{
@@ -576,7 +595,7 @@ void printxy() {
 	int y = display.getCursorY();
 	Serial.print("x,y=" +String(x) + ","+ String(y));
 }
-void IRAM_ATTR showMenuScreen() {
+void showMenuScreen() {
 //	sayln(lastValue);
 
 	display.dim(false);
@@ -652,17 +671,18 @@ void writeToScreen(int index) {
 	}
 }
 
-void IRAM_ATTR showInfoScreen() {
+void showInfoScreen() {
 	menu.moveto(menu.getRoot());
 	display.clearDisplay();
 	display.setCursor(0,0);
 //	infos->showCurrent(display);
-	infos->show(1, display);
+	debugf("showInfoScreen");
+	infos->show(1);
 	//TODO: why?
 //	infos->print(currentInfoScreenIndex, display);
 }
 
-void IRAM_ATTR refreshScreen()
+void refreshScreen()
 {
 	debugf("Refresh Screen called");
 
@@ -685,50 +705,8 @@ void refreshTimeForUi()
 		return;
 	}
 
-//	int x = getXOnScreenForString(currentTime, 1);
-//	if(lastTimeRect.x = -1) {
-////		display.fillRect( x, 1, currentTime.length() * 6, 8, BLACK);
-//	}
-//	else {
-//		display.fillRect( lastTimeRect.x, lastTimeRect.y, lastTimeRect.w, lastTimeRect.h, BLACK);
-//	}
-//
-////	Serial.printf("computed rect time =x %i, y %i, w %i\n", x, 1, currentTime.length() * 6);
-//	display.setTextSize(1);
-//	display.setTextColor(WHITE);
-//	display.setCursor(x, 1 );
-////	display.setCursor(15, 10);
-////	String t = String(millis()/1000);
-////		display.print(t);
-//	lastTimeRect = display.print(currentTime);
-//	Serial.printf("current time =x %i, y %i, w %i\n", lastTimeRect.x, lastTimeRect.y, lastTimeRect.w);
-////	display.print(currentTime);
-////	display.get;
-////	Serial.println("xC=" + String(display.cursor_x) + ", yC=" +String(display.cursor_y) );
-//	display.display();
-
-	//need to update the time param on screen if shown
-
-
-	//TODO:ilan
-	infos->updateParamValue("time", currentTime, display);
-//	InfoScreenPage* iScreen = infos->get(currentInfoScreenIndex);
-//	iScreen->updateParam("time", currentTime, display);
+	infos->updateParamValue("time", currentTime);
 	display.display();
-
-//	Vector<InfoScreenLine*>* lines = iScreen->getAllLinesParamsForId("time");
-//
-//	//update all params with the "time" id
-//	if (lines->size() > 0) {
-//		String t = currentTime;
-//		for (int i = 0; i < lines->size(); ++i) {
-//			lines->elementAt(i)->updateDataForId(display, "time", currentTime);
-//		}
-////		iPage->itemAt(0)->updateData(display, 0, t);
-////		iPage->print(display);
-////		//update lasttimerect with alue
-////		lastTimeRect = iPage->itemAt(0)->getParam(0)->t;
-//	}
 
 	updateWebSockets("updatetime:" + currentTime);
 }
@@ -742,7 +720,6 @@ void updateTimeTimerAction()
 //	debugf("mem %d",system_get_free_heap_size());
 //	Serial.println(currentTime);
 
-	//TODO:ilan
 	refreshTimeForUi();
 //	unsigned long end = millis();
 //	debugf("Time took %lu",  (long)(end- start));
@@ -761,9 +738,9 @@ void doInit() {
 }
 
 // Will be called when WiFi station was connected to AP
-void IRAM_ATTR connectOk()
+void connectOk()
 {
-	infos->updateParamValue("station", WifiStation.getIP().toString(), display);
+	infos->updateParamValue("station", WifiStation.getIP().toString());
 //	Serial.println("I'm CONNECTED");
 //
 //	if (!mqtt)
@@ -780,10 +757,10 @@ void IRAM_ATTR connectOk()
 
 
 // Will be called when WiFi station timeout was reached
-void IRAM_ATTR connectFail()
+void connectFail()
 {
 	Serial.println("I'm NOT CONNECTED. Need help :(");
-	infos->updateParamValue("station", "Unknown", display);
+	infos->updateParamValue("station", "Unknown");
 	// .. some you code for device configuration ..
 }
 
@@ -980,7 +957,7 @@ void startWebServer()
 
 }
 
-void IRAM_ATTR startFTP()
+void startFTP()
 {
 	if (!fileExist("index.html"))
 		fileSetContent("index.html", "<h3>Please connect to FTP and upload files from folder 'web/build' (details in code)</h3>");
@@ -991,15 +968,15 @@ void IRAM_ATTR startFTP()
 }
 
 // Will be called when system initialization was completed
-void IRAM_ATTR startServers()
+void startServers()
 {
-	infos->updateParamValue("ap", WifiAccessPoint.getIP().toString(), display);
+	infos->updateParamValue("ap", WifiAccessPoint.getIP().toString());
 	Serial.println("Starting servers");
 ////	startFTP();
 	startWebServer();
 }
 
-void IRAM_ATTR networkScanCompleted(bool succeeded, BssList list)
+void networkScanCompleted(bool succeeded, BssList list)
 {
 	if (succeeded)
 	{
@@ -1012,7 +989,7 @@ void IRAM_ATTR networkScanCompleted(bool succeeded, BssList list)
 	networks.sort([](const BssInfo& a, const BssInfo& b){ return b.rssi - a.rssi; } );
 }
 
-void IRAM_ATTR setRelayState(boolean state) {
+void setRelayState(boolean state) {
 	if (state != relayState) {
 		relayState = state;
 		digitalWrite(relayPin, (relayState ? HIGH : LOW));
@@ -1085,11 +1062,12 @@ void readAfterWait() {
 
 	float celsius = (float)raw / 16.0;
 //	fahrenheit = celsius * 1.8 + 32.0;
-	debugf("  Temperature = %f Celsius ", celsius);
+
+	//debugf("  Temperature = %f Celsius ", celsius);
 	currentTemp = celsius;
 
 	if(currentDisplayMode == Display_Info) {
-		infos->updateParamValue("temp", String(currentTemp, 2), display);
+		infos->updateParamValue("temp", String(currentTemp, 2));
 		display.display();
 	}
 
@@ -1193,7 +1171,7 @@ void sendData(int field, String data)
 //	thingSpeak.downloadString("http://api.thingspeak.com/update?key=7XXUJWCWYTMXKN3L&field1=" + String(sensorValue), onDataSent);
 }
 
-void IRAM_ATTR ShowInfo() {
+void ShowInfo() {
     Serial.printf("\r\nSDK: v%s\r\n", system_get_sdk_version());
     Serial.printf("Free Heap: %d\r\n", system_get_free_heap_size());
     Serial.printf("CPU Frequency: %d MHz\r\n", system_get_cpu_freq());
@@ -1202,7 +1180,7 @@ void IRAM_ATTR ShowInfo() {
     //Serial.printf("SPI Flash Size: %d\r\n", (1 << ((spi_flash_get_id() >> 16) & 0xff)));
 }
 
-void IRAM_ATTR serialCallBack(Stream& stream, char arrivedChar,
+void serialCallBack(Stream& stream, char arrivedChar,
 		unsigned short availableCharsCount)
 {
 	if (arrivedChar == '\n')
@@ -1336,6 +1314,11 @@ void init()
 	display.setTextSize(1);
 	display.setTextColor(WHITE);
 
+	display.print("ilan");
+	display.display();
+
+	infos = new InfoScreens("SousVide", &display);
+
 	initMenu();
 	initInfoScreens();
 
@@ -1354,7 +1337,6 @@ void init()
 
 	DateTime date = SystemClock.now();
 	lastActionTime = date.Milliseconds;
-//	sayln(lastActionTime);
 
 	buttonTimer.initializeMs(80, checkRotaryBtn).start();
 
