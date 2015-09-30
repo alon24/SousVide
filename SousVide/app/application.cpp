@@ -114,7 +114,19 @@ void wsMessageReceived(WebSocket& socket, const String& message)
 
 void updateInitWebSockets(WebSocket client) {
 	char buf[1000];
-	sprintf(buf, "udpdatePID:[%lu,%lu,%lu];updateSetpoint:%lu", sousController->Setpoint, sousController->Kp, sousController->Ki, sousController->Kd );
+	sprintf(buf, "updatePID:[%s,%s,%s];updateSetPoint:%s",
+			String(sousController->Kp, 1).c_str(),
+			String(sousController->Ki, 1).c_str(),
+			String(sousController->Kd, 1).c_str(),
+			String(sousController->Setpoint, 1).c_str());
+
+//	char buf2[1000];
+//	Serial.printf(buf2, "updatePID:[%.1f,%.1f,%.1f];updateSetpoint:%.1f",
+//			sousController->Kp,
+//			sousController->Ki,
+//			sousController->Kd,
+//			sousController->Setpoint);
+
 	client.sendString(String(buf));
 }
 
