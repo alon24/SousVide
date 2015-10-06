@@ -16,6 +16,8 @@ function updateVal(id, val) {
 	$('#' + id).slider('refresh');
 }
 
+var websocketServerLocation;
+
 function init() {
   output = document.getElementById("output");
   // updateTime();
@@ -44,23 +46,18 @@ function init() {
         doSend('toggleRelay:' + (this.value === 'arrive' ? 'true' : 'false'));
         // console.log("relay1_state clicked " + this.value);
       });
-    testWebSocket();
+
+    var loc = location.host;
+    if (loc==="") {
+      loc="127.0.0.1";
+    }
+
+    websocketServerLocation = "ws://" + loc + "/";
+    startWebSocket();
+    // testWebSocket();
   });
 }
 
-var sliderChange = function(sliderValue) {
-  console.log("Slider changed: " + sliderValue);
-};
-
-function sendValueChanged(id, value) {
-  console.log(id + "="  + value);
-  doSend('change-val-' + id + ':' + value);
-}
-
-function saveSettings() {
-  console.log("save settings");
-  doSend("saveSettings:");
-}
 function testWebSocket() {
   try {
     var wsUri = "ws://" + location.host + "/";
@@ -83,24 +80,46 @@ function testWebSocket() {
   }
 }
 
-function onOpen(evt) {
-  writeToScreen("CONNECTED");
-  doSend("Sming love WebSockets");
+var timerID=0;
+var socket;
 
-  //query sming data
-  //time
-  //pid
-//  doSend("query:time,p,i,d,state,SetPoint");
+function startWebSocket(){
+  console.log("Trying to connect to ws at " + websocketServerLocation);
+    socket = new WebSocket(websocketServerLocation);
 
+    socket.onmessage = function(evt) {
+      onMessage(evt);
+    };
+
+    socket.onopen = function(event) {
+      onOpen(event);
+    };
+
+    socket.onclose = function(evt) {
+      onClose(evt);
+    };
+
+    socket.onerror = function(evt) {
+      onClose(evt);
+    };
 }
 
-function onClose(evt) {
-  writeToScreen("DISCONNECTED");
+function onOpen(event){
+  if(window.timerID){ /* a setInterval has been fired */
+    window.clearInterval(window.timerID);
+    window.timerID=0;
+  }
+}
+
+function onClose(event){
+  if(!window.timerID){ /* avoid firing a new setInterval, after one has been done */
+    console.log("Starting 5 sec timer");
+    window.timerID=setInterval(function(){startWebSocket(websocketServerLocation)}, 5000);
+  }
+  /* that way setInterval will be fired only once after loosing connection */
 }
 
 function onMessage(evt) {
-  //    writeToScreen('<span style="color: blue;">RESPONSE: ' + evt.data+'</span>');
-  //websocket.close();
   handlePayload(evt.data);
 }
 
@@ -114,7 +133,7 @@ function parseCommand(com) {
 
 function handlePayload(payload) {
 	var commands = payload.split(";");
-	for (var i = 0; i < commands.length; i++) { 
+	for (var i = 0; i < commands.length; i++) {
 	    var command = commands[i];
 	    var cmd = parseCommand(command);
 	  //check if need to change the realy button state
@@ -150,7 +169,21 @@ function handlePayload(payload) {
 //			var set = payload.substring('SetPoint'.length + 1);
 			updateVal("SetPoint", cmd[1]);
 		}
-	}	    
+	}
+}
+
+var sliderChange = function(sliderValue) {
+  console.log("Slider changed: " + sliderValue);
+};
+
+function sendValueChanged(id, value) {
+  console.log(id + "="  + value);
+  doSend('change-val-' + id + ':' + value);
+}
+
+function saveSettings() {
+  console.log("save settings");
+  doSend("saveSettings:");
 }
 
 function updatePID(pid) {
@@ -183,7 +216,7 @@ function onError(evt) {
 function doSend(message) {
 //  writeToScreen("SENT: " + message);
   try {
-    websocket.send(message);
+    socket.send(message);
   } catch (e) {
     console.log("ws not initialized could not send message " + message);
   }
@@ -199,7 +232,7 @@ function writeToScreen(message) {
 function doDisconnect() {
   var disconnect = document.getElementById("disconnect");
   disconnect.disabled = true;
-  websocket.close();
+  socket.close();
 }
 
 window.addEventListener("load", init, false);

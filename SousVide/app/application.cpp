@@ -157,7 +157,7 @@ String getCommandAndData(String &cmd) {
 
 
 void handleCommands(String commands) {
-	Serial.println("now handling " + commands);
+	debugf("handleCommands::now handling %s", commands.c_str());
 
 	//iterate over commands
 	Vector<String> commandToken;
@@ -167,6 +167,7 @@ void handleCommands(String commands) {
 		String command = commandToken.get(i);
 		String parsedCmd = getCommandAndData(command);
 
+		debugf("handleCommands::command=%s, data=%s", parsedCmd.c_str(), command.c_str());
 		//command is now the just the data (stripped of the command itself)
 //		debugf("handleCommands::original cmd=%s, parsed=%s, data=%s", command.c_str(), parsedCmd.c_str(), command.c_str());
 
@@ -186,7 +187,7 @@ void handleCommands(String commands) {
 			Serial.println("handleCommand:: state.equals(true)==" + String(command.equals("true")));
 			updateWebSockets("relayState:" + String(relayState == true ? "true" : "false"));
 		}
-		else if(parsedCmd.equals("change-val-needed_temp")) {
+		else if(parsedCmd.equals("change-val-SetPoint")) {
 			double temp = atof(command.c_str());
 			sousController->Setpoint = temp;
 			infos->updateParamValue("Setpoint", command);
@@ -1288,6 +1289,13 @@ void serialCallBack(Stream& stream, char arrivedChar,
 
 }
 
+void initFromConfig() {
+	sousController->Setpoint = ActiveConfig.Needed_temp;
+	sousController->Kp = ActiveConfig.Kp;
+	sousController->Ki = ActiveConfig.Ki;
+	sousController->Kd = ActiveConfig.Kd;
+}
+
 void init()
 {
 	Serial.begin(SERIAL_BAUD_RATE); // 115200
@@ -1322,6 +1330,8 @@ void init()
 	ActiveConfig = loadConfig();
 
 	sousController = new MySousVideController();
+	initFromConfig();
+
 
 	debugf("======= SousVide ==========");
 	Serial.println();

@@ -10,6 +10,9 @@ SousvideConfig loadConfig()
 	SousvideConfig cfg;
 	if (fileExist(SOUSVIDE_CONFIG_FILE))
 	{
+		Serial.printf("loadConfig::dumping file %s:\r\n", SOUSVIDE_CONFIG_FILE);
+		Serial.println(fileGetContent(SOUSVIDE_CONFIG_FILE));
+
 		int size = fileGetSize(SOUSVIDE_CONFIG_FILE);
 		char* jsonString = new char[size + 1];
 		fileGetContent(SOUSVIDE_CONFIG_FILE, jsonString, size + 1);
@@ -64,6 +67,9 @@ void saveConfig(SousvideConfig& cfg)
 	char buf[3048];
 	root.prettyPrintTo(buf, sizeof(buf));
 	fileSetContent(SOUSVIDE_CONFIG_FILE, buf);
+
+	Serial.printf("saveConfig::dumping file %s:\r\n", SOUSVIDE_CONFIG_FILE);
+	Serial.println(fileGetContent(SOUSVIDE_CONFIG_FILE));
 }
 
 
