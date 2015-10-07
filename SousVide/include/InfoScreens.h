@@ -237,6 +237,14 @@ public:
 		display->display();
 	}
 
+	void setCurrent(int index) {
+		if (index >= mChildern.size()) {
+			return;
+		}
+
+		mCurrent = index;
+	}
+
 	void showCurrent() {
 		lastUpdateTime = millis();
 //		debugf("showCurrent,1");

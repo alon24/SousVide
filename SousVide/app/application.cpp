@@ -7,7 +7,7 @@
 #include <ButtonActions.cpp>
 #include <mqttHelper.h>
 #include <utils.h>
-#include <AppSettings.h>
+//#include <AppSettings.h>
 #include <configuration.h>
 
 #include <Libraries/OneWire/OneWire.h>
@@ -79,7 +79,7 @@ int totalActiveSockets = 0;
 String name;
 String ip;
 
-int currentInfoScreenIndex = 0;
+//int currentInfoScreenIndex = 0;
 
 HttpServer server;
 FTPServer ftp;
@@ -106,7 +106,7 @@ void wsConnected(WebSocket& socket)
 
 void wsMessageReceived(WebSocket& socket, const String& message)
 {
-	Serial.printf("WebSocket message received:\r\n%s\r\n", message.c_str());
+//	Serial.printf("WebSocket message received:\r\n%s\r\n", message.c_str());
 //	String response = "Echo: " + message;
 //	socket.sendString(response);
 	handleCommands(message);
@@ -114,18 +114,12 @@ void wsMessageReceived(WebSocket& socket, const String& message)
 
 void updateInitWebSockets(WebSocket client) {
 	char buf[1000];
-	sprintf(buf, "updatePID:[%s,%s,%s];updateSetPoint:%s",
+	sprintf(buf, "updatePID:[%s,%s,%s];updateSetPoint:%s;updateWIFI:%s,%s",
 			String(sousController->Kp, 1).c_str(),
 			String(sousController->Ki, 1).c_str(),
 			String(sousController->Kd, 1).c_str(),
-			String(sousController->Setpoint, 1).c_str());
-
-//	char buf2[1000];
-//	Serial.printf(buf2, "updatePID:[%.1f,%.1f,%.1f];updateSetpoint:%.1f",
-//			sousController->Kp,
-//			sousController->Ki,
-//			sousController->Kd,
-//			sousController->Setpoint);
+			String(sousController->Setpoint, 1).c_str(),
+			ActiveConfig.NetworkSSID.c_str(), ActiveConfig.NetworkPassword.c_str());
 
 	client.sendString(String(buf));
 }
@@ -157,7 +151,7 @@ String getCommandAndData(String &cmd) {
 
 
 void handleCommands(String commands) {
-	debugf("handleCommands::now handling %s", commands.c_str());
+//	debugf("handleCommands::now handling %s", commands.c_str());
 
 	//iterate over commands
 	Vector<String> commandToken;
@@ -223,6 +217,16 @@ void handleCommands(String commands) {
 			ActiveConfig.Needed_temp = sousController->Setpoint;
 			saveConfig(ActiveConfig);
 			//TODO: save changes to file
+		}
+		else if(parsedCmd.equals("wifi")) {
+			Vector<String> commandToken;
+			int numToken = splitString(command, ',' , commandToken);
+			ActiveConfig.NetworkSSID = commandToken.elementAt(0);
+			ActiveConfig.NetworkPassword = commandToken.elementAt(1);
+		}
+		else if(parsedCmd.equals("reboot")) {
+			debugf("Rebooting");
+			System.restart();
 		}
 	}
 }
@@ -417,8 +421,8 @@ void  initInfoScreens() {
 	paramStruct* t = el->addParam("time", currentTime);
 	t->t.x = getXOnScreenForString(currentTime, 1);
 
-	InfoPageLine* el2 = p1->createLine("2", "temp: ");
-	el2->addParam("temp", String(currentTemp, 3));
+//	InfoPageLine* el2 = p1->createLine("2", "temp: ");
+//	el2->addParam("temp", String(currentTemp, 3));
 
 	InfoPageLine* el3 = p1->createLine("3", "ap: ");
 	el3->addParam("ap", "0.0.0.0");
@@ -426,16 +430,22 @@ void  initInfoScreens() {
 	InfoPageLine* el4 = p1->createLine("4", "sta:");
 	el4->addParam("station", "0.0.0.0");
 
+	p1->createLine("ssid", "ID: ")->addParam("ssid", "");
+
 	//Sousvide info page params
 	InfoScreenPage* p2 = infos->createScreen("s1", "s1");
 	InfoPageLine* ep2 = p2->createLine("h", "Params");
 	paramStruct* t1 = ep2->addParam("time", currentTime);
 	t1->t.x = getXOnScreenForString(currentTime, 1);
 
+	p2->createLine("temp", "C.Temp: ")->addParam("temp", String(currentTemp, 3));
 	p2->createLine("2", "Setpoint: ")->addParam("Setpoint", String(sousController->Setpoint, 1));
 	p2->createLine("3", "Kp: ")->addParam("Kp", String(sousController->Kp, 1));
 	p2->createLine("4", "Ki: ")->addParam("Ki", String(sousController->Ki, 1));
+
 	p2->createLine("5", "Kd: ")->addParam("Kd", String(sousController->Kd, 1));
+
+//	infos->setCurrent(1);
 }
 
 void  moveToMenuMode()
@@ -703,11 +713,8 @@ void showInfoScreen() {
 	menu.moveto(menu.getRoot());
 	display.clearDisplay();
 	display.setCursor(0,0);
-//	infos->showCurrent(display);
 	debugf("showInfoScreen");
-	infos->show(1);
-	//TODO: why?
-//	infos->print(currentInfoScreenIndex, display);
+	infos->showCurrent();
 }
 
 void refreshScreen()
@@ -810,41 +817,41 @@ void onIndex(HttpRequest &request, HttpResponse &response)
 		response.sendTemplate(tmpl); // will be automatically deleted
 	}
 }
-
-void onIpConfig(HttpRequest &request, HttpResponse &response)
-{
-	if (request.getRequestMethod() == RequestMethod::POST)
-	{
-		AppSettings.dhcp = request.getPostParameter("dhcp") == "1";
-		AppSettings.ip = request.getPostParameter("ip");
-		AppSettings.netmask = request.getPostParameter("netmask");
-		AppSettings.gateway = request.getPostParameter("gateway");
-		debugf("Updating IP settings: %d", AppSettings.ip.isNull());
-		AppSettings.save();
-	}
-
-	TemplateFileStream *tmpl = new TemplateFileStream("settings.html");
-	auto &vars = tmpl->variables();
-
-	bool dhcp = WifiStation.isEnabledDHCP();
-	vars["dhcpon"] = dhcp ? "checked='checked'" : "";
-	vars["dhcpoff"] = !dhcp ? "checked='checked'" : "";
-
-	if (!WifiStation.getIP().isNull())
-	{
-		vars["ip"] = WifiStation.getIP().toString();
-		vars["netmask"] = WifiStation.getNetworkMask().toString();
-		vars["gateway"] = WifiStation.getNetworkGateway().toString();
-	}
-	else
-	{
-		vars["ip"] = "192.168.1.77";
-		vars["netmask"] = "255.255.255.0";
-		vars["gateway"] = "192.168.1.1";
-	}
-
-	response.sendTemplate(tmpl); // will be automatically deleted
-}
+//
+//void onIpConfig(HttpRequest &request, HttpResponse &response)
+//{
+//	if (request.getRequestMethod() == RequestMethod::POST)
+//	{
+//		AppSettings.dhcp = request.getPostParameter("dhcp") == "1";
+//		AppSettings.ip = request.getPostParameter("ip");
+//		AppSettings.netmask = request.getPostParameter("netmask");
+//		AppSettings.gateway = request.getPostParameter("gateway");
+//		debugf("Updating IP settings: %d", AppSettings.ip.isNull());
+//		AppSettings.save();
+//	}
+//
+//	TemplateFileStream *tmpl = new TemplateFileStream("settings.html");
+//	auto &vars = tmpl->variables();
+//
+//	bool dhcp = WifiStation.isEnabledDHCP();
+//	vars["dhcpon"] = dhcp ? "checked='checked'" : "";
+//	vars["dhcpoff"] = !dhcp ? "checked='checked'" : "";
+//
+//	if (!WifiStation.getIP().isNull())
+//	{
+//		vars["ip"] = WifiStation.getIP().toString();
+//		vars["netmask"] = WifiStation.getNetworkMask().toString();
+//		vars["gateway"] = WifiStation.getNetworkGateway().toString();
+//	}
+//	else
+//	{
+//		vars["ip"] = "192.168.1.77";
+//		vars["netmask"] = "255.255.255.0";
+//		vars["gateway"] = "192.168.1.1";
+//	}
+//
+//	response.sendTemplate(tmpl); // will be automatically deleted
+//}
 
 void onFile(HttpRequest &request, HttpResponse &response)
 {
@@ -912,67 +919,67 @@ void onDoCommand(HttpRequest &request, HttpResponse &response)
 	response.sendJsonObject(stream);
 }
 
-void makeConnection()
-{
-	WifiStation.enable(true);
-	WifiStation.config(network, password);
+//void makeConnection()
+//{
+//	WifiStation.enable(true);
+//	WifiStation.config(network, password);
+//
+//	AppSettings.ssid = network;
+//	AppSettings.password = password;
+//	AppSettings.save();
+//
+//	network = ""; // task completed
+//}
 
-	AppSettings.ssid = network;
-	AppSettings.password = password;
-	AppSettings.save();
-
-	network = ""; // task completed
-}
-
-void onAjaxConnect(HttpRequest &request, HttpResponse &response)
-{
-	JsonObjectStream* stream = new JsonObjectStream();
-	JsonObject& json = stream->getRoot();
-
-	String curNet = request.getPostParameter("network");
-	String curPass = request.getPostParameter("password");
-
-	bool updating = curNet.length() > 0 && (WifiStation.getSSID() != curNet || WifiStation.getPassword() != curPass);
-	bool connectingNow = WifiStation.getConnectionStatus() == eSCS_Connecting || network.length() > 0;
-
-	if (updating && connectingNow)
-	{
-		debugf("wrong action: %s %s, (updating: %d, connectingNow: %d)", network.c_str(), password.c_str(), updating, connectingNow);
-		json["status"] = (bool)false;
-		json["connected"] = (bool)false;
-	}
-	else
-	{
-		json["status"] = (bool)true;
-		if (updating)
-		{
-			network = curNet;
-			password = curPass;
-			debugf("CONNECT TO: %s %s", network.c_str(), password.c_str());
-			json["connected"] = false;
-			connectionTimer.initializeMs(1200, makeConnection).startOnce();
-		}
-		else
-		{
-			json["connected"] = WifiStation.isConnected();
-			debugf("Network already selected. Current status: %s", WifiStation.getConnectionStatusName());
-		}
-	}
-
-	if (!updating && !connectingNow && WifiStation.isConnectionFailed())
-		json["error"] = WifiStation.getConnectionStatusName();
-
-	response.setAllowCrossDomainOrigin("*");
-	response.sendJsonObject(stream);
-}
+//void onAjaxConnect(HttpRequest &request, HttpResponse &response)
+//{
+//	JsonObjectStream* stream = new JsonObjectStream();
+//	JsonObject& json = stream->getRoot();
+//
+//	String curNet = request.getPostParameter("network");
+//	String curPass = request.getPostParameter("password");
+//
+//	bool updating = curNet.length() > 0 && (WifiStation.getSSID() != curNet || WifiStation.getPassword() != curPass);
+//	bool connectingNow = WifiStation.getConnectionStatus() == eSCS_Connecting || network.length() > 0;
+//
+//	if (updating && connectingNow)
+//	{
+//		debugf("wrong action: %s %s, (updating: %d, connectingNow: %d)", network.c_str(), password.c_str(), updating, connectingNow);
+//		json["status"] = (bool)false;
+//		json["connected"] = (bool)false;
+//	}
+//	else
+//	{
+//		json["status"] = (bool)true;
+//		if (updating)
+//		{
+//			network = curNet;
+//			password = curPass;
+//			debugf("CONNECT TO: %s %s", network.c_str(), password.c_str());
+//			json["connected"] = false;
+//			connectionTimer.initializeMs(1200, makeConnection).startOnce();
+//		}
+//		else
+//		{
+//			json["connected"] = WifiStation.isConnected();
+//			debugf("Network already selected. Current status: %s", WifiStation.getConnectionStatusName());
+//		}
+//	}
+//
+//	if (!updating && !connectingNow && WifiStation.isConnectionFailed())
+//		json["error"] = WifiStation.getConnectionStatusName();
+//
+//	response.setAllowCrossDomainOrigin("*");
+//	response.sendJsonObject(stream);
+//}
 
 void startWebServer()
 {
 	server.listen(80);
 	server.addPath("/", onIndex);
-	server.addPath("/ipconfig", onIpConfig);
+//	server.addPath("/ipconfig", onIpConfig);
 	server.addPath("/ajax/get-networks", onAjaxNetworkList);
-	server.addPath("/ajax/connect", onAjaxConnect);
+//	server.addPath("/ajax/connect", onAjaxConnect);
 ////	server.addPath("/ajax/doCommand", onDoCommand);
 	server.setDefaultHandler(onFile);
 
@@ -1305,6 +1312,7 @@ void initFromConfig() {
 	sousController->Kp = ActiveConfig.Kp;
 	sousController->Ki = ActiveConfig.Ki;
 	sousController->Kd = ActiveConfig.Kd;
+
 }
 
 void init()
@@ -1384,28 +1392,31 @@ void init()
 	//ilan
 	timeTimer.initializeMs(1000, updateTimeTimerAction).start();
 
-	AppSettings.load();
+//	AppSettings.load();
 
 	ds.begin(); // It's required for one-wire initialization!
 	readTempTimer.initializeMs(1000, readTempData).startOnce();
 
 	WifiStation.enable(true);
+	WifiStation.config(ActiveConfig.NetworkSSID, ActiveConfig.NetworkPassword);
+	infos->updateParamValue("ssid", ActiveConfig.NetworkSSID);
 //	if (AppSettings.exist())
 //	{
 //		WifiStation.config(AppSettings.ssid, AppSettings.password);
-//		if (!AppSettings.dhcp && !AppSettings.ip.isNull())
-//			WifiStation.setIP(AppSettings.ip, AppSettings.netmask, AppSettings.gateway);
+////		if (!AppSettings.dhcp && !AppSettings.ip.isNull())
+////			WifiStation.setIP(AppSettings.ip, AppSettings.netmask, AppSettings.gateway);
 //	}
 
 //	debugf("net=%s, pass=%s", WIFI_SSID, WIFI_PWD);
 
-	WifiStation.config(WIFI_SSID, WIFI_PWD);
-	WifiStation.startScan(networkScanCompleted);
+//	WifiStation.config(WIFI_SSID, WIFI_PWD);
+
+//	WifiStation.startScan(networkScanCompleted);
 
 
 	// Start AP for configuration
 	WifiAccessPoint.enable(true);
-	WifiAccessPoint.config("ESP Configuration", "", AUTH_OPEN);
+	WifiAccessPoint.config("Sousvide Config", "", AUTH_OPEN);
 
 	// Run WEB server on system ready
 	System.onReady(startServers);

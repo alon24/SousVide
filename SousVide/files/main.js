@@ -175,6 +175,7 @@ function parseCommand(com) {
 	return ret;
 }
 
+//updates from webserver
 function handlePayload(payload) {
 	var commands = payload.split(";");
 	for (var i = 0; i < commands.length; i++) {
@@ -198,22 +199,27 @@ function handlePayload(payload) {
 		    }
 		}
 		else if (cmd[0].startsWith('updatetime')) {
-//			var newTime = payload.substring('updatetime'.length + 1);
 			updateTime(cmd[1]);
 		}
 		else if (cmd[0].startsWith('temp')) {
-//			var newTemp = payload.substring('temp'.length + 1);
 			updateTemp(cmd[1]);
 		}
 		else if (cmd[0].startsWith('updatePID')) {
-//			var pid = payload.substring('pid'.length + 1);
 			updatePID(cmd[1]);
 		}
 		else if (cmd[0].startsWith('updateSetPoint')) {
-//			var set = payload.substring('SetPoint'.length + 1);
 			updateVal("SetPoint", cmd[1]);
 		}
+    else if (cmd[0].startsWith('updateWIFI')) {
+			updateWifi(cmd[1]);
+		}
 	}
+}
+
+function updateWifi(data) {
+    var wifiParts = data.split(",");
+    $('#SSID').val(wifiParts[0]);
+    $('#Password').val(wifiParts[1]);
 }
 
 var sliderChange = function(sliderValue) {
@@ -227,6 +233,8 @@ function sendValueChanged(id, value) {
 
 function saveSettings() {
   console.log("save settings");
+  var wifiCmd = "wifi:" + $('#SSID').val() + "," + $('#Password').val();
+  doSend(wifiCmd);
   doSend("saveSettings:");
 }
 
@@ -264,6 +272,10 @@ function doSend(message) {
   } catch (e) {
     console.log("ws not initialized could not send message " + message);
   }
+}
+
+function connectWifi() {
+
 }
 
 function writeToScreen(message) {
