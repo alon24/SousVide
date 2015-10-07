@@ -17,16 +17,18 @@ function updateVal(id, val) {
 }
 
 var websocketServerLocation;
+var heartbeat_msg = '--heartbeat--', heartbeat_interval = null, missed_heartbeats = 0;
 
 function init() {
+
   output = document.getElementById("output");
   // updateTime();
   $("#flip_sous_state").attr("disabled", true);
   $("#relay1_state").attr("disabled", true);
 
   $("#relay1").attr("disabled", true);
-  $(document).ready(function(){
 
+  $(document).ready(function(){
     $("#flip_sous_state").attr("disabled", false);
     $("#relay1_state").attr("disabled", false);
 
@@ -52,31 +54,46 @@ function init() {
       loc="127.0.0.1";
     }
 
+    setFormState(false);
+
     websocketServerLocation = "ws://" + loc + "/";
     startWebSocket();
     // testWebSocket();
   });
 }
 
-function testWebSocket() {
-  try {
-    var wsUri = "ws://" + location.host + "/";
-    websocket = new WebSocket(wsUri);
-    websocket.onopen = function(evt) {
-      onOpen(evt);
-    };
-    websocket.onclose = function(evt) {
-      onClose(evt);
-    };
-    websocket.onmessage = function(evt) {
-      onMessage(evt);
-    };
-    websocket.onerror = function(evt) {
-      onError(evt);
-    };
-  }
-  catch(err) {
-      console.log("Web socket not connected");
+// function testWebSocket() {
+//   try {
+//     var wsUri = "ws://" + location.host + "/";
+//     websocket = new WebSocket(wsUri);
+//     websocket.onopen = function(evt) {
+//       onOpen(evt);
+//     };
+//     websocket.onclose = function(evt) {
+//       onClose(evt);
+//     };
+//     websocket.onmessage = function(evt) {
+//       onMessage(evt);
+//     };
+//     websocket.onerror = function(evt) {
+//       onError(evt);
+//     };
+//   }
+//   catch(err) {
+//       console.log("Web socket not connected");
+//   }
+// }
+
+function setFormState(enabled) {
+  // $('.flip_sous_state').slider('disable');
+  if (enabled === true) {
+    $('#SetPoint, #p, #i, #d').slider('enable');
+    // $('#flip_sous_state').slider('enable');
+    $("#savesettings").removeClass('disabled');
+  } else {
+    $('#SetPoint, #p, #i, #d').slider('disable');
+    // $('#flip_sous_state').slider('disable');
+    $("#savesettings").addClass('disabled');
   }
 }
 
@@ -109,6 +126,25 @@ function onOpen(event){
     window.clearInterval(window.timerID);
     window.timerID=0;
   }
+
+  // if (heartbeat_interval === null) {
+  //       missed_heartbeats = 0;
+  //       heartbeat_interval = setInterval(function() {
+  //           try {
+  //               missed_heartbeats++;
+  //               if (missed_heartbeats >= 3)
+  //                   throw new Error("Too many missed heartbeats.");
+  //               socket.send(heartbeat_msg);
+  //           } catch(e) {
+  //               clearInterval(heartbeat_interval);
+  //               heartbeat_interval = null;
+  //               console.warn("Closing connection. Reason: " + e.message);
+  //               socket.close();
+  //           }
+  //       }, 5000);
+  //   }
+
+    setFormState(true);
 }
 
 function onClose(event){
@@ -117,9 +153,17 @@ function onClose(event){
     window.timerID=setInterval(function(){startWebSocket(websocketServerLocation)}, 5000);
   }
   /* that way setInterval will be fired only once after loosing connection */
+
+  setFormState(false);
 }
 
 function onMessage(evt) {
+  // if (evt.data === heartbeat_msg) {
+  //     // reset the counter for missed heartbeats
+  //     missed_heartbeats = 0;
+  //     return;
+  // }
+
   handlePayload(evt.data);
 }
 

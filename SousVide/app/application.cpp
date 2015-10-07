@@ -174,6 +174,15 @@ void handleCommands(String commands) {
 		if(parsedCmd.equals("query")) {
 
 		}
+		else if (parsedCmd.equals("toggleSousvideOperation")) {
+			if (operationMode == Sousvide) {
+				operationMode = Manual;
+			} else {
+				operationMode = Sousvide;
+			}
+
+			debugf("sous operation = %s", (operationMode == Sousvide ? "Sousvide" : " Manual"));
+		}
 		else if (parsedCmd.equals("toggleRelay")) {
 //			String state = commands.substring(12);
 //			setRelayState(state.equals("true"));
@@ -1020,15 +1029,17 @@ OneWire ds(dsTempPin);
 Timer readTempTimer;
 
 void IRAM_ATTR checkTempTriggerRelay(float temp) {
-	//move on thsi only when Sousvide, do not interfere with manual mode
+	//move on this only when Sousvide, do not interfere with manual mode
 	if (operationMode == Sousvide)
 	{
-		int trigger = (int)28;
-		if((int)temp >= trigger && !relayState ) {
-			Serial.println("temp is >= " + String(trigger) + ", starting relay");
+		int trigger = (int)sousController->Setpoint;
+		if((int)temp < trigger && !relayState ) {
+			debugf("current temp is below %i, so starting relay", temp);
+//			Serial.println("temp is " + String(trigger) + ", starting relay");
 			handleCommands("toggleRelay:true");
-		} else if((int)temp < trigger && relayState){
-			Serial.println("temp is <  " + String(trigger) + ",stopping relay");
+		} else if((int)temp >= trigger && relayState){
+			debugf("current temp is %i, so stopping relay", temp);
+//			Serial.println("temp is <  " + String(trigger) + ",stopping relay");
 			handleCommands("toggleRelay:false");
 		}
 	}
