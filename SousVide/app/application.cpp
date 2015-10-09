@@ -2,6 +2,8 @@
 #include <SmingCore/SmingCore.h>
 //#include <Libraries/Adafruit_SSD1306/Adafruit_SSD1306.h>
 #include <Extended_SSD1306.h>
+//#include <SSD1306_ExtendedDisplay.h>
+
 #include <menues.h>
 #include <InfoScreens.h>
 #include <ButtonActions.cpp>
@@ -35,6 +37,8 @@ InfoScreens* infos;
 //* SSD1306 - I2C
 Extended_SSD1306 display(4);
 
+//BaseDisplay* display;
+
 MySousVideController *sousController;
 
 //Pins used
@@ -42,9 +46,9 @@ MySousVideController *sousController;
 #define sdaPin 2
 //#define dsTempPin 4
 //#define relayPin 5
-#define encoderA 13
-#define encoderB 12
-#define encoderSwitchPin 14 //push button switch
+#define encoderSwitchPin 12 //push button switch
+#define encoderA 14
+#define encoderB 13
 
 //// If you want, you can define WiFi settings globally in Eclipse Environment Variables
 //#ifndef WIFI_SSID
@@ -66,6 +70,7 @@ Timer displayTimer;
 Timer timeTimer;
 Timer initTimer;
 Timer blinkTimer;
+Timer heartBeat;
 
 //textRect lastTimeRect;
 
@@ -345,7 +350,7 @@ volatile int lastEncoded = 0;
 volatile long encoderValue = 0;
 
 long lastencoderValue = 0;
-int lastValue = -20;
+int lastValue =-1000;
 
 int lastMSB = 0;
 int lastLSB = 0;
@@ -448,7 +453,7 @@ void  initInfoScreens() {
 //	infos->setCurrent(1);
 }
 
-void  moveToMenuMode()
+void IRAM_ATTR moveToMenuMode()
 {
 	if (currentDisplayMode == Display_Info)
 	{
@@ -466,7 +471,7 @@ void  moveToMenuMode()
 
 Timer refreshScreenTimer;
 
-void handleEncoderInterrupt() {
+void IRAM_ATTR handleEncoderInterrupt() {
 	if(lastValue != encoderValue/4 && (encoderValue %4 == 0)) {
 		if (currentDisplayMode == Display_Menu) {
 //			debugf("Display_Menu");
@@ -500,7 +505,7 @@ void handleEncoderInterrupt() {
 	}
 }
 
-void  updateEncoder(){
+void IRAM_ATTR updateEncoder(){
 
   int MSB = digitalRead(encoderA); //MSB = most significant bit
   int LSB = digitalRead(encoderB); //LSB = least significant bit
@@ -1315,6 +1320,12 @@ void initFromConfig() {
 
 }
 
+const String WS_HEARTBEAT = "--heartbeat--";
+
+void sendHeartBeat() {
+	 updateWebSockets(WS_HEARTBEAT);
+}
+
 void init()
 {
 	Serial.begin(SERIAL_BAUD_RATE); // 115200
@@ -1343,6 +1354,9 @@ void init()
 	#else
 		debugf("spiffs disabled");
 	#endif
+
+//	//Change CPU freq. to 160MHZ
+//	System.setCpuFrequency(eCF_160MHz);
 
 	Wire.pins(sclPin, sdaPin);
 
@@ -1428,5 +1442,7 @@ void init()
 	Serial.println();
 
 	Serial.setCallback(serialCallBack);
+
+	heartBeat.initializeMs(4000, sendHeartBeat).start();
 }
 

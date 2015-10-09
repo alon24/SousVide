@@ -59,7 +59,7 @@ SPIFF_SIZE      ?= 300000
 #SPIFFY          ?= spiffy
 
 #SPI_SIZE ?= 4M
-#SPI_MODE ?= qio	
+SPI_MODE ?= dio	
 #SPI_SPEED ?= 40
 #
 #COM_SPEED_ESPTOOL = 230400

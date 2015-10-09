@@ -62,38 +62,18 @@ function init() {
   });
 }
 
-// function testWebSocket() {
-//   try {
-//     var wsUri = "ws://" + location.host + "/";
-//     websocket = new WebSocket(wsUri);
-//     websocket.onopen = function(evt) {
-//       onOpen(evt);
-//     };
-//     websocket.onclose = function(evt) {
-//       onClose(evt);
-//     };
-//     websocket.onmessage = function(evt) {
-//       onMessage(evt);
-//     };
-//     websocket.onerror = function(evt) {
-//       onError(evt);
-//     };
-//   }
-//   catch(err) {
-//       console.log("Web socket not connected");
-//   }
-// }
-
 function setFormState(enabled) {
   // $('.flip_sous_state').slider('disable');
   if (enabled === true) {
     $('#SetPoint, #p, #i, #d').slider('enable');
     // $('#flip_sous_state').slider('enable');
     $("#savesettings").removeClass('disabled');
+    $('#connected').prop("hidden", false);
   } else {
     $('#SetPoint, #p, #i, #d').slider('disable');
     // $('#flip_sous_state').slider('disable');
     $("#savesettings").addClass('disabled');
+    $('#connected').prop("hidden", true);
   }
 }
 
@@ -121,28 +101,30 @@ function startWebSocket(){
     };
 }
 
+var heartbeat_msg = '--heartbeat--', heartbeat_interval = null, missed_heartbeats = 0;
+
 function onOpen(event){
   if(window.timerID){ /* a setInterval has been fired */
     window.clearInterval(window.timerID);
     window.timerID=0;
   }
 
-  // if (heartbeat_interval === null) {
-  //       missed_heartbeats = 0;
-  //       heartbeat_interval = setInterval(function() {
-  //           try {
-  //               missed_heartbeats++;
-  //               if (missed_heartbeats >= 3)
-  //                   throw new Error("Too many missed heartbeats.");
-  //               socket.send(heartbeat_msg);
-  //           } catch(e) {
-  //               clearInterval(heartbeat_interval);
-  //               heartbeat_interval = null;
-  //               console.warn("Closing connection. Reason: " + e.message);
-  //               socket.close();
-  //           }
-  //       }, 5000);
-  //   }
+  if (heartbeat_interval === null) {
+        missed_heartbeats = 0;
+        heartbeat_interval = setInterval(function() {
+            try {
+                missed_heartbeats++;
+                if (missed_heartbeats >= 3)
+                    throw new Error("Too many missed heartbeats.");
+                socket.send(heartbeat_msg);
+            } catch(e) {
+                clearInterval(heartbeat_interval);
+                heartbeat_interval = null;
+                console.warn("Closing connection. Reason: " + e.message);
+                socket.close();
+            }
+        }, 5000);
+    }
 
     setFormState(true);
 }
@@ -158,11 +140,11 @@ function onClose(event){
 }
 
 function onMessage(evt) {
-  // if (evt.data === heartbeat_msg) {
-  //     // reset the counter for missed heartbeats
-  //     missed_heartbeats = 0;
-  //     return;
-  // }
+  if (evt.data === heartbeat_msg) {
+      // reset the counter for missed heartbeats
+      missed_heartbeats = 0;
+      return;
+  }
 
   handlePayload(evt.data);
 }
@@ -227,7 +209,9 @@ var sliderChange = function(sliderValue) {
 };
 
 function sendValueChanged(id, value) {
-  console.log(id + "="  + value);
+
+
+  // console.log(id + "="  + value);
   doSend('change-val-' + id + ':' + value);
 }
 
