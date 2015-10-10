@@ -16,10 +16,48 @@ function updateVal(id, val) {
 	$('#' + id).slider('refresh');
 }
 
+function setSliderListeners(id) {
+  var sl = $('#' + id);
+  sl.slider().on('slideStop', function (ev) {
+      console.log('sl:' + sl.slider('getValue'));
+   });
+
+   $('#' + id).slider().on('slide', function (ev) {
+     $('#' + id+"_val").val( sl.slider('getValue'));
+     // console.log('sl:' + mySlider.slider('getValue'));
+   });
+   $('#' + id+"_val").val( sl.slider('getValue'));
+}
+
 var websocketServerLocation;
 var heartbeat_msg = '--heartbeat--', heartbeat_interval = null, missed_heartbeats = 0;
 
 function init() {
+
+  $("#ex13").slider({
+      ticks: [0, 100],
+      ticks_labels: ['0', '100']
+  });
+  setSliderListeners('ex13');
+
+  $("[name='my-checkbox']").bootstrapSwitch();
+  // $("[name='my-checkbox']").bootstrapSwitch("state", false);
+  // console.log($("[name='my-checkbox']").bootstrapSwitch("state"));
+
+  // .on('switchChange.bootstrapSwitch', function (event, state) {});
+  $("[name='my-checkbox']").bootstrapSwitch().on('switchChange.bootstrapSwitch', function (event, state) {
+      console.log(state);
+   });
+
+   $("[name='relay1_state_1']").bootstrapSwitch();
+
+  // mySlider.on('slideStop', function (ev) {
+  //      var min = ev.value[0];
+  //      var max = ev.value[1];
+  //      $("#minval").val(ev.value[0]);
+  //      $("#maxval").val(ev.value[1]);
+  //
+  //  });
 
   output = document.getElementById("output");
   // updateTime();

@@ -1,4 +1,11 @@
-
+.parent{
+    display:table;
+}
+.child{
+    display:table-cell;
+    vertical-align:middle;
+    padding-left:20px;
+}
 .sousActions{
   background: yellow
 }
