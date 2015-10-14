@@ -29,27 +29,36 @@ function setSliderListeners(id) {
    $('#' + id+"_val").val( sl.slider('getValue'));
 }
 
+function addTemp(id) {
+    var el = $(id);
+    var contentB = "<div> sss </div>";
+    $("<div> sss </div>").prepend(el);
+
+}
+
 var websocketServerLocation;
 var heartbeat_msg = '--heartbeat--', heartbeat_interval = null, missed_heartbeats = 0;
 
 function init() {
 
-  $("#ex13").slider({
-      ticks: [0, 100],
-      ticks_labels: ['0', '100']
-  });
-  setSliderListeners('ex13');
+  // $("#ex13").slider({
+  //     ticks: [0, 100],
+  //     ticks_labels: ['0', '100']
+  // });
+  // setSliderListeners('ex13');
+  //
+  // $("[name='my-checkbox']").bootstrapSwitch();
+  // // $("[name='my-checkbox']").bootstrapSwitch("state", false);
+  // // console.log($("[name='my-checkbox']").bootstrapSwitch("state"));
+  //
+  // // .on('switchChange.bootstrapSwitch', function (event, state) {});
+  // $("[name='my-checkbox']").bootstrapSwitch().on('switchChange.bootstrapSwitch', function (event, state) {
+  //     console.log(state);
+  //  });
+  //
+  //  $("[name='relay1_state_1']").bootstrapSwitch();
 
-  $("[name='my-checkbox']").bootstrapSwitch();
-  // $("[name='my-checkbox']").bootstrapSwitch("state", false);
-  // console.log($("[name='my-checkbox']").bootstrapSwitch("state"));
-
-  // .on('switchChange.bootstrapSwitch', function (event, state) {});
-  $("[name='my-checkbox']").bootstrapSwitch().on('switchChange.bootstrapSwitch', function (event, state) {
-      console.log(state);
-   });
-
-   $("[name='relay1_state_1']").bootstrapSwitch();
+  //  $("ex14")
 
   // mySlider.on('slideStop', function (ev) {
   //      var min = ev.value[0];
@@ -236,6 +245,11 @@ function handlePayload(payload) {
 	}
 }
 
+function connect() {
+      var wifiCmd = $('#SSID').val() + "," + $('#Password').val();
+      doSend('connect:' + wifiCmd);
+}
+
 function updateWifi(data) {
     var wifiParts = data.split(",");
     $('#SSID').val(wifiParts[0]);
@@ -294,10 +308,6 @@ function doSend(message) {
   } catch (e) {
     console.log("ws not initialized could not send message " + message);
   }
-}
-
-function connectWifi() {
-
 }
 
 function writeToScreen(message) {

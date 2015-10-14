@@ -174,8 +174,9 @@ void handleCommands(String commands) {
 
 		}
 		else if (parsedCmd.equals("toggleSousvideOperation")) {
-			if (operationMode == Sousvide) {
+			if (command.equals("false")) {
 				operationMode = Manual;
+				updateWebSockets("relayState:false");
 			} else {
 				operationMode = Sousvide;
 			}
@@ -229,6 +230,20 @@ void handleCommands(String commands) {
 			ActiveConfig.NetworkSSID = commandToken.elementAt(0);
 			ActiveConfig.NetworkPassword = commandToken.elementAt(1);
 		}
+		else if(parsedCmd.equals("connect")) {
+			Vector<String> commandToken;
+			int numToken = splitString(command, ',' , commandToken);
+			ActiveConfig.NetworkSSID = commandToken.elementAt(0);
+			ActiveConfig.NetworkPassword = commandToken.elementAt(1);
+			saveConfig(ActiveConfig);
+			debugf("Connecting to %s, %s", ActiveConfig.NetworkSSID.c_str(), ActiveConfig.NetworkPassword.c_str());
+			WifiStation.enable(false);
+			WifiStation.config(ActiveConfig.NetworkSSID, ActiveConfig.NetworkPassword);
+			WifiStation.enable(true);
+			infos->updateParamValue("ssid", "try:" + ActiveConfig.NetworkSSID);
+			infos->updateParamValue("station", "reconnecting");
+			WifiStation.waitConnection(connectOk, 25, connectFail); // We recommend 20+ seconds for connection timeout at start
+		}
 		else if(parsedCmd.equals("reboot")) {
 			debugf("Rebooting");
 			System.restart();
@@ -253,11 +268,6 @@ void wsBinaryReceived(WebSocket& socket, uint8_t* data, size_t size)
 void wsDisconnected(WebSocket& socket)
 {
 	totalActiveSockets--;
-
-	// Notify everybody about lost connection
-	WebSocketsList &clients = server.getActiveWebSockets();
-	for (int i = 0; i < clients.count(); i++)
-		clients[i].sendString("We lost our friend :( Total: " + String(totalActiveSockets));
 }
 
 ////Web Sockets ///////
@@ -781,6 +791,7 @@ void doInit() {
 void connectOk()
 {
 	infos->updateParamValue("station", WifiStation.getIP().toString());
+	infos->updateParamValue("ssid", WifiStation.getSSID());
 //	Serial.println("I'm CONNECTED");
 //
 //	if (!mqtt)
@@ -800,7 +811,9 @@ void connectOk()
 void connectFail()
 {
 	Serial.println("I'm NOT CONNECTED. Need help :(");
-	infos->updateParamValue("station", "Unknown");
+	infos->updateParamValue("station", "Disconnected");
+	infos->updateParamValue("ssid", "no:" + ActiveConfig.NetworkSSID);
+	WifiStation.enable(false);
 	// .. some you code for device configuration ..
 }
 
@@ -1434,8 +1447,7 @@ void init()
 
 	// Run WEB server on system ready
 	System.onReady(startServers);
-
-	WifiStation.waitConnection(connectOk, 30, connectFail); // We recommend 20+ seconds for connection timeout at start
+	WifiStation.waitConnection(connectOk, 20, connectFail); // We recommend 20+ seconds for connection timeout at start
 
 	Serial.printf("\r\nCurrently running rom %d.\r\n", slot);
 	Serial.println("Type 'help' and press enter for instructions.");

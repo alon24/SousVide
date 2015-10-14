@@ -120,9 +120,11 @@
                                 }" />
                             </div>
                             <div class="child">
-                                <input id="ex13" type="text" data-slider-step="1"  '/>
+                                <input id="ex13" type="text" data-slider-step="1"/>
                             </div>
                         </div>
+
+                        <input id="ex14" type="text" data-slider-step="1"/>
 
                         <!-- <input type="range" id="SetPoint" min="0" max="100" value="28" step="1" onchange="sendValueChanged('SetPoint', this.value)"> -->
                       </td>
@@ -193,6 +195,7 @@
           						<label for="exampleInputPassword1">Password</label>
           						<input type="Password" id ="Password" name="Password" class="form-control" placeholder="Password">
           					  </div>
+                      <button id="reboot" class="btn btn-success" onclick="doSend('connect:');">Reboot</button>
           					  <button id="reboot" class="btn btn-success" onclick="doSend('reboot:');">Reboot</button>
           					  <!-- <button type="cancel" class="btn btn-link">Cancel</button> -->
           					<!-- </form> -->
