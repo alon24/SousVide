@@ -69,18 +69,21 @@ function init() {
   //  });
 
   output = document.getElementById("output");
-  // updateTime();
-  $("#flip_sous_state").attr("disabled", true);
-  $("#relay1_state").attr("disabled", true);
 
-  $("#relay1").attr("disabled", true);
+  toggleShowOverlay(true);
 
-  $(document).ready(function(){
-    $("#flip_sous_state").attr("disabled", false);
-    $("#relay1_state").attr("disabled", false);
-
-    $("#flip_sous_state").val("leave").flipswitch('refresh');
-    $("#relay1_state").val("leave").flipswitch('refresh');
+//  // updateTime();
+//  $("#flip_sous_state").attr("disabled", true);
+//  $("#relay1_state").attr("disabled", true);
+//
+//  $("#relay1").attr("disabled", true);
+//
+ $(document).ready(function(){
+//    $("#flip_sous_state").attr("disabled", false);
+//    $("#relay1_state").attr("disabled", false);
+//
+   $("#flip_sous_state").val("leave").flipswitch('refresh');
+   $("#relay1_state").val("leave").flipswitch('refresh');
 
     $("#flip_sous_state").change(
       function(){
@@ -101,12 +104,24 @@ function init() {
       loc="127.0.0.1";
     }
 
-    setFormState(false);
+
+//    setFormState(false);
 
     websocketServerLocation = "ws://" + loc + "/";
     startWebSocket();
     // testWebSocket();
   });
+}
+
+function toggleShowOverlay(state) {
+    if (state === true) {
+      $("#NotConnectedDiv").prop('hidden',false);
+      $("#ConnectedDIv").prop('hidden', true);
+    }
+    else {
+      $("#NotConnectedDiv").prop('hidden',true);
+      $("#ConnectedDIv").prop('hidden', false);
+    }
 }
 
 function setFormState(enabled) {
@@ -173,17 +188,23 @@ function onOpen(event){
         }, 5000);
     }
 
-    setFormState(true);
+    toggleShowOverlay(false);
+    // setFormState(true);
 }
 
 function onClose(event){
-  if(!window.timerID){ /* avoid firing a new setInterval, after one has been done */
-    console.log("Starting 5 sec timer");
-    window.timerID=setInterval(function(){startWebSocket(websocketServerLocation)}, 5000);
-  }
+  // if(!window.timerID){ /* avoid firing a new setInterval, after one has been done */
+  //   console.log("Starting 5 sec timer");
+  //   window.timerID=setInterval(function(){startWebSocket(websocketServerLocation)}, 5000);
+  // }
   /* that way setInterval will be fired only once after loosing connection */
 
-  setFormState(false);
+  // setFormState(false);
+
+  toggleShowOverlay(true);
+
+  // $("#NotConnectedDiv").prop('hidden',false);
+  // $("#ConnectedDIv").prop('hidden', true);
 }
 
 function onMessage(evt) {
