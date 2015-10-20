@@ -251,7 +251,7 @@ void handleCommands(String commands) {
 	}
 }
 
-void hadleQuery(String items) {
+void handleQuery(String items) {
 	Vector<String> commandToken;
 	int numToken = splitString(items, ';' , commandToken);
 
@@ -1070,6 +1070,7 @@ void IRAM_ATTR checkTempTriggerRelay(float temp) {
 	}
 }
 
+//http://forum.arduino.cc/index.php?topic=72654.0
 void readTempData();
 Timer oneTempReadTimer;
 byte addr[8];
@@ -1457,4 +1458,3 @@ void init()
 
 	heartBeat.initializeMs(4000, sendHeartBeat).start();
 }
-
