@@ -30,6 +30,11 @@ void  handleCommands(String commands);
 void  updateInitWebSockets(WebSocket client);
 void  setRelayState(boolean state);
 
+/* Pinout:
+ * MISO GPIO12 - not needed
+ *
+ * MOSI GPIO13 CLK GPIO14 CS GPIO15 DC GPIO5 RST GPIO4 */
+
 InfoScreens* infos;
 
 //encoder code from http://bildr.org/2012/08/rotary-encoder-arduino/
@@ -40,15 +45,6 @@ Extended_SSD1306 display(4);
 //BaseDisplay* display;
 
 MySousVideController *sousController;
-
-//Pins used
-#define sclPin 0
-#define sdaPin 2
-//#define dsTempPin 4
-//#define relayPin 5
-#define encoderSwitchPin 12 //push button switch
-#define encoderA 14
-#define encoderB 13
 
 //// If you want, you can define WiFi settings globally in Eclipse Environment Variables
 //#ifndef WIFI_SSID

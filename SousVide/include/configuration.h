@@ -18,11 +18,29 @@
 ////#define CONTROL_PIN 3 // UART0 RX pin
 //#define CONTROL_PIN 15
 
+
+//Pins used
+
+//SPI LCD Pins
+#define mosiPin 13
+#define clkPin 14
+#define csPin 15
+#define dcPin 5
+
+//SSD13006 Pins
+#define sclPin 13
+#define sdaPin 14
+
 // Pin for communication with Temp sensor
 #define dsTempPin 4
 
 // Pin for trigger control output
 #define relayPin 5
+
+//RELAY Pins
+#define encoderSwitchPin 0 //push button switch
+#define encoderA 14
+#define encoderB 13
 
 #define SOUSVIDE_CONFIG_FILE ".sousvide.conf" // leading point for security reasons :)
 
