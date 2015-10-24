@@ -70,7 +70,7 @@ Timer heartBeat;
 
 //textRect lastTimeRect;
 
-time_t lastActionTime =0;
+time_t lastActionTime = 0;
 String currentTime = "00:00:00";
 
 float currentTemp = 0;
@@ -1041,7 +1041,8 @@ void networkScanCompleted(bool succeeded, BssList list)
 void setRelayState(boolean state) {
 	if (state != relayState) {
 		relayState = state;
-		digitalWrite(relayPin, (relayState ? HIGH : LOW));
+//		digitalWrite(relayPin, (relayState ? HIGH : LOW));
+		digitalWrite(relayPin, (relayState ? LOW : HIGH));
 	}
 }
 

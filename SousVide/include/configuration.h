@@ -32,15 +32,15 @@
 #define sdaPin 14
 
 // Pin for communication with Temp sensor
-#define dsTempPin 4
+#define dsTempPin 5
 
 // Pin for trigger control output
-#define relayPin 5
+#define relayPin 4
 
-//RELAY Pins
+//Rotary Pins
 #define encoderSwitchPin 0 //push button switch
-#define encoderA 14
-#define encoderB 13
+#define encoderA 2
+#define encoderB 12
 
 #define SOUSVIDE_CONFIG_FILE ".sousvide.conf" // leading point for security reasons :)
 
