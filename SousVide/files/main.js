@@ -176,7 +176,7 @@ function onOpen(event){
         heartbeat_interval = setInterval(function() {
             try {
                 missed_heartbeats++;
-                if (missed_heartbeats >= 1)
+                if (missed_heartbeats >= 2)
                     throw new Error("Too many missed heartbeats.");
                 socket.send(heartbeat_msg);
             } catch(e) {
