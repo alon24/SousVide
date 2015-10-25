@@ -339,7 +339,8 @@ void onMessageReceived(String topic, String message)
 		        String in = getValue(s, ',' , 0);
 		        String oper = getValue(s, ':' , 1);
 		        	Serial.println("tok: " + s + ", in=" + in + ",oper=" + oper);
-		        	digitalWrite(relayPin, oper.compareTo("1") ? HIGH : LOW);
+		        	setRelayState(oper.compareTo("1"));
+//		        	digitalWrite(relayPin, oper.compareTo("1") ? HIGH : LOW);
 		        if (in.compareTo("out1")) {
 		        }
 //		        break;
@@ -513,8 +514,8 @@ void IRAM_ATTR handleEncoderInterrupt() {
 
 void IRAM_ATTR updateEncoder(){
 
-  int MSB = digitalRead(encoderA); //MSB = most significant bit
-  int LSB = digitalRead(encoderB); //LSB = least significant bit
+  int MSB = digitalRead(encoderCLK); //MSB = most significant bit
+  int LSB = digitalRead(encoderDT); //LSB = least significant bit
 
   int encoded = (MSB << 1) |LSB; //converting the 2 pin value to single number
   int sum  = (lastEncoded << 2) | encoded; //adding it to the previous encoded value
@@ -912,12 +913,12 @@ void onAjaxNetworkList(HttpRequest &request, HttpResponse &response)
 	response.setAllowCrossDomainOrigin("*");
 	response.sendJsonObject(stream);
 }
-
-bool flipRelay(){
-	relayState = !relayState;
-	digitalWrite(relayPin, relayState ? HIGH : LOW);
-	return relayState;
-}
+//
+//bool flipRelay(){
+//	relayState = !relayState;
+//	digitalWrite(relayPin, relayState ? HIGH : LOW);
+//	return relayState;
+//}
 
 void onDoCommand(HttpRequest &request, HttpResponse &response)
 {
@@ -927,7 +928,7 @@ void onDoCommand(HttpRequest &request, HttpResponse &response)
 
 
 //	if (response.)
-	json["relayState"] = flipRelay();
+//	json["relayState"] = flipRelay();
 
 	response.setAllowCrossDomainOrigin("*");
 	response.sendJsonObject(stream);
@@ -1394,15 +1395,16 @@ void init()
 	initMenu();
 	initInfoScreens();
 
-	pinMode(encoderA, INPUT_PULLUP);
-	pinMode(encoderB, INPUT_PULLUP);
-	digitalWrite(encoderA, HIGH); //turn pullup resistor on
-	digitalWrite(encoderB, HIGH); //turn pullup resistor on
+	pinMode(encoderCLK, INPUT_PULLUP);
+	pinMode(encoderDT, INPUT_PULLUP);
+	digitalWrite(encoderCLK, HIGH); //turn pullup resistor on
+	digitalWrite(encoderDT, HIGH); //turn pullup resistor on
 
 	pinMode(relayPin, OUTPUT);
-	digitalWrite(relayPin, LOW);
-	attachInterrupt(encoderA, updateEncoder, CHANGE);
-	attachInterrupt(encoderB, updateEncoder, CHANGE);
+//	setRelayState(false);
+	digitalWrite(relayPin, HIGH);
+	attachInterrupt(encoderCLK, updateEncoder, CHANGE);
+	attachInterrupt(encoderDT, updateEncoder, CHANGE);
 
 	pinMode(encoderSwitchPin, INPUT);
 	digitalWrite(encoderSwitchPin, HIGH); //turn pullup resistor on

@@ -35,12 +35,12 @@
 #define dsTempPin 5
 
 // Pin for trigger control output
-#define relayPin 4
+#define relayPin 2
 
 //Rotary Pins
 #define encoderSwitchPin 0 //push button switch
-#define encoderA 2
-#define encoderB 12
+#define encoderCLK 4
+#define encoderDT 12
 
 #define SOUSVIDE_CONFIG_FILE ".sousvide.conf" // leading point for security reasons :)
 
