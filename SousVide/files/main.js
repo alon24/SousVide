@@ -176,7 +176,7 @@ function onOpen(event){
         heartbeat_interval = setInterval(function() {
             try {
                 missed_heartbeats++;
-                if (missed_heartbeats >= 3)
+                if (missed_heartbeats >= 1)
                     throw new Error("Too many missed heartbeats.");
                 socket.send(heartbeat_msg);
             } catch(e) {
@@ -233,7 +233,7 @@ function handlePayload(payload) {
 	    var cmd = parseCommand(command);
 	  //check if need to change the realy button state
 		if (cmd[0].startsWith('relayState')) {
-			var state = payload.substring('relayState'.length + 1);
+			var state = cmd[1];
 		    // console.log('state = ' + state + ", relay1 = " + $("#relay1_state").val());
 		    if( (state == 'true' && $("#relay1_state").val() == 'leave') ||
 		        (state == 'false' && $("#relay1_state").val() == 'arrive')      )

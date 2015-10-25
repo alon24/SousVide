@@ -115,12 +115,13 @@ void wsMessageReceived(WebSocket& socket, const String& message)
 
 void updateInitWebSockets(WebSocket client) {
 	char buf[1000];
-	sprintf(buf, "updatePID:[%s,%s,%s];updateSetPoint:%s;updateWIFI:%s,%s",
+	sprintf(buf, "updatePID:[%s,%s,%s];updateSetPoint:%s;updateWIFI:%s,%s;relayState:%s",
 			String(sousController->Kp, 1).c_str(),
 			String(sousController->Ki, 1).c_str(),
 			String(sousController->Kd, 1).c_str(),
 			String(sousController->Setpoint, 1).c_str(),
-			ActiveConfig.NetworkSSID.c_str(), ActiveConfig.NetworkPassword.c_str());
+			ActiveConfig.NetworkSSID.c_str(), ActiveConfig.NetworkPassword.c_str(),
+			(relayState == true ? "true" : "false"));
 
 	client.sendString(String(buf));
 }
