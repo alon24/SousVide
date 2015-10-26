@@ -78,9 +78,9 @@ class InfoPageLine : public BaseScreenElement
 	String m_text;
 	int m_textSize;
 	bool initialized = false;
-	Vector<paramStruct*> params;
 public:
 
+	Vector<paramStruct*> params;
 	int mX, mY, mWidth;
 	InfoPageLine(String id, String text, int size);
 	int getTextSize();
@@ -184,6 +184,19 @@ public:
 		return ret;
 	}
 
+	Vector<paramStruct*> getAllParamsInPage() {
+		Vector<paramStruct*> ret;
+		for (int i = 0; i < mChildren.size(); ++i) {
+			InfoPageLine* l = mChildren.elementAt(i);
+			//add all the params in the line
+			for (int j = 0; j < l->params.size(); ++i) {
+				ret.add(l->params.elementAt(j));
+			}
+		}
+
+		return ret;
+	}
+
 	//No screen update
 	void updateParamValue(String id, String newData) {
 		getParent()->updateParamValue(id, newData);
@@ -223,7 +236,7 @@ typedef Delegate<void()> showScreenUpdateDelegate;
 class InfoScreens : public BaseScreenElement{
 
 private:
-	int mCurrent=0;
+//	int mCurrent=0;
 	Vector<InfoScreenPage*> mChildern;
 //	Vector<paramStruct*> dirtyElements;
 	HashMap<String, paramState> paramValueMap;
@@ -236,12 +249,23 @@ private:
 public:
 	void handleUpdateTimer() {
 		if(canUpdateDisplay()) {
-//			if()
-			showCurrent();
-
+			if (paramValueMap["currentPage"].dirty) {
+				display->clearDisplay();
+				display->setCursor(0,0);
+				print(paramValueMap["currentPage"].val.toInt());
+				paramValueMap["currentPage"].clearDirty();
+			}
+			else {
+				Vector<paramStruct*> params = getCurrent()->getAllParamsInPage();
+				for (int i = 0; i < params.size(); ++i) {
+					paramStruct* param = params.get(i);
+					if (paramValueMap[param->id].dirty) {
+						display->writeover(param->t, paramValueMap[param->id].val);
+						paramValueMap[param->id].clearDirty();
+					}
+				}
+			}
 		}
-
-
 	}
 
 //	InfoScreens(String id) : BaseScreenElement(id) {
@@ -252,6 +276,8 @@ public:
 	{
 		this->display = dis;
 		screenupdate.setCallback(showScreenUpdateDelegate(&InfoScreens::handleUpdateTimer, this));
+		screenupdate.setIntervalMs(80);
+		screenupdate.start(true);
 
 		display->print("InfoScreens");
 		Serial.print(display->getCursorY());
@@ -263,7 +289,14 @@ public:
 			return;
 		}
 
-		mCurrent = index;
+		if (paramValueMap.contains("currentPage")) {
+			paramValueMap[id].update(String(index));
+		}
+		else {
+			paramState p;
+			p.update(String(index));
+		}
+//		mCurrent = index;
 	}
 
 	void showCurrent() {
@@ -271,12 +304,16 @@ public:
 //		debugf("showCurrent,1");
 		this->updateDisplay = true;
 //		debugf("showCurrent,2");
-		print(mCurrent);
+
+		//handle printing in timer
+//		print(paramValueMap["currentPage"S].val);
+
+
 //		debugf("showCurrent,3");
 	}
 
 	void show(int pNum) {
-		mCurrent = pNum;
+		setCurrent(pNum);
 //		debugf("show:%i", pNum);
 		showCurrent();
 	}
@@ -297,27 +334,27 @@ public:
 		}
 		lastUpdateTime = tmpTime;
 		debugf("moveRight mills=%lu", lastUpdateTime);
-
-		debugf("moveRight mCurrent=%i" , mCurrent);
-		if (mCurrent + 1 < mChildern.size()) {
-			mCurrent++;
+		int current = paramValueMap["currentPage"].val.toInt();
+		debugf("moveRight mCurrent=%i" , current);
+		if (current + 1 < mChildern.size()) {
+			current++;
 		}
 		else {
-			mCurrent = 0;
+			current = 0;
 		}
-		debugf("moveRight mCurrent after=%i" , mCurrent);
-
-		display->clearDisplay();
-		display->setCursor(0,0);
-		showCurrent();
+		debugf("moveRight mCurrent after=%i" , current);
+		paramValueMap["currentPage"].update(String(current));
+//		display->clearDisplay();
+//		display->setCursor(0,0);
+//		showCurrent();
 	}
 
 	void moveLeft() {
 		if (mChildern.size() == 1) {
 			return;
 		}
-
-		debugf("moveLeft mCurrent=%i" , mCurrent);
+		int current = paramValueMap["currentPage"].val.toInt();
+		debugf("moveLeft mCurrent=%i" , current);
 
 		int tmpTime = millis();
 		long mils = tmpTime - lastUpdateTime;
@@ -328,18 +365,19 @@ public:
 		lastUpdateTime = tmpTime;
 		debugf("moveLeft mills=%lu", lastUpdateTime);
 
-		if (mCurrent - 1 >= 0) {
-			mCurrent--;
+		if (current - 1 >= 0) {
+			current--;
 		}
 		else {
-			mCurrent = mChildern.size()-1;
+			current = mChildern.size()-1;
 		}
 
-		debugf("moveLeft mCurrent after=%i" , mCurrent);
+		debugf("moveLeft mCurrent after=%i" , current);
+		paramValueMap["currentPage"].update(String(current));
 
-		this->display->clearDisplay();
-		display->setCursor(0,0);
-		showCurrent();
+//		this->display->clearDisplay();
+//		display->setCursor(0,0);
+//		showCurrent();
 	}
 
 //	//Do not print to screen anymore(so no updates to data)
@@ -369,7 +407,7 @@ public:
 	}
 
 	InfoScreenPage* getCurrent() {
-		return mChildern.get(mCurrent);
+		return mChildern.get(paramValueMap["currentPage"].val.toInt());
 	}
 
 	void print(int pIndex) {
