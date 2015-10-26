@@ -406,6 +406,97 @@ F 3 "" H 7050 2900 60  0000 C CNN
 	1    7050 2900
 	1    0    0    -1  
 $EndComp
+Text GLabel 4150 6100 0    60   Input ~ 0
+Relay.Sig
+Text GLabel 3650 6550 0    60   Input ~ 0
+Relay.Sig
+Text GLabel 6400 4150 0    60   Input ~ 0
+Relay.Sig
+Text GLabel 1600 3700 2    60   Input ~ 0
+Ro.SW
+Text GLabel 1950 3600 2    60   Input ~ 0
+Ro.DT
+Text GLabel 1650 3500 2    60   Input ~ 0
+Ro.CLK
+Text Label 2650 3000 0    60   ~ 0
+SCL/CLK
+Text Label 2700 2900 0    60   ~ 0
+SDA/DC
+Text Label 2900 2700 0    60   ~ 0
+DC
+Text Notes 1600 3050 0    60   ~ 0
+SPI Pinout: \nMOSI GPIO13 \nCLK GPIO14\nCS GPIO15 \nDC GPIO5 
+Text Label 2900 2800 0    60   ~ 0
+CS
+Text GLabel 3150 4450 2    60   Input ~ 0
+Relay.Sig
+Text Label 2800 3750 0    60   ~ 0
+GPIO5
+Text GLabel 6550 3350 2    60   Input ~ 0
+Ro.SW
+Text GLabel 6500 2950 2    60   Input ~ 0
+Ro.CLK
+Text GLabel 4000 3100 0    60   Input ~ 0
+Ro.DT
+Text Label 7350 2400 0    60   ~ 0
+Rx
+Text Label 7350 2550 0    60   ~ 0
+Tx
+$Comp
+L CONN_01X02 P?
+U 1 1 562A1405
+P 5150 4350
+F 0 "P?" H 5150 4500 50  0000 C CNN
+F 1 "GPIO9,10" V 5250 4350 50  0000 C CNN
+F 2 "" H 5150 4350 60  0000 C CNN
+F 3 "" H 5150 4350 60  0000 C CNN
+	1    5150 4350
+	0    1    1    0   
+$EndComp
+$Comp
+L AP1117 U?
+U 1 1 562B5B86
+P 3000 950
+F 0 "U?" H 3100 700 50  0000 C CNN
+F 1 "AP1117" H 3000 1200 50  0000 C CNN
+F 2 "" H 3000 950 60  0000 C CNN
+F 3 "" H 3000 950 60  0000 C CNN
+	1    3000 950 
+	1    0    0    -1  
+$EndComp
+$Comp
+L CP C?
+U 1 1 562B673B
+P 1250 1850
+F 0 "C?" H 1275 1950 50  0000 L CNN
+F 1 "CP" H 1275 1750 50  0000 L CNN
+F 2 "" H 1288 1700 30  0000 C CNN
+F 3 "" H 1250 1850 60  0000 C CNN
+	1    1250 1850
+	0    -1   -1   0   
+$EndComp
+$Comp
+L +3.3V #PWR?
+U 1 1 562B781B
+P 3450 850
+F 0 "#PWR?" H 3450 700 50  0001 C CNN
+F 1 "+3.3V" H 3450 990 50  0000 C CNN
+F 2 "" H 3450 850 60  0000 C CNN
+F 3 "" H 3450 850 60  0000 C CNN
+	1    3450 850 
+	1    0    0    -1  
+$EndComp
+$Comp
+L +3.3V #PWR?
+U 1 1 562B791B
+P 1850 4000
+F 0 "#PWR?" H 1850 3850 50  0001 C CNN
+F 1 "+3.3V" H 1850 4140 50  0000 C CNN
+F 2 "" H 1850 4000 60  0000 C CNN
+F 3 "" H 1850 4000 60  0000 C CNN
+	1    1850 4000
+	1    0    0    -1  
+$EndComp
 Wire Wire Line
 	2850 4650 2850 4850
 Wire Wire Line
@@ -603,14 +694,6 @@ Wire Wire Line
 	1500 3600 1950 3600
 Wire Wire Line
 	1500 3500 1650 3500
-Wire Wire Line
-	6100 3150 6600 3150
-Text GLabel 4150 6100 0    60   Input ~ 0
-Relay.Sig
-Text GLabel 3650 6550 0    60   Input ~ 0
-Relay.Sig
-Text GLabel 6400 4150 0    60   Input ~ 0
-Relay.Sig
 Connection ~ 4350 6100
 Wire Wire Line
 	3650 6550 3800 6550
@@ -618,29 +701,9 @@ Wire Wire Line
 	3800 6550 3800 6750
 Connection ~ 3800 6750
 Wire Wire Line
-	4300 3150 4000 3150
-Text GLabel 1600 3700 2    60   Input ~ 0
-Ro.SW
-Text GLabel 1950 3600 2    60   Input ~ 0
-Ro.A
-Text GLabel 1650 3500 2    60   Input ~ 0
-Ro.B
-Wire Wire Line
 	6400 4000 6400 4150
 Wire Wire Line
-	6400 2950 6400 3700
-Wire Wire Line
 	2850 4450 3150 4450
-Text Label 2650 2900 0    60   ~ 0
-SCL/CLK
-Text Label 2700 3000 0    60   ~ 0
-SDA/DC
-Text Label 2900 2700 0    60   ~ 0
-DC
-Text Notes 1600 3050 0    60   ~ 0
-SPI Pinout: \nMOSI GPIO13 \nCLK GPIO14\nCS GPIO15 \nDC GPIO5 
-Text Label 2900 2800 0    60   ~ 0
-CS
 Wire Wire Line
 	3400 3650 3700 3650
 Wire Wire Line
@@ -650,52 +713,8 @@ Wire Wire Line
 	3300 3650 3300 3300
 Wire Wire Line
 	3300 3300 3450 3300
-Text GLabel 3150 4450 2    60   Input ~ 0
-Relay.Sig
 Wire Wire Line
 	3200 3650 2600 3650
-Wire Wire Line
-	2600 3650 2600 2300
-Wire Wire Line
-	2600 2300 3400 2300
-Connection ~ 3400 2300
-Text Label 2800 3750 0    60   ~ 0
-GPIO5
-Text GLabel 6550 2950 2    60   Input ~ 0
-Ro.SW
-Wire Wire Line
-	6600 3150 6600 3550
-Wire Wire Line
-	6600 3550 6750 3550
-Text GLabel 4000 3000 0    60   Input ~ 0
-Ro.B
-Wire Wire Line
-	4000 3150 4000 3000
-Text GLabel 6750 3550 2    60   Input ~ 0
-Ro.A
-Wire Wire Line
-	6100 2950 6400 2950
-Wire Wire Line
-	6100 3050 6500 3050
-Wire Wire Line
-	6500 3050 6500 2950
-Wire Wire Line
-	6500 2950 6550 2950
-Text Label 7350 2400 0    60   ~ 0
-Rx
-Text Label 7350 2550 0    60   ~ 0
-Tx
-$Comp
-L CONN_01X02 P?
-U 1 1 562A1405
-P 5150 4350
-F 0 "P?" H 5150 4500 50  0000 C CNN
-F 1 "GPIO9,10" V 5250 4350 50  0000 C CNN
-F 2 "" H 5150 4350 60  0000 C CNN
-F 3 "" H 5150 4350 60  0000 C CNN
-	1    5150 4350
-	0    1    1    0   
-$EndComp
 Wire Wire Line
 	4950 3850 4950 4150
 Wire Wire Line
@@ -705,33 +724,11 @@ Wire Wire Line
 Wire Wire Line
 	5200 4000 5200 4150
 Connection ~ 5050 4000
-$Comp
-L AP1117 U?
-U 1 1 562B5B86
-P 3000 950
-F 0 "U?" H 3100 700 50  0000 C CNN
-F 1 "AP1117" H 3000 1200 50  0000 C CNN
-F 2 "" H 3000 950 60  0000 C CNN
-F 3 "" H 3000 950 60  0000 C CNN
-	1    3000 950 
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	2700 1250 2700 950 
 Connection ~ 2450 1250
 Wire Wire Line
 	3000 1550 3000 1250
-$Comp
-L CP C?
-U 1 1 562B673B
-P 1250 1850
-F 0 "C?" H 1275 1950 50  0000 L CNN
-F 1 "CP" H 1275 1750 50  0000 L CNN
-F 2 "" H 1288 1700 30  0000 C CNN
-F 3 "" H 1250 1850 60  0000 C CNN
-	1    1250 1850
-	0    -1   -1   0   
-$EndComp
 Connection ~ 1000 1600
 Wire Wire Line
 	1300 1450 2150 1450
@@ -742,36 +739,30 @@ Wire Wire Line
 	1400 1850 1500 1850
 Wire Wire Line
 	1500 1850 1500 1450
-$Comp
-L +3.3V #PWR?
-U 1 1 562B781B
-P 3450 850
-F 0 "#PWR?" H 3450 700 50  0001 C CNN
-F 1 "+3.3V" H 3450 990 50  0000 C CNN
-F 2 "" H 3450 850 60  0000 C CNN
-F 3 "" H 3450 850 60  0000 C CNN
-	1    3450 850 
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	3300 950  3450 950 
 Wire Wire Line
 	3450 950  3450 850 
-$Comp
-L +3.3V #PWR?
-U 1 1 562B791B
-P 1850 4000
-F 0 "#PWR?" H 1850 3850 50  0001 C CNN
-F 1 "+3.3V" H 1850 4140 50  0000 C CNN
-F 2 "" H 1850 4000 60  0000 C CNN
-F 3 "" H 1850 4000 60  0000 C CNN
-	1    1850 4000
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	1500 3800 1700 3800
 Wire Wire Line
 	1700 3800 1700 4000
 Wire Wire Line
 	1700 4000 1850 4000
+Wire Wire Line
+	6100 3150 6400 3150
+Wire Wire Line
+	6400 3150 6400 3700
+Wire Wire Line
+	6100 2950 6500 2950
+Wire Wire Line
+	4000 3100 4000 3150
+Wire Wire Line
+	4000 3150 4300 3150
+Wire Wire Line
+	6100 3050 6500 3050
+Wire Wire Line
+	6500 3050 6500 3350
+Wire Wire Line
+	6500 3350 6550 3350
 $EndSCHEMATC
