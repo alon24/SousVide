@@ -13,14 +13,27 @@
 
 #define TIME_BETWEEN_SCREEN_CHANGE 300
 
-struct paramStruct {
+struct paramState {
+	bool dirty = false;
+	String val;
+
+	void update(String newVal) {
+		val = newVal;
+		dirty = true;
+	}
+
+	void clearDirty() {
+		dirty = false;
+	}
+};
+
+struct paramStruct{
 	textRect t;
 //	String text;
 	String id;
 
 	void init(String id, String text, textRect t) {
 		this->id = id;
-//		this->text = text;
 		this->t = t;
 	}
 };
@@ -57,7 +70,7 @@ public:
 	virtual void setCanUpdateDisplay(bool newState) {};
 	virtual bool canUpdateDisplay() {};
 	virtual void updateParamValue(String id, String newData) {};
-	virtual String getParamText(String id){};
+	virtual paramState getParamText(String id){};
 };
 
 class InfoPageLine : public BaseScreenElement
@@ -88,7 +101,7 @@ public:
 		return parent->canUpdateDisplay();
 	}
 
-	String getParamText(String id){
+	paramState getParamText(String id){
 		return parent->getParamText(id);
 	}
 
@@ -200,7 +213,7 @@ public:
 		return getParent()->canUpdateDisplay();
 	}
 
-	String getParamText(String id){
+	paramState getParamText(String id){
 		return parent->getParamText(id);
 	}
 };
@@ -210,17 +223,25 @@ typedef Delegate<void()> showScreenUpdateDelegate;
 class InfoScreens : public BaseScreenElement{
 
 private:
-	int mCurrent = 0;
+	int mCurrent=0;
 	Vector<InfoScreenPage*> mChildern;
-	Vector<paramStruct*> dirtyElements;
-	HashMap<String, String> paramValueMap;
+//	Vector<paramStruct*> dirtyElements;
+	HashMap<String, paramState> paramValueMap;
+
 	bool updateDisplay = false;
 	unsigned long lastUpdateTime = 0;
-	Timer updateNextTimer;
+//	Timer updateNextTimer;
+	Timer screenupdate;
 
 public:
 	void handleUpdateTimer() {
-		showCurrent();
+		if(canUpdateDisplay()) {
+//			if()
+			showCurrent();
+
+		}
+
+
 	}
 
 //	InfoScreens(String id) : BaseScreenElement(id) {
@@ -230,7 +251,7 @@ public:
 	InfoScreens(String id, Extended_SSD1306 *dis) : BaseScreenElement(id)
 	{
 		this->display = dis;
-		updateNextTimer.setCallback(showScreenUpdateDelegate(&InfoScreens::handleUpdateTimer, this));
+		screenupdate.setCallback(showScreenUpdateDelegate(&InfoScreens::handleUpdateTimer, this));
 
 		display->print("InfoScreens");
 		Serial.print(display->getCursorY());
@@ -363,25 +384,28 @@ public:
 		debugf("print, 4");
 	}
 
-	String getParamText(String id) {
+	paramState getParamText(String id) {
 		return paramValueMap[id];
 	}
 
 	//no screen update
 	void updateParamValue(String id, String newData) {
 		if (paramValueMap.contains(id)) {
-			paramValueMap.remove(id);
+			paramValueMap[id].update(newData);
+//			paramValueMap.remove(id);
 		}
 
-		paramValueMap[id] = newData;
+		paramState p;
+		p.update(newData);
+		paramValueMap[id] = p;
 
-		if (canUpdateDisplay()) {
-			Vector<paramStruct*> params = getCurrent()->getAllParamsForId(id);
-			for (int i = 0; i < params.size(); ++i) {
-				paramStruct* param = params.get(i);
-				display->writeover(param->t, newData);
-			}
-		}
+//		if (canUpdateDisplay()) {
+//			Vector<paramStruct*> params = getCurrent()->getAllParamsForId(id);
+//			for (int i = 0; i < params.size(); ++i) {
+//				paramStruct* param = params.get(i);
+//				display->writeover(param->t, newData);
+//			}
+//		}
 	}
 
 	void setCanUpdateDisplay(bool newState){

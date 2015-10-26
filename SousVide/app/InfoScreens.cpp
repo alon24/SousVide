@@ -68,15 +68,16 @@ void InfoPageLine::print()
 	{
 //		debugf("print,3.3.4 - %i", s);
 		paramStruct* param = params.get(s);
-		String str = getParamText(param->id);
-//		String str = param->text;
+		paramState str = getParamText(param->id);
+
 		if (param->t.x != -1)
 		{
 //			debugf("print,3.3.5 - %i", s);
 			this->display->setCursor(param->t.x, y);
 //			debugf("print,3.3.55 - %i", s);
 		}
-		textRect* t = this->display->print(str);
+		textRect* t = this->display->print(str.val);
+		str.clearDirty();
 		param->t = *t;
 //		Serial.printf("x %i, y %i, w %i\n", t->x, t->y, t->w);
 	}
