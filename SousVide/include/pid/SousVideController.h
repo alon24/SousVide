@@ -5,13 +5,13 @@
  *      Author: ilan
  */
 
-#ifndef INCLUDE_MYPID_H_
-#define INCLUDE_MYPID_H_
+#ifndef INCLUDE_SousVideController_H_
+#define INCLUDE_SousVideController_H_
 
 #include <pid/PID_v1.h>
 #include <pid/PID_AutoTune_v0.h>
 
-class MySousVideController {
+class SousVideController {
 	volatile long onTime = 0;
 
 	// EEPROM addresses for persisted data
@@ -71,13 +71,13 @@ public:
 	double Ki = 0;
 	double Kd = 0;
 
-	MySousVideController() {
+	SousVideController() {
 		myPID = new PID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
 		aTune = new PID_ATune(&Input, &Output);
 		initPID();
 	};
 
-	~MySousVideController() {
+	~SousVideController() {
 		delete(myPID);
 		delete(aTune);
 	};
@@ -992,4 +992,4 @@ private:
 ////   return value;
 ////}
 
-#endif /* INCLUDE_MYPID_H_ */
+#endif /* INCLUDE_SousVideController_H_ */

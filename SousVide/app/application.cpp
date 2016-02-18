@@ -10,7 +10,7 @@
 
 //#include <PID_v1.h>
 //#include <PID_AutoTune_v0.h>
-#include <pid/MyPID.h>
+#include "../include/pid/SousVideController.h"
 
 //Forward declerations
 //mqtt
@@ -36,7 +36,7 @@ Base_Display_Driver* display;
 
 //BaseDisplay* display;
 
-MySousVideController *sousController;
+SousVideController *sousController;
 
 //// If you want, you can define WiFi settings globally in Eclipse Environment Variables
 //#ifndef WIFI_SSID
@@ -699,7 +699,7 @@ void init()
 
 	ActiveConfig = loadConfig();
 
-	sousController = new MySousVideController();
+	sousController = new SousVideController();
 	initFromConfig();
 
 
