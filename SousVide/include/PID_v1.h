@@ -1,6 +1,6 @@
 #ifndef PID_v1_h
 #define PID_v1_h
-
+#include "SmingCore.h"
 class PID
 {
 

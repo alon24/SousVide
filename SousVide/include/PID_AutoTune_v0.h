@@ -1,6 +1,8 @@
 #ifndef PID_AutoTune_v0
 #define PID_AutoTune_v0
 
+#include "SmingCore.h"
+
 class PID_ATune
 {
 

@@ -1,22 +1,131 @@
-#include <user_config.h>
-#include <SmingCore/SmingCore.h>
-//#include <Libraries/Adafruit_SSD1306/Adafruit_SSD1306.h>
-#include <Extended_SSD1306.h>
-//#include <SSD1306_ExtendedDisplay.h>
+#include "SmingCore.h"
+#include <drivers/SSD1306_driver.h>
 
-#include <menues.h>
 #include <InfoScreens.h>
-#include <ButtonActions.cpp>
 #include <mqttHelper.h>
 #include <utils.h>
-//#include <AppSettings.h>
 #include <configuration.h>
-
 #include <Libraries/OneWire/OneWire.h>
 
 //#include <PID_v1.h>
 //#include <PID_AutoTune_v0.h>
 #include <MyPID.h>
+
+// download urls, set appropriately
+#define ROM_0_URL  "http://192.168.7.5:80/rom0.bin"
+#define ROM_1_URL  "http://192.168.7.5:80/rom1.bin"
+#define SPIFFS_URL "http://192.168.7.5:80/spiff_rom.bin"
+
+rBootHttpUpdate* otaUpdater = 0;
+
+void OtaUpdate_CallBack(bool result) {
+
+	Serial.println("In callback...");
+	if(result == true) {
+		// success
+		uint8 slot;
+		slot = rboot_get_current_rom();
+		if (slot == 0) slot = 1; else slot = 0;
+		// set to boot new rom and then reboot
+		Serial.printf("Firmware updated, rebooting to rom %d...\r\n", slot);
+		rboot_set_current_rom(slot);
+		System.restart();
+	} else {
+		// fail
+		Serial.println("Firmware update failed!");
+	}
+}
+
+void OtaUpdate() {
+
+	uint8 slot;
+	rboot_config bootconf;
+
+	Serial.println("Updating...");
+
+	// need a clean object, otherwise if run before and failed will not run again
+	if (otaUpdater) delete otaUpdater;
+	otaUpdater = new rBootHttpUpdate();
+
+	// select rom slot to flash
+	bootconf = rboot_get_config();
+	slot = bootconf.current_rom;
+	if (slot == 0) slot = 1; else slot = 0;
+
+#ifndef RBOOT_TWO_ROMS
+	// flash rom to position indicated in the rBoot config rom table
+	otaUpdater->addItem(bootconf.roms[slot], ROM_0_URL);
+#else
+	// flash appropriate rom
+	if (slot == 0) {
+		otaUpdater->addItem(bootconf.roms[slot], ROM_0_URL);
+	} else {
+		otaUpdater->addItem(bootconf.roms[slot], ROM_1_URL);
+	}
+#endif
+
+#ifndef DISABLE_SPIFFS
+	// use user supplied values (defaults for 4mb flash in makefile)
+	if (slot == 0) {
+		otaUpdater->addItem(RBOOT_SPIFFS_0, SPIFFS_URL);
+	} else {
+		otaUpdater->addItem(RBOOT_SPIFFS_1, SPIFFS_URL);
+	}
+#endif
+
+	// request switch and reboot on success
+	//otaUpdater->switchToRom(slot);
+	// and/or set a callback (called on failure or success without switching requested)
+	otaUpdater->setCallback(OtaUpdate_CallBack);
+
+	// start update
+	otaUpdater->start();
+}
+
+void Switch() {
+	uint8 before, after;
+	before = rboot_get_current_rom();
+	if (before == 0) after = 1; else after = 0;
+	Serial.printf("Swapping from rom %d to rom %d.\r\n", before, after);
+	rboot_set_current_rom(after);
+	Serial.println("Restarting...\r\n");
+	System.restart();
+}
+
+void initSpiff()
+{
+	// mount spiffs
+	int slot = rboot_get_current_rom();
+	#ifndef DISABLE_SPIFFS
+		if (slot == 0)
+		{
+	#ifdef RBOOT_SPIFFS_0
+			debugf("trying to mount spiffs at %x, length %d", RBOOT_SPIFFS_0 , SPIFF_SIZE);
+			spiffs_mount_manual(RBOOT_SPIFFS_0, SPIFF_SIZE);
+	#else
+			debugf("trying to mount spiffs at %x, length %d", 0x100000, SPIFF_SIZE);
+			spiffs_mount_manual(0x100000, SPIFF_SIZE);
+	#endif
+		}
+		else
+		{
+	#ifdef RBOOT_SPIFFS_1
+			debugf("trying to mount spiffs at %x, length %d", RBOOT_SPIFFS_1 , SPIFF_SIZE);
+			spiffs_mount_manual(RBOOT_SPIFFS_1, SPIFF_SIZE);
+	#else
+			debugf("trying to mount spiffs at %x, length %d", SPIFF_SIZE);
+			spiffs_mount_manual(0x300000, SPIFF_SIZE);
+	#endif
+		}
+	#else
+		debugf("spiffs disabled");
+	#endif
+	//WifiAccessPoint.enable(false);
+
+	Serial.printf("\r\nCurrently running rom %d.\r\n", slot);
+	Serial.println("Type 'help' and press enter for instructions.");
+	Serial.println();
+}
 
 //Forward declerations
 //mqtt
@@ -37,10 +146,8 @@ void  setRelayState(boolean state);
 
 InfoScreens* infos;
 
-//encoder code from http://bildr.org/2012/08/rotary-encoder-arduino/
-
 //* SSD1306 - I2C
-Extended_SSD1306 display(4);
+Base_Display_Driver* display;
 
 //BaseDisplay* display;
 
@@ -63,9 +170,9 @@ OperationMode operationMode = Manual;
 Timer procTimer;
 Timer buttonTimer;
 Timer displayTimer;
-Timer timeTimer;
+Timer keepAliveTimer;
 Timer initTimer;
-Timer blinkTimer;
+//Timer blinkTimer;
 Timer heartBeat;
 
 //textRect lastTimeRect;
@@ -379,371 +486,45 @@ enum DisplayMode
 };
 DisplayMode currentDisplayMode = Display_Info;
 
-////button modes
-//boolean clicked = false;
-//boolean doubleClicked = false;
-//boolean hold = false;
-//boolean longHold = false;
-
 //should check screen action
 boolean shouldDimScreen = false;
-
-void buttonUseEvent(ButtonUseEvent used);
-
-ButtonActions bAct(encoderSwitchPin, buttonUseEvent);
-
-Menu menu("SousVide");
-
-void  initMenu()
-{
-	MenuPage *settings = menu.createPage("Settings");
-	MenuItem *i1 = settings->createItem("Set Time");
-	MenuItem *i2 = settings->createItem("Sous Work");
-
-	MenuPage* sous = menu.createPage("Sous Options");
-	sous->createItem("SetPidStartTime");
-	sous->createItem("SetPidOffTime");
-	sous->createItem("off");
-	sous->createItem("Tune P");
-	sous->createItem("Tune I");
-	sous->createItem("Tune D");
-	sous->createItem("Run");
-	sous->createItem("Tune SP");
-
-	MenuPage* time = new MenuPage("Time");
-	MenuItem* hh = new MenuItem("HH");
-	MenuItem* mm = new MenuItem("MM");
-	time->addChild(hh);
-	time->addChild(mm);
-	menu.addChild(time);
-
-	i1->setLinker(time);
-	i2->setLinker(sous);
-	menu.setCurrentItem(i1);
-	menu.setMaxPerPage(5);
-	menu.setRoot(settings);
-	menu.getParams()->highlightMode = HighlightMode::Inverse;
-}
 
 /**
  * setup infoscreens moved by the rotary
  */
 void  initInfoScreens() {
-	InfoScreenPage* p1 = infos->createScreen("M", "M");
-	InfoPageLine* el = p1->createLine("h", "SousVide");
-	paramStruct* t = el->addParam("time", currentTime);
-	t->t.x = getXOnScreenForString(currentTime, 1);
+	// Add a new Page
+	InfoPage* p1 = infos->createPage("Main");
+	//Add a line item
+	p1->createLine("Network")->addParam("time", currentTime)->t.x = getXOnScreenForString(currentTime, 1);
+	InfoLine *apLine = p1->createLine("ap ");
+	apLine->addParam("apState", "on: ", true, 4);
+	apLine->addParam("apIp", "Not Connected");
 
-//	InfoPageLine* el2 = p1->createLine("2", "temp: ");
-//	el2->addParam("temp", String(currentTemp, 3));
+	InfoLine* staLine = p1->createLine("ssid: ");
+	staLine->addParam("staState", "off:");
+	p1->createLine("sta:")->addParam("stationIp", "");
 
-	InfoPageLine* el3 = p1->createLine("3", "ap: ");
-	el3->addParam("ap", "0.0.0.0");
+	InfoPage* p2 = infos->createPage("Sous");
+	InfoLine* line = p2->createLine("SousVide");
+	line->addParam("state", "off", true, 3);
+	line->addParam("time", currentTime)->t.x = getXOnScreenForString(currentTime, 1);
+	p2->createLine("Current Temp:")->addParam("temp", String(currentTemp, 2));
+	p2->createLine("Setpoint Temp:")->addParam("Setpoint", String(sousController->Setpoint, 2));
+	p2->createLine("Kp:")->addParam("kp", String(sousController->Kp, 1), true, 5);
+	p2->createLine("Ki:")->addParam("kp", String(sousController->Ki, 1), true, 5);
+	p2->createLine("Kd:")->addParam("kp", String(sousController->Kd, 1), true, 5);
 
-	InfoPageLine* el4 = p1->createLine("4", "sta:");
-	el4->addParam("station", "0.0.0.0");
+	//add a list of static Values
+	paramDataValues* ofOnVals = new paramDataValues();
+	ofOnVals->addValue(new String("off:"));
+	ofOnVals->addValue(new String("on: "));
 
-	p1->createLine("ssid", "ID: ")->addParam("ssid", "");
+	//assign the values to the id=station parameter
+	infos->setEditModeValues("state", ofOnVals);
+	infos->setEditModeValues("apState", ofOnVals);
+	infos->setEditModeValues("staState", ofOnVals);
 
-	//Sousvide info page params
-	InfoScreenPage* p2 = infos->createScreen("s1", "s1");
-	InfoPageLine* ep2 = p2->createLine("h", "Params");
-	paramStruct* t1 = ep2->addParam("time", currentTime);
-	t1->t.x = getXOnScreenForString(currentTime, 1);
-
-	p2->createLine("temp", "C.Temp: ")->addParam("temp", String(currentTemp, 3));
-	p2->createLine("2", "Setpoint: ")->addParam("Setpoint", String(sousController->Setpoint, 1));
-	p2->createLine("3", "Kp: ")->addParam("Kp", String(sousController->Kp, 1));
-	p2->createLine("4", "Ki: ")->addParam("Ki", String(sousController->Ki, 1));
-
-	p2->createLine("5", "Kd: ")->addParam("Kd", String(sousController->Kd, 1));
-
-//	infos->setCurrent(1);
-}
-
-void IRAM_ATTR moveToMenuMode()
-{
-	if (currentDisplayMode == Display_Info)
-	{
-		infos->setCanUpdateDisplay(false);
-	    currentDisplayMode = Display_Menu;
-		sayln("Display - move to menu mode");
-//		menu.setCurrentItem(1,1);
-	    menu.moveToRoot();
-	    refreshScreen();
-	}
-
-//    lastActionTime = SystemClock.now().toUnixTime();
-//	shouldDimScreen = false;
-}
-
-Timer refreshScreenTimer;
-
-void IRAM_ATTR handleEncoderInterrupt() {
-	if(lastValue != encoderValue/4 && (encoderValue %4 == 0)) {
-		if (currentDisplayMode == Display_Menu) {
-//			debugf("Display_Menu");
-			if (lastValue > encoderValue/4) {
-				menu.moveUp();
-			}
-			else
-			{
-				menu.moveDown();
-			}
-			lastValue = encoderValue/4;
-	//	    say("encode used");
-
-			//move to menu mode
-//			moveToMenuMode();
-
-			refreshScreenTimer.initializeMs(10, refreshScreen).startOnce();
-//			refreshScreen();
-		}
-		else {
-//			debugf("handleEncoderInterrupt::!Display_Menu");
-			int i = encoderValue/16;
-			if (lastValue > i) {
-				infos->moveRight();
-			}
-			else if (lastValue < i)
-			{
-				infos->moveLeft();
-			}
-		}
-	}
-}
-
-void IRAM_ATTR updateEncoder(){
-
-  int MSB = digitalRead(encoderCLK); //MSB = most significant bit
-  int LSB = digitalRead(encoderDT); //LSB = least significant bit
-
-  int encoded = (MSB << 1) |LSB; //converting the 2 pin value to single number
-  int sum  = (lastEncoded << 2) | encoded; //adding it to the previous encoded value
-
-  if(sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011) encoderValue ++;
-  if(sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000) encoderValue --;
-
-  lastEncoded = encoded; //store this value for next time
-  handleEncoderInterrupt();
-}
-
-void  checkRotaryBtn()
-{
-	bAct.actOnButton();
-}
-
-void handleClick() {
-
-	switch(currentDisplayMode)
-	{
-		case Display_Menu:
-			menu.movetolinked();
-//			currentDisplayMode = Display_Info;
-			refreshScreen();
-			break;
-		case Display_Info:
-			moveToMenuMode();
-//			displayMode = Display_Menu;
-			refreshScreen();
-//			checkDisplayState();
-			break;
-	}
-
-}
-
-void handleDoubleClick() {
-	if (currentDisplayMode == Display_Menu) {
-		menu.moveUpLevel();
-		refreshScreen();
-	}
-}
-
-void moveToRegMode()
-{
-	if (currentDisplayMode == Display_Menu)
-	{
-		infos->setCanUpdateDisplay(true);
-	    currentDisplayMode = Display_Info;
-		sayln("Display - move to regular mode");
-//		menu.setCurrentItem(1,1);
-		refreshScreen();
-	}
-
-//    lastActionTime = SystemClock.now().toUnixTime();
-//	shouldDimScreen = false;
-}
-
-void handleLongClick() {
-	sayln("long");
-//	moveToRegMode();
-//	m_dispMode = DIS_SHOW_DATA;
-//	checkDisplayState();
-}
-
-void handleHoldClick() {
-	moveToRegMode();
-}
-
-void buttonUseEvent(ButtonUseEvent used)
-{
-	Serial.println("button action used = " + String(used.action));
-	switch (used.action) {
-		case BTN_CLICK:
-			handleClick();
-			break;
-		case BTN_DOUBLE_CLICK:
-			handleDoubleClick();
-			break;
-		case BTN_HOLD_CLICK:
-			handleLongClick();
-			break;
-		case BTN_LONG_CLICK:
-			handleHoldClick();
-			break;
-	}
-}
-////////////////////// Display //////////////////
-void checkDisplayState()
-{
-//	if (m_dispMode == DIS_SHOW_DATA) {
-//		return;
-//	}
-//sayln(String(timeForScreenAction == true));
-	if (shouldDimScreen == false) {
-		DateTime d = SystemClock.now();
-		time_t temp = d.toUnixTime();
-//		Serial.print("last=");
-//		Serial.print(String(lastActionTime));
-//		Serial.print(", now=");
-//		Serial.println(String(temp));
-
-//		if (temp > lastActionTime + 10) {
-//			sayln("its been more 10 secs - dimming screen");
-////			display.clearDisplay();
-//			display.dim(true);
-////			display.display();
-//			shouldDimScreen = true;
-//		}
-	}
-}
-
-void highlightRow(int i) {
-	int hight = 8;
-	int start = 10 + hight;
-	int y = (start + (i*hight));
-	display.fillRect(2, y, 121, hight, WHITE);
-}
-
-int getCenterXForString(MenuParams *params, String t, int textSize) {
-	int width = t.length() * (textSize == 1 ? 6 : 6);
-	int x = (128 - width)/2 + (params->boxed ? 1 : 0);
-	return x;
-}
-
-void printxy() {
-	int x = display.getCursorX();
-	int y = display.getCursorY();
-	Serial.print("x,y=" +String(x) + ","+ String(y));
-}
-void showMenuScreen() {
-//	sayln(lastValue);
-
-	display.dim(false);
-	display.setTextSize(1);
-	display.setTextColor(WHITE);
-	String t = "SousVide by alon24";
-	display.setCursor(getCenterXForString(menu.getParams(), t, 1), 1);
-	display.clearDisplay();
-	display.println(t);
-//	display.get
-//	display.get
-//	Serial.println("xC=" + String(display.cursor_x) + ", yC=" +String(display.cursor_y) );
-//	display.setCursor(2,10);
-
-	Vector<BaseMenuElement*> v = menu.getDisplayedItems();
-	BaseMenuElement* cur = menu.getCurrent();
-	BaseMenuElement* p = cur->getParent();
-	t = p->getId();
-	display.setCursor(getCenterXForString(menu.getParams(), t, 1), 10);
-	display.println(t);
-	display.setTextSize(1);
-
-	uint16_t regColor = WHITE;
-	uint16_t highlightColor = (menu.getParams()->highlightMode == HighlightMode::pointer) ? WHITE : BLACK;
-	int hight = 8;
-	int start = 10 + hight;
-
-	for (int i = 0; i < v.size(); ++i) {
-		BaseMenuElement* item = v.elementAt(i);
-		String txt;
-		if(cur == item) {
-			display.setTextColor(highlightColor);
-			if (menu.getParams()->highlightMode == HighlightMode::pointer) {
-				txt = String(">");
-			}
-			else {
-				int y = (start + (i*hight));
-				display.setCursor(4, y);
-//				txt= String(" ");
-				highlightRow(i);
-			}
-		} else {
-			display.setTextColor(regColor);
-			if (menu.getParams()->highlightMode == HighlightMode::pointer) {
-				txt = String(" ");
-			}
-			else
-			{
-				int y = (start + (i*hight));
-				display.setCursor(4, y);
-			}
-		}
-
-		txt += item->getId();
-		display.println(txt);
-	}
-
-	if(menu.getParams()->boxed == true) {
-		display.drawRect(0,0,128,64, WHITE);
-	}
-
-	display.display();
-}
-
-void writeToScreen(int index) {
-	if (index == 0) {
-		display.setCursor(1, 10);
-		display.print("sc1 ");
-	}
-	else if (index == 1) {
-		display.setCursor(1, 15);
-		display.print("sc2 ");
-	}
-}
-
-void showInfoScreen() {
-	menu.moveto(menu.getRoot());
-	display.clearDisplay();
-	display.setCursor(0,0);
-	debugf("showInfoScreen");
-	infos->showCurrent();
-}
-
-void refreshScreen()
-{
-	debugf("Refresh Screen called");
-
-//	showMenuScreen();
-	switch (currentDisplayMode)
-	{
-		case Display_Menu:
-			showMenuScreen();
-			break;
-		case Display_Info:
-			showInfoScreen();
-			break;
-	}
 }
 
 void refreshTimeForUi()
@@ -754,7 +535,7 @@ void refreshTimeForUi()
 	}
 
 	infos->updateParamValue("time", currentTime);
-	display.display();
+//	display.display();
 
 	updateWebSockets("updatetime:" + currentTime);
 }
@@ -886,33 +667,33 @@ void onFile(HttpRequest &request, HttpResponse &response)
 
 void onAjaxNetworkList(HttpRequest &request, HttpResponse &response)
 {
-	JsonObjectStream* stream = new JsonObjectStream();
-	JsonObject& json = stream->getRoot();
-
-	json["status"] = (bool)true;
-
-	bool connected = WifiStation.isConnected();
-	json["connected"] = connected;
-	if (connected)
-	{
-		// Copy full string to JSON buffer memory
-		json.addCopy("network", WifiStation.getSSID());
-	}
-
-	JsonArray& netlist = json.createNestedArray("available");
-	for (int i = 0; i < networks.count(); i++)
-	{
-		if (networks[i].hidden) continue;
-		JsonObject &item = netlist.createNestedObject();
-		item.add("id", (int)networks[i].getHashId());
-		// Copy full string to JSON buffer memory
-		item.addCopy("title", networks[i].ssid);
-		item.add("signal", networks[i].rssi);
-		item.add("encryption", networks[i].getAuthorizationMethodName());
-	}
-
-	response.setAllowCrossDomainOrigin("*");
-	response.sendJsonObject(stream);
+//	JsonObjectStream* stream = new JsonObjectStream();
+//	JsonObject& json = stream->getRoot();
+//
+//	json["status"] = (bool)true;
+//
+//	bool connected = WifiStation.isConnected();
+//	json["connected"] = connected;
+//	if (connected)
+//	{
+//		// Copy full string to JSON buffer memory
+//		json.addCopy("network", WifiStation.getSSID());
+//	}
+//
+//	JsonArray& netlist = json.createNestedArray("available");
+//	for (int i = 0; i < networks.count(); i++)
+//	{
+//		if (networks[i].hidden) continue;
+//		JsonObject &item = netlist.createNestedObject();
+//		item.add("id", (int)networks[i].getHashId());
+//		// Copy full string to JSON buffer memory
+//		item.addCopy("title", networks[i].ssid);
+//		item.add("signal", networks[i].rssi);
+//		item.add("encryption", networks[i].getAuthorizationMethodName());
+//	}
+//
+//	response.setAllowCrossDomainOrigin("*");
+//	response.sendJsonObject(stream);
 }
 //
 //bool flipRelay(){
@@ -1123,7 +904,7 @@ void readAfterWait() {
 
 	if(currentDisplayMode == Display_Info) {
 		infos->updateParamValue("temp", String(currentTemp, 2));
-		display.display();
+//		display.display();
 	}
 
 	checkTempTriggerRelay(celsius);
@@ -1344,29 +1125,7 @@ void init()
 	Serial.begin(SERIAL_BAUD_RATE); // 115200
 	Serial.systemDebugOutput(true); // Debug output to serial
 
-	// mount spiffs
-		int slot = rboot_get_current_rom();
-	#ifndef DISABLE_SPIFFS
-		if (slot == 0) {
-	#ifdef RBOOT_SPIFFS_0
-			debugf("trying to mount spiffs at %x, length %d", RBOOT_SPIFFS_0 + 0x40200000, SPIFF_SIZE);
-			spiffs_mount_manual(RBOOT_SPIFFS_0 + 0x40200000, SPIFF_SIZE);
-	#else
-			debugf("trying to mount spiffs at %x, length %d", 0x40300000, SPIFF_SIZE);
-			spiffs_mount_manual(0x40300000, SPIFF_SIZE);
-	#endif
-		} else {
-	#ifdef RBOOT_SPIFFS_1
-			debugf("trying to mount spiffs at %x, length %d", RBOOT_SPIFFS_1 + 0x40200000, SPIFF_SIZE);
-			spiffs_mount_manual(RBOOT_SPIFFS_1 + 0x40200000, SPIFF_SIZE);
-	#else
-			debugf("trying to mount spiffs at %x, length %d", 0x40500000, SPIFF_SIZE);
-			spiffs_mount_manual(0x40500000, SPIFF_SIZE);
-	#endif
-		}
-	#else
-		debugf("spiffs disabled");
-	#endif
+	initSpiff();
 
 //	//Change CPU freq. to 160MHZ
 //	System.setCpuFrequency(eCF_160MHz);
@@ -1382,19 +1141,14 @@ void init()
 	debugf("======= SousVide ==========");
 	Serial.println();
 
-	display.begin(SSD1306_SWITCHCAPVCC);
-	display.clearDisplay();
+	display = new SSD1306_Driver(4);
+	display->init();
 
-	display.setTextSize(1);
-	display.setTextColor(WHITE);
-
-	display.print("ilan");
-	display.display();
-
-	infos = new InfoScreens("SousVide", &display);
-
-	initMenu();
 	initInfoScreens();
+	infos = new InfoScreens(display);
+	initInfoScreens();
+	infos->initMFButton(encoderSwitchPin);
+
 
 	pinMode(encoderCLK, INPUT_PULLUP);
 	pinMode(encoderDT, INPUT_PULLUP);
@@ -1404,8 +1158,6 @@ void init()
 	pinMode(relayPin, OUTPUT);
 //	setRelayState(false);
 	digitalWrite(relayPin, HIGH);
-	attachInterrupt(encoderCLK, updateEncoder, CHANGE);
-	attachInterrupt(encoderDT, updateEncoder, CHANGE);
 
 	pinMode(encoderSwitchPin, INPUT);
 	digitalWrite(encoderSwitchPin, HIGH); //turn pullup resistor on
@@ -1413,12 +1165,8 @@ void init()
 	DateTime date = SystemClock.now();
 	lastActionTime = date.Milliseconds;
 
-	buttonTimer.initializeMs(80, checkRotaryBtn).start();
-
-	showInfoScreen();
-
 	//ilan
-	timeTimer.initializeMs(1000, updateTimeTimerAction).start();
+	keepAliveTimer.initializeMs(1000, updateTimeTimerAction).start();
 
 //	AppSettings.load();
 
@@ -1447,12 +1195,9 @@ void init()
 	WifiAccessPoint.config("Sousvide Config", "", AUTH_OPEN);
 
 	// Run WEB server on system ready
-	System.onReady(startServers);
+//	System.onReady(startServers);
+	startServers();
 	WifiStation.waitConnection(connectOk, 20, connectFail); // We recommend 20+ seconds for connection timeout at start
-
-	Serial.printf("\r\nCurrently running rom %d.\r\n", slot);
-	Serial.println("Type 'help' and press enter for instructions.");
-	Serial.println();
 
 	Serial.setCallback(serialCallBack);
 

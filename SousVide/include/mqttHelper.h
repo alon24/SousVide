@@ -8,7 +8,7 @@
 #ifndef APP_MQTTHELPER_H_
 #define APP_MQTTHELPER_H_
 
-#include <SmingCore/SmingCore.h>
+#include "SmingCore.h"
 //#include <utils.h>
 
 #ifndef MQTT_MAIN_TOPIC
