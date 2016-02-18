@@ -5,127 +5,12 @@
 #include <mqttHelper.h>
 #include <utils.h>
 #include <configuration.h>
-#include <Libraries/OneWire/OneWire.h>
+#include <libraries/OneWire/OneWire.h>
+#include <libraries/DS18S20/ds18s20.h>
 
 //#include <PID_v1.h>
 //#include <PID_AutoTune_v0.h>
-#include <MyPID.h>
-
-// download urls, set appropriately
-#define ROM_0_URL  "http://192.168.7.5:80/rom0.bin"
-#define ROM_1_URL  "http://192.168.7.5:80/rom1.bin"
-#define SPIFFS_URL "http://192.168.7.5:80/spiff_rom.bin"
-
-rBootHttpUpdate* otaUpdater = 0;
-
-void OtaUpdate_CallBack(bool result) {
-
-	Serial.println("In callback...");
-	if(result == true) {
-		// success
-		uint8 slot;
-		slot = rboot_get_current_rom();
-		if (slot == 0) slot = 1; else slot = 0;
-		// set to boot new rom and then reboot
-		Serial.printf("Firmware updated, rebooting to rom %d...\r\n", slot);
-		rboot_set_current_rom(slot);
-		System.restart();
-	} else {
-		// fail
-		Serial.println("Firmware update failed!");
-	}
-}
-
-void OtaUpdate() {
-
-	uint8 slot;
-	rboot_config bootconf;
-
-	Serial.println("Updating...");
-
-	// need a clean object, otherwise if run before and failed will not run again
-	if (otaUpdater) delete otaUpdater;
-	otaUpdater = new rBootHttpUpdate();
-
-	// select rom slot to flash
-	bootconf = rboot_get_config();
-	slot = bootconf.current_rom;
-	if (slot == 0) slot = 1; else slot = 0;
-
-#ifndef RBOOT_TWO_ROMS
-	// flash rom to position indicated in the rBoot config rom table
-	otaUpdater->addItem(bootconf.roms[slot], ROM_0_URL);
-#else
-	// flash appropriate rom
-	if (slot == 0) {
-		otaUpdater->addItem(bootconf.roms[slot], ROM_0_URL);
-	} else {
-		otaUpdater->addItem(bootconf.roms[slot], ROM_1_URL);
-	}
-#endif
-
-#ifndef DISABLE_SPIFFS
-	// use user supplied values (defaults for 4mb flash in makefile)
-	if (slot == 0) {
-		otaUpdater->addItem(RBOOT_SPIFFS_0, SPIFFS_URL);
-	} else {
-		otaUpdater->addItem(RBOOT_SPIFFS_1, SPIFFS_URL);
-	}
-#endif
-
-	// request switch and reboot on success
-	//otaUpdater->switchToRom(slot);
-	// and/or set a callback (called on failure or success without switching requested)
-	otaUpdater->setCallback(OtaUpdate_CallBack);
-
-	// start update
-	otaUpdater->start();
-}
-
-void Switch() {
-	uint8 before, after;
-	before = rboot_get_current_rom();
-	if (before == 0) after = 1; else after = 0;
-	Serial.printf("Swapping from rom %d to rom %d.\r\n", before, after);
-	rboot_set_current_rom(after);
-	Serial.println("Restarting...\r\n");
-	System.restart();
-}
-
-void initSpiff()
-{
-	// mount spiffs
-	int slot = rboot_get_current_rom();
-	#ifndef DISABLE_SPIFFS
-		if (slot == 0)
-		{
-	#ifdef RBOOT_SPIFFS_0
-			debugf("trying to mount spiffs at %x, length %d", RBOOT_SPIFFS_0 , SPIFF_SIZE);
-			spiffs_mount_manual(RBOOT_SPIFFS_0, SPIFF_SIZE);
-	#else
-			debugf("trying to mount spiffs at %x, length %d", 0x100000, SPIFF_SIZE);
-			spiffs_mount_manual(0x100000, SPIFF_SIZE);
-	#endif
-		}
-		else
-		{
-	#ifdef RBOOT_SPIFFS_1
-			debugf("trying to mount spiffs at %x, length %d", RBOOT_SPIFFS_1 , SPIFF_SIZE);
-			spiffs_mount_manual(RBOOT_SPIFFS_1, SPIFF_SIZE);
-	#else
-			debugf("trying to mount spiffs at %x, length %d", SPIFF_SIZE);
-			spiffs_mount_manual(0x300000, SPIFF_SIZE);
-	#endif
-		}
-	#else
-		debugf("spiffs disabled");
-	#endif
-	//WifiAccessPoint.enable(false);
-
-	Serial.printf("\r\nCurrently running rom %d.\r\n", slot);
-	Serial.println("Type 'help' and press enter for instructions.");
-	Serial.println();
-}
+#include <pid/MyPID.h>
 
 //Forward declerations
 //mqtt
@@ -237,10 +122,6 @@ void updateWebSockets(String cmd) {
 	WebSocketsList &clients = server.getActiveWebSockets();
 	for (int i = 0; i < clients.count(); i++) {
 		clients[i].sendString(cmd);
-//		Serial.println("updateWebUI::relayState:" + String(relayState == true ? "true" : "false"));
-//		clients[i].sendString("relayState:" + String(relayState == true ? "true" : "false"));
-//		clients[i].sendString("updatetime:" + currentTime);
-//		clients[i].sendString("temp:" + String(currentTemp));
 	}
 }
 
@@ -456,43 +337,13 @@ void onMessageReceived(String topic, String message)
 	}
 }
 
-///// Display //////////////
-#define say(a) ( Serial.print(a) )
-#define sayln(a) (Serial.println(a))
-void  refreshScreen();
-
-volatile int lastEncoded = 0;
-volatile long encoderValue = 0;
-
-long lastencoderValue = 0;
-int lastValue =-1000;
-
-int lastMSB = 0;
-int lastLSB = 0;
-
-struct displayMode
-{
-	enum DisplayMode
-	{
-		Regular=1,
-		Menu=2
-	};
-};
-
-enum DisplayMode
-{
-	Display_Info=1,
-	Display_Menu=2
-};
-DisplayMode currentDisplayMode = Display_Info;
-
 //should check screen action
 boolean shouldDimScreen = false;
 
 /**
  * setup infoscreens moved by the rotary
  */
-void  initInfoScreens() {
+void initInfoScreens() {
 	// Add a new Page
 	InfoPage* p1 = infos->createPage("Main");
 	//Add a line item
@@ -529,14 +380,7 @@ void  initInfoScreens() {
 
 void refreshTimeForUi()
 {
-	if (currentDisplayMode == Display_Menu)
-	{
-		return;
-	}
-
 	infos->updateParamValue("time", currentTime);
-//	display.display();
-
 	updateWebSockets("updatetime:" + currentTime);
 }
 
@@ -614,41 +458,6 @@ void onIndex(HttpRequest &request, HttpResponse &response)
 		response.sendTemplate(tmpl); // will be automatically deleted
 	}
 }
-//
-//void onIpConfig(HttpRequest &request, HttpResponse &response)
-//{
-//	if (request.getRequestMethod() == RequestMethod::POST)
-//	{
-//		AppSettings.dhcp = request.getPostParameter("dhcp") == "1";
-//		AppSettings.ip = request.getPostParameter("ip");
-//		AppSettings.netmask = request.getPostParameter("netmask");
-//		AppSettings.gateway = request.getPostParameter("gateway");
-//		debugf("Updating IP settings: %d", AppSettings.ip.isNull());
-//		AppSettings.save();
-//	}
-//
-//	TemplateFileStream *tmpl = new TemplateFileStream("settings.html");
-//	auto &vars = tmpl->variables();
-//
-//	bool dhcp = WifiStation.isEnabledDHCP();
-//	vars["dhcpon"] = dhcp ? "checked='checked'" : "";
-//	vars["dhcpoff"] = !dhcp ? "checked='checked'" : "";
-//
-//	if (!WifiStation.getIP().isNull())
-//	{
-//		vars["ip"] = WifiStation.getIP().toString();
-//		vars["netmask"] = WifiStation.getNetworkMask().toString();
-//		vars["gateway"] = WifiStation.getNetworkGateway().toString();
-//	}
-//	else
-//	{
-//		vars["ip"] = "192.168.1.77";
-//		vars["netmask"] = "255.255.255.0";
-//		vars["gateway"] = "192.168.1.1";
-//	}
-//
-//	response.sendTemplate(tmpl); // will be automatically deleted
-//}
 
 void onFile(HttpRequest &request, HttpResponse &response)
 {
@@ -695,12 +504,6 @@ void onAjaxNetworkList(HttpRequest &request, HttpResponse &response)
 //	response.setAllowCrossDomainOrigin("*");
 //	response.sendJsonObject(stream);
 }
-//
-//bool flipRelay(){
-//	relayState = !relayState;
-//	digitalWrite(relayPin, relayState ? HIGH : LOW);
-//	return relayState;
-//}
 
 void onDoCommand(HttpRequest &request, HttpResponse &response)
 {
@@ -715,60 +518,6 @@ void onDoCommand(HttpRequest &request, HttpResponse &response)
 	response.setAllowCrossDomainOrigin("*");
 	response.sendJsonObject(stream);
 }
-
-//void makeConnection()
-//{
-//	WifiStation.enable(true);
-//	WifiStation.config(network, password);
-//
-//	AppSettings.ssid = network;
-//	AppSettings.password = password;
-//	AppSettings.save();
-//
-//	network = ""; // task completed
-//}
-
-//void onAjaxConnect(HttpRequest &request, HttpResponse &response)
-//{
-//	JsonObjectStream* stream = new JsonObjectStream();
-//	JsonObject& json = stream->getRoot();
-//
-//	String curNet = request.getPostParameter("network");
-//	String curPass = request.getPostParameter("password");
-//
-//	bool updating = curNet.length() > 0 && (WifiStation.getSSID() != curNet || WifiStation.getPassword() != curPass);
-//	bool connectingNow = WifiStation.getConnectionStatus() == eSCS_Connecting || network.length() > 0;
-//
-//	if (updating && connectingNow)
-//	{
-//		debugf("wrong action: %s %s, (updating: %d, connectingNow: %d)", network.c_str(), password.c_str(), updating, connectingNow);
-//		json["status"] = (bool)false;
-//		json["connected"] = (bool)false;
-//	}
-//	else
-//	{
-//		json["status"] = (bool)true;
-//		if (updating)
-//		{
-//			network = curNet;
-//			password = curPass;
-//			debugf("CONNECT TO: %s %s", network.c_str(), password.c_str());
-//			json["connected"] = false;
-//			connectionTimer.initializeMs(1200, makeConnection).startOnce();
-//		}
-//		else
-//		{
-//			json["connected"] = WifiStation.isConnected();
-//			debugf("Network already selected. Current status: %s", WifiStation.getConnectionStatusName());
-//		}
-//	}
-//
-//	if (!updating && !connectingNow && WifiStation.isConnectionFailed())
-//		json["error"] = WifiStation.getConnectionStatusName();
-//
-//	response.setAllowCrossDomainOrigin("*");
-//	response.sendJsonObject(stream);
-//}
 
 void startWebServer()
 {
@@ -830,7 +579,7 @@ void setRelayState(boolean state) {
 }
 
 //Temp
-OneWire ds(dsTempPin);
+DS18S20 ReadTemp;
 Timer readTempTimer;
 
 void IRAM_ATTR checkTempTriggerRelay(float temp) {
@@ -850,133 +599,40 @@ void IRAM_ATTR checkTempTriggerRelay(float temp) {
 	}
 }
 
-//http://forum.arduino.cc/index.php?topic=72654.0
-void readTempData();
-Timer oneTempReadTimer;
-byte addr[8];
-byte data[12];
-byte type_s;
-
-void readAfterWait() {
-	byte present = 0;
-
-	// we might do a ds.depower() here, but the reset will take care of it.
-
-	present = ds.reset();
-	ds.select(addr);
-	ds.write(0xBE);         // Read Scratchpad
-
-	for ( int i = 0; i < 9; i++)
-	{
-		// we need 9 bytes
-		data[i] = ds.read();
-//		Serial.print(data[i], HEX);
-//		Serial.print(" ");
-	}
-
-	// Convert the data to actual temperature
-	// because the result is a 16 bit signed integer, it should
-	// be stored to an "int16_t" type, which is always 16 bits
-	// even when compiled on a 32 bit processor.
-	int16_t raw = (data[1] << 8) | data[0];
-	if (type_s)
-	{
-		raw = raw << 3; // 9 bit resolution default
-		if (data[7] == 0x10)
-		{
-		  // "count remain" gives full 12 bit resolution
-		  raw = (raw & 0xFFF0) + 12 - data[6];
-		}
-	} else {
-		byte cfg = (data[4] & 0x60);
-		// at lower res, the low bits are undefined, so let's zero them
-		if (cfg == 0x00) raw = raw & ~7;  // 9 bit resolution, 93.75 ms
-		else if (cfg == 0x20) raw = raw & ~3; // 10 bit res, 187.5 ms
-		else if (cfg == 0x40) raw = raw & ~1; // 11 bit res, 375 ms
-		//// default is 12 bit resolution, 750 ms conversion time
-	}
-
-	float celsius = (float)raw / 16.0;
-//	fahrenheit = celsius * 1.8 + 32.0;
-
-	//debugf("  Temperature = %f Celsius ", celsius);
-	currentTemp = celsius;
-
-	if(currentDisplayMode == Display_Info) {
-		infos->updateParamValue("temp", String(currentTemp, 2));
-//		display.display();
-	}
-
-	checkTempTriggerRelay(celsius);
-
-//	unsigned long end = millis();
-//	debugf("Temp took %lu",  (long)(end- start));
-
-	updateWebSockets("temp:" + String(currentTemp));
-	readTempTimer.initializeMs(1000, readTempData).startOnce();
-}
-
-void readTempData()
+void readData()
 {
-//	unsigned long start = millis();
-	byte i;
-	byte present = 0;
-//	byte type_s;
-//	byte data[12];
-//	byte addr[8];
-	float celsius, fahrenheit;
+	uint8_t a;
+	uint64_t info;
 
-	ds.reset_search();
-	if (!ds.search(addr))
+	if (!ReadTemp.MeasureStatus())  // the last measurement completed
 	{
-		Serial.println("No addresses found.");
-		Serial.println();
-		ds.reset_search();
-		delay(250);
-		readTempTimer.initializeMs(1000, readTempData).startOnce();
-		return;
+      if (ReadTemp.GetSensorsCount()) {  // is minimum 1 sensor detected ?
+	    Serial.println(" Reading temperature");
+	    //only read first
+	    int a=0;
+	    float celsius=0;
+	      Serial.print(" T");
+	      Serial.print(a+1);
+	      Serial.print(" = ");
+
+	      if (ReadTemp.IsValidTemperature(a))   // temperature read correctly ?
+	        {
+	    	  Serial.print(ReadTemp.GetCelsius(a));
+	    	  Serial.print(" Celsius, (");
+	    	  currentTemp = celsius;
+	    	  celsius = ReadTemp.GetCelsius(a);
+	    	  updateWebSockets("temp:" + String(celsius));
+	    	  infos->updateParamValue("temp", String(currentTemp, 2));
+	    	  checkTempTriggerRelay(celsius);
+	        }
+	      else
+	    	  Serial.println("Temperature not valid");
+
+	      ReadTemp.StartMeasure();  // next measure, result after 1.2 seconds * number of sensors
+      }
 	}
-
-//	Serial.print("Thermometer ROM =");
-//	for( i = 0; i < 8; i++)
-//	{
-//		Serial.write(' ');
-//		Serial.print(addr[i], HEX);
-//	}
-
-	if (OneWire::crc8(addr, 7) != addr[7])
-	{
-	  Serial.println("CRC is not valid!");
-	  return;
-	}
-//	Serial.println();
-
-	// the first ROM byte indicates which chip
-	switch (addr[0]) {
-	case 0x10:
-//	  Serial.println("  Chip = DS18S20");  // or old DS1820
-	  type_s = 1;
-	  break;
-	case 0x28:
-//	  Serial.println("  Chip = DS18B20");
-	  type_s = 0;
-	  break;
-	case 0x22:
-//	  Serial.println("  Chip = DS1822");
-	  type_s = 0;
-	  break;
-	default:
-		debugf("Device is not a DS18x20 family device.");
-//	  Serial.println("Device is not a DS18x20 family device.");
-	  return;
-	}
-
-	ds.reset();
-	ds.select(addr);
-	ds.write(0x44, 1);        // start conversion, with parasite power on at the end
-
-
-	oneTempReadTimer.initializeMs(1000, readAfterWait).startOnce();
+	else
+		Serial.println("No valid Measure so far! wait please");
 }
 
 //ThingSpeak
@@ -1016,102 +672,11 @@ void ShowInfo() {
     //Serial.printf("SPI Flash Size: %d\r\n", (1 << ((spi_flash_get_id() >> 16) & 0xff)));
 }
 
-void serialCallBack(Stream& stream, char arrivedChar,
-		unsigned short availableCharsCount)
-{
-	if (arrivedChar == '\n')
-	{
-		char str[availableCharsCount];
-		for (int i = 0; i < availableCharsCount; i++)
-		{
-			str[i] = stream.read();
-			if (str[i] == '\r' || str[i] == '\n')
-			{
-				str[i] = '\0';
-			}
-		}
-
-		if (!strcmp(str, "connect"))
-		{
-			// connect to wifi
-			WifiStation.config(WIFI_SSID, WIFI_PWD);
-			WifiStation.enable(true);
-		}
-		else if (!strcmp(str, "ip"))
-		{
-			Serial.printf("ip: %s mac: %s\r\n",
-					WifiStation.getIP().toString().c_str(),
-					WifiStation.getMAC().c_str());
-		}
-		else if (!strcmp(str, "ota"))
-		{
-//			OtaUpdate();
-		}
-		else if (!strcmp(str, "switch"))
-		{
-//			Switch();
-		}
-		else if (!strcmp(str, "restart"))
-		{
-			System.restart();
-		}
-		else if (!strcmp(str, "ls"))
-		{
-			Vector<String> files = fileList();
-			Serial.printf("filecount %d\r\n", files.count());
-			for (unsigned int i = 0; i < files.count(); i++)
-			{
-				Serial.println(files[i]);
-			}
-		}
-		else if (!strcmp(str, "cat"))
-		{
-			Vector<String> files = fileList();
-			if (files.count() > 0)
-			{
-				Serial.printf("dumping file %s:\r\n", files[0].c_str());
-				Serial.println(fileGetContent(files[0]));
-			}
-			else
-			{
-				Serial.println("Empty spiffs!");
-			}
-		}
-		else if (!strcmp(str, "info"))
-		{
-			ShowInfo();
-		}
-		else if (!strcmp(str, "help"))
-		{
-			Serial.println();
-			Serial.println("available commands:");
-			Serial.println("  help - display this message");
-			Serial.println("  ip - show current ip address");
-			Serial.println("  connect - connect to wifi");
-			Serial.println("  restart - restart the esp8266");
-			Serial.println("  switch - switch to the other rom and reboot");
-			Serial.println("  ota - perform ota update, switch rom and reboot");
-			Serial.println("  info - show esp8266 info");
-			#ifndef DISABLE_SPIFFS
-						Serial.println("  ls - list files in spiffs");
-						Serial.println("  cat - show first file in spiffs");
-			#endif
-			Serial.println();
-		}
-		else
-		{
-			Serial.println("unknown command");
-		}
-	}
-
-}
-
 void initFromConfig() {
 	sousController->Setpoint = ActiveConfig.Needed_temp;
 	sousController->Kp = ActiveConfig.Kp;
 	sousController->Ki = ActiveConfig.Ki;
 	sousController->Kd = ActiveConfig.Kd;
-
 }
 
 const String WS_HEARTBEAT = "--heartbeat--";
@@ -1128,7 +693,7 @@ void init()
 	initSpiff();
 
 //	//Change CPU freq. to 160MHZ
-//	System.setCpuFrequency(eCF_160MHz);
+	System.setCpuFrequency(eCF_160MHz);
 
 	Wire.pins(sclPin, sdaPin);
 
@@ -1170,8 +735,13 @@ void init()
 
 //	AppSettings.load();
 
-	ds.begin(); // It's required for one-wire initialization!
-	readTempTimer.initializeMs(1000, readTempData).startOnce();
+//	ds.begin(); // It's required for one-wire initialization!
+//	readTempTimer.initializeMs(1000, readTempData).startOnce();
+
+	ReadTemp.Init(dsTempPin);  			// select PIN It's required for one-wire initialization!
+	ReadTemp.StartMeasure(); // first measure start,result after 1.2 seconds * number of sensors
+
+	readTempTimer.initializeMs(10000, readData).start();   // every 10 seconds
 
 	WifiStation.enable(true);
 	WifiStation.config(ActiveConfig.NetworkSSID, ActiveConfig.NetworkPassword);
@@ -1198,8 +768,5 @@ void init()
 //	System.onReady(startServers);
 	startServers();
 	WifiStation.waitConnection(connectOk, 20, connectFail); // We recommend 20+ seconds for connection timeout at start
-
-	Serial.setCallback(serialCallBack);
-
 	heartBeat.initializeMs(4000, sendHeartBeat).start();
 }

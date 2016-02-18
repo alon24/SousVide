@@ -8,7 +8,7 @@
 #ifndef INCLUDE_DRIVERS_BASE_DISPLAY_DRIVER_H_
 #define INCLUDE_DRIVERS_BASE_DISPLAY_DRIVER_H_
 
-#include "SmingCore.h"
+#include <SmingCore.h>
 //#include <Adafruit_GFX/Adafruit_GFX.h>
 
 struct textRect {

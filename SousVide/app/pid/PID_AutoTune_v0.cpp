@@ -4,7 +4,7 @@
 //  #include "WProgram.h"
 //#endif
 
-#include <PID_AutoTune_v0.h>
+#include <pid/PID_AutoTune_v0.h>
 
 
 PID_ATune::PID_ATune(double* Input, double* Output)

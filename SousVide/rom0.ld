@@ -27,7 +27,7 @@ MEMORY
   dram0_0_seg :                       	org = 0x3FFE8000, len = 0x18000
   iram1_0_seg :                       	org = 0x40100000, len = 0x9000
 /*irom0_0_seg :                       	org = 0x4020A000, len = 0x52000*/
-  irom0_0_seg :                       	org = 0x40202010, len = 0x52000
+  irom0_0_seg :                       	org = 0x40202010, len = 0xF0000
 }
 
 INCLUDE "../ld/eagle.app.v6.hr.common.ld"

@@ -3,7 +3,8 @@
 ## Uncomment and change examples:
 
 #Add your source directories here separated by space
-MODULES = app app/drivers
+####MODULES = app app/drivers
+MODULES ?= app app/drivers app/pid
 
 ## ESP_HOME sets the path where ESP tools and SDK are located.
 ## Windows:

@@ -8,8 +8,8 @@
 #ifndef INCLUDE_MYPID_H_
 #define INCLUDE_MYPID_H_
 
-#include <PID_v1.h>
-#include <PID_AutoTune_v0.h>
+#include <pid/PID_v1.h>
+#include <pid/PID_AutoTune_v0.h>
 
 class MySousVideController {
 	volatile long onTime = 0;

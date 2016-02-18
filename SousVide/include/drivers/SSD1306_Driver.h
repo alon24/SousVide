@@ -9,7 +9,7 @@
 #define INCLUDE_SSD1306_DRIVER_H_
 
 #include <Libraries/Adafruit_SSD1306/Adafruit_SSD1306.h>
-#include "SmingCore.h"
+//#include <SmingCore/SmingCore.h>
 #include "Base_Display_Driver.h"
 
 class SSD1306_Driver: public Base_Display_Driver, public Adafruit_SSD1306 {

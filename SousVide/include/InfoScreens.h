@@ -8,10 +8,11 @@
 #ifndef INCLUDE_INFOSCREENS_H_
 #define INCLUDE_INFOSCREENS_H_
 
-#include "SmingCore.h"
+//#include <SmingCore/SmingCore.h>
+
 #include "drivers/Base_Display_Driver.h"
 #include "utils/MultiFunctionButton.h"
-#include "utils/Rotary2.h"
+#include "utils/Rotary.h"
 
 struct paramDataValues {
 	Vector<String*> data;
