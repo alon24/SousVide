@@ -41,6 +41,8 @@
 #define encoderCLK 4
 #define encoderDT 12
 
+#define lightPin = 14;
+
 #define SOUSVIDE_CONFIG_FILE ".sousvide.conf" // leading point for security reasons :)
 
 enum OperationMode

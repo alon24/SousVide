@@ -1,7 +1,7 @@
 #include "SmingCore.h"
-#include <drivers/SSD1306_driver.h>
+#include <libraries/InfoScreens/SSD1306_driver.h>
 
-#include <InfoScreens.h>
+#include <libraries/InfoScreens/InfoScreens.h>
 #include <mqttHelper.h>
 #include <utils.h>
 #include <configuration.h>
@@ -54,14 +54,9 @@ OperationMode operationMode = Manual;
 //Timers
 Timer procTimer;
 Timer buttonTimer;
-Timer displayTimer;
 Timer keepAliveTimer;
 Timer initTimer;
-//Timer blinkTimer;
 Timer heartBeat;
-
-//textRect lastTimeRect;
-
 time_t lastActionTime = 0;
 String currentTime = "00:00:00";
 
@@ -695,13 +690,13 @@ void init()
 //	//Change CPU freq. to 160MHZ
 	System.setCpuFrequency(eCF_160MHz);
 
+	//setup i2c pins
 	Wire.pins(sclPin, sdaPin);
 
 	ActiveConfig = loadConfig();
 
 	sousController = new SousVideController();
 	initFromConfig();
-
 
 	debugf("======= SousVide ==========");
 	Serial.println();
@@ -713,7 +708,6 @@ void init()
 	infos = new InfoScreens(display);
 	initInfoScreens();
 	infos->initMFButton(encoderSwitchPin);
-
 
 	pinMode(encoderCLK, INPUT_PULLUP);
 	pinMode(encoderDT, INPUT_PULLUP);
