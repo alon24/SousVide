@@ -2,6 +2,7 @@
 #define INCLUDE_CONFIGURATION_H_
 
 #include "SmingCore.h"
+#include <basicStructures.h>
 
 // If you want, you can define WiFi settings globally in Eclipse Environment Variables
 #ifndef WIFI_SSID
@@ -20,21 +21,21 @@
 
 //Pins used
 
-//SPI LCD Pins
-#define mosiPin 13
-#define clkPin 14
-#define csPin 15
-#define dcPin 5
+////SPI LCD Pins
+//#define mosiPin 13
+//#define clkPin 14
+//#define csPin 15
+//#define dcPin 5
 
 //SSD13006 Pins
 #define sclPin 13
 #define sdaPin 14
 
 // Pin for communication with Temp sensor
-#define dsTempPin 5
+#define DS_TEMP_PIN 5
 
 // Pin for trigger control output
-#define relayPin 2
+#define RELAY_PIN 2
 
 //Rotary Pins
 #define encoderSwitchPin 0 //push button switch
@@ -45,11 +46,11 @@
 
 #define SOUSVIDE_CONFIG_FILE ".sousvide.conf" // leading point for security reasons :)
 
-enum OperationMode
-{
-	Manual = 0,
-	Sousvide = 1,
-};
+//enum OperationMode
+//{
+//	Manual = 0,
+//	Sousvide = 1,
+//};
 
 struct SousvideConfig
 {

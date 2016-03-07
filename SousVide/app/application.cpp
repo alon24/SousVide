@@ -5,12 +5,11 @@
 #include <mqttHelper.h>
 #include <utils.h>
 #include <configuration.h>
-#include <libraries/OneWire/OneWire.h>
-#include <libraries/DS18S20/ds18s20.h>
 
 //#include <PID_v1.h>
 //#include <PID_AutoTune_v0.h>
 #include "../include/pid/SousVideController.h"
+#include <SousvideCommand.h>
 
 //Forward declerations
 //mqtt
@@ -24,50 +23,28 @@ void  handleCommands(String commands);
 void  updateInitWebSockets(WebSocket client);
 void  setRelayState(boolean state);
 
-/* Pinout:
- * MISO GPIO12 - not needed
- *
- * MOSI GPIO13 CLK GPIO14 CS GPIO15 DC GPIO5 RST GPIO4 */
-
 InfoScreens* infos;
 
 //* SSD1306 - I2C
 Base_Display_Driver* display;
+//SousVideController *sousController;
 
-//BaseDisplay* display;
-
-SousVideController *sousController;
-
-//// If you want, you can define WiFi settings globally in Eclipse Environment Variables
-//#ifndef WIFI_SSID
-//	#define WIFI_SSID "PleaseEnterSSID" // Put you SSID and Password here
-//	#define WIFI_PWD "PleaseEnterPass"
-//#endif
-
-//enum class OperationMode
-//{
-//	Manual = 0, Sousvide = 1,
-//};
-
-OperationMode operationMode = Manual;
+//OperationMode operationMode = Manual;
 
 //Timers
 Timer procTimer;
-Timer buttonTimer;
 Timer keepAliveTimer;
 Timer initTimer;
 Timer heartBeat;
 time_t lastActionTime = 0;
 String currentTime = "00:00:00";
 
-float currentTemp = 0;
+//float currentTemp = 0;
 
 int totalActiveSockets = 0;
 
 String name;
 String ip;
-
-//int currentInfoScreenIndex = 0;
 
 HttpServer server;
 FTPServer ftp;
@@ -76,39 +53,41 @@ BssList networks;
 String network, password;
 Timer connectionTimer;
 
-bool relayState = false;
+//bool relayState = false;
+
+
+void handleSousInfoUpdates(String param, String value) {
+
+}
+
+SousvideCommand sousCommand(RELAY_PIN, DS_TEMP_PIN, handleSousInfoUpdates);
 
 ////Web Sockets ///////
 
 void wsConnected(WebSocket& socket)
 {
 	totalActiveSockets++;
-
 	// Notify everybody about new connection
 	WebSocketsList &clients = server.getActiveWebSockets();
 	for (int i = 0; i < clients.count(); i++) {
 		updateInitWebSockets(clients[i]);
-//		clients[i].sendString("New friend arrived! Total: " + String(totalActiveSockets));
 	}
 }
 
 void wsMessageReceived(WebSocket& socket, const String& message)
 {
-//	Serial.printf("WebSocket message received:\r\n%s\r\n", message.c_str());
-//	String response = "Echo: " + message;
-//	socket.sendString(response);
 	handleCommands(message);
 }
 
 void updateInitWebSockets(WebSocket client) {
 	char buf[1000];
 	sprintf(buf, "updatePID:[%s,%s,%s];updateSetPoint:%s;updateWIFI:%s,%s;relayState:%s",
-			String(sousController->Kp, 1).c_str(),
-			String(sousController->Ki, 1).c_str(),
-			String(sousController->Kd, 1).c_str(),
-			String(sousController->Setpoint, 1).c_str(),
+			String(sousCommand.sousController->Kp, 1).c_str(),
+			String(sousCommand.sousController->Ki, 1).c_str(),
+			String(sousCommand.sousController->Kd, 1).c_str(),
+			String(sousCommand.sousController->Setpoint, 1).c_str(),
 			ActiveConfig.NetworkSSID.c_str(), ActiveConfig.NetworkPassword.c_str(),
-			(relayState == true ? "true" : "false"));
+			(sousCommand.relayState == true ? "true" : "false"));
 
 	client.sendString(String(buf));
 }
@@ -134,101 +113,100 @@ String getCommandAndData(String &cmd) {
 	return retCmd;
 }
 
-
 void handleCommands(String commands) {
-//	debugf("handleCommands::now handling %s", commands.c_str());
-
-	//iterate over commands
-	Vector<String> commandToken;
-	int numToken = splitString(commands, ';' , commandToken);
-
-	for (int i = 0; i < numToken; ++i) {
-		String command = commandToken.get(i);
-		String parsedCmd = getCommandAndData(command);
-
-		debugf("handleCommands::command=%s, data=%s", parsedCmd.c_str(), command.c_str());
-		//command is now the just the data (stripped of the command itself)
-//		debugf("handleCommands::original cmd=%s, parsed=%s, data=%s", command.c_str(), parsedCmd.c_str(), command.c_str());
-
-		if(parsedCmd.equals("query")) {
-
-		}
-		else if (parsedCmd.equals("toggleSousvideOperation")) {
-			if (command.equals("false")) {
-				operationMode = Manual;
-				updateWebSockets("relayState:false");
-			} else {
-				operationMode = Sousvide;
-			}
-
-			debugf("sous operation = %s", (operationMode == Sousvide ? "Sousvide" : " Manual"));
-		}
-		else if (parsedCmd.equals("toggleRelay")) {
-//			String state = commands.substring(12);
-//			setRelayState(state.equals("true"));
-
-			setRelayState(command.equals("true"));
-
-	//		Serial.println("handleCommands::toggeled relay " + String(state));
-	//		relayState = state.equals("true") ? true : false;
-	//		digitalWrite(relayPin, (state.equals("true") ? HIGH : LOW));
-
-			Serial.println("handleCommand:: state.equals(true)==" + String(command.equals("true")));
-			updateWebSockets("relayState:" + String(relayState == true ? "true" : "false"));
-		}
-		else if(parsedCmd.equals("change-val-SetPoint")) {
-			double temp = atof(command.c_str());
-			sousController->Setpoint = temp;
-			infos->updateParamValue("Setpoint", command);
-		}
-		else if(parsedCmd.equals("change-val-p")) {
-			double p = atof(command.c_str());
-			sousController->Kp = p;
-			infos->updateParamValue("Kp", command);
-		}
-		else if(parsedCmd.equals("change-val-i")) {
-			double i = atof(command.c_str());
-			sousController->Ki = i;
-			infos->updateParamValue("Ki", command);
-		}
-		else if(parsedCmd.equals("change-val-d")) {
-			double d = atof(command.c_str());
-			sousController->Kd = d;
-			infos->updateParamValue("Kd", command);
-		}
-		else if(parsedCmd.equals("saveSettings")) {
-			ActiveConfig.Kp = sousController->Kp;
-			ActiveConfig.Ki = sousController->Ki;
-			ActiveConfig.Kd = sousController->Kd;
-			ActiveConfig.Needed_temp = sousController->Setpoint;
-			saveConfig(ActiveConfig);
-			//TODO: save changes to file
-		}
-		else if(parsedCmd.equals("wifi")) {
-			Vector<String> commandToken;
-			int numToken = splitString(command, ',' , commandToken);
-			ActiveConfig.NetworkSSID = commandToken.elementAt(0);
-			ActiveConfig.NetworkPassword = commandToken.elementAt(1);
-		}
-		else if(parsedCmd.equals("connect")) {
-			Vector<String> commandToken;
-			int numToken = splitString(command, ',' , commandToken);
-			ActiveConfig.NetworkSSID = commandToken.elementAt(0);
-			ActiveConfig.NetworkPassword = commandToken.elementAt(1);
-			saveConfig(ActiveConfig);
-			debugf("Connecting to %s, %s", ActiveConfig.NetworkSSID.c_str(), ActiveConfig.NetworkPassword.c_str());
-			WifiStation.enable(false);
-			WifiStation.config(ActiveConfig.NetworkSSID, ActiveConfig.NetworkPassword);
-			WifiStation.enable(true);
-			infos->updateParamValue("ssid", "try:" + ActiveConfig.NetworkSSID);
-			infos->updateParamValue("station", "reconnecting");
-			WifiStation.waitConnection(connectOk, 25, connectFail); // We recommend 20+ seconds for connection timeout at start
-		}
-		else if(parsedCmd.equals("reboot")) {
-			debugf("Rebooting");
-			System.restart();
-		}
-	}
+////	debugf("handleCommands::now handling %s", commands.c_str());
+//
+//	//iterate over commands
+//	Vector<String> commandToken;
+//	int numToken = splitString(commands, ';' , commandToken);
+//
+//	for (int i = 0; i < numToken; ++i) {
+//		String command = commandToken.get(i);
+//		String parsedCmd = getCommandAndData(command);
+//
+//		debugf("handleCommands::command=%s, data=%s", parsedCmd.c_str(), command.c_str());
+//		//command is now the just the data (stripped of the command itself)
+////		debugf("handleCommands::original cmd=%s, parsed=%s, data=%s", command.c_str(), parsedCmd.c_str(), command.c_str());
+//
+//		if(parsedCmd.equals("query")) {
+//
+//		}
+//		else if (parsedCmd.equals("toggleSousvideOperation")) {
+//			if (command.equals("false")) {
+//				operationMode = Manual;
+//				updateWebSockets("relayState:false");
+//			} else {
+//				operationMode = Sousvide;
+//			}
+//
+//			debugf("sous operation = %s", (operationMode == Sousvide ? "Sousvide" : " Manual"));
+//		}
+//		else if (parsedCmd.equals("toggleRelay")) {
+////			String state = commands.substring(12);
+////			setRelayState(state.equals("true"));
+//
+//			setRelayState(command.equals("true"));
+//
+//	//		Serial.println("handleCommands::toggeled relay " + String(state));
+//	//		relayState = state.equals("true") ? true : false;
+//	//		digitalWrite(relayPin, (state.equals("true") ? HIGH : LOW));
+//
+//			Serial.println("handleCommand:: state.equals(true)==" + String(command.equals("true")));
+//			updateWebSockets("relayState:" + String(relayState == true ? "true" : "false"));
+//		}
+//		else if(parsedCmd.equals("change-val-SetPoint")) {
+//			double temp = atof(command.c_str());
+//			sousController->Setpoint = temp;
+//			infos->updateParamValue("Setpoint", command);
+//		}
+//		else if(parsedCmd.equals("change-val-p")) {
+//			double p = atof(command.c_str());
+//			sousController->Kp = p;
+//			infos->updateParamValue("Kp", command);
+//		}
+//		else if(parsedCmd.equals("change-val-i")) {
+//			double i = atof(command.c_str());
+//			sousController->Ki = i;
+//			infos->updateParamValue("Ki", command);
+//		}
+//		else if(parsedCmd.equals("change-val-d")) {
+//			double d = atof(command.c_str());
+//			sousController->Kd = d;
+//			infos->updateParamValue("Kd", command);
+//		}
+//		else if(parsedCmd.equals("saveSettings")) {
+//			ActiveConfig.Kp = sousController->Kp;
+//			ActiveConfig.Ki = sousController->Ki;
+//			ActiveConfig.Kd = sousController->Kd;
+//			ActiveConfig.Needed_temp = sousController->Setpoint;
+//			saveConfig(ActiveConfig);
+//			//TODO: save changes to file
+//		}
+//		else if(parsedCmd.equals("wifi")) {
+//			Vector<String> commandToken;
+//			int numToken = splitString(command, ',' , commandToken);
+//			ActiveConfig.NetworkSSID = commandToken.elementAt(0);
+//			ActiveConfig.NetworkPassword = commandToken.elementAt(1);
+//		}
+//		else if(parsedCmd.equals("connect")) {
+//			Vector<String> commandToken;
+//			int numToken = splitString(command, ',' , commandToken);
+//			ActiveConfig.NetworkSSID = commandToken.elementAt(0);
+//			ActiveConfig.NetworkPassword = commandToken.elementAt(1);
+//			saveConfig(ActiveConfig);
+//			debugf("Connecting to %s, %s", ActiveConfig.NetworkSSID.c_str(), ActiveConfig.NetworkPassword.c_str());
+//			WifiStation.enable(false);
+//			WifiStation.config(ActiveConfig.NetworkSSID, ActiveConfig.NetworkPassword);
+//			WifiStation.enable(true);
+//			infos->updateParamValue("ssid", "try:" + ActiveConfig.NetworkSSID);
+//			infos->updateParamValue("station", "reconnecting");
+//			WifiStation.waitConnection(connectOk, 25, connectFail); // We recommend 20+ seconds for connection timeout at start
+//		}
+//		else if(parsedCmd.equals("reboot")) {
+//			debugf("Rebooting");
+//			System.restart();
+//		}
+//	}
 }
 
 void handleQuery(String items) {
@@ -355,11 +333,11 @@ void initInfoScreens() {
 	InfoLine* line = p2->createLine("SousVide");
 	line->addParam("state", "off", true, 3);
 	line->addParam("time", currentTime)->t.x = getXOnScreenForString(currentTime, 1);
-	p2->createLine("Current Temp:")->addParam("temp", String(currentTemp, 2));
-	p2->createLine("Setpoint Temp:")->addParam("Setpoint", String(sousController->Setpoint, 2));
-	p2->createLine("Kp:")->addParam("kp", String(sousController->Kp, 1), true, 5);
-	p2->createLine("Ki:")->addParam("kp", String(sousController->Ki, 1), true, 5);
-	p2->createLine("Kd:")->addParam("kp", String(sousController->Kd, 1), true, 5);
+	p2->createLine("Current Temp:")->addParam("temp", "init");
+	p2->createLine("Setpoint Temp:")->addParam("Setpoint", "init");
+	p2->createLine("Kp:")->addParam("kp", "init", true, 5);
+	p2->createLine("Ki:")->addParam("kp", "init", true, 5);
+	p2->createLine("Kd:")->addParam("kp", "init", true, 5);
 
 	//add a list of static Values
 	paramDataValues* ofOnVals = new paramDataValues();
@@ -395,11 +373,11 @@ void updateTimeTimerAction()
 
 bool state = true;
 
-void blink()
-{
-	digitalWrite(relayPin, state);
-	state = !state;
-}
+//void blink()
+//{
+//	digitalWrite(relayPin, state);
+//	state = !state;
+//}
 
 void doInit() {
 	mqtt->publishInit();
@@ -565,70 +543,70 @@ void networkScanCompleted(bool succeeded, BssList list)
 	networks.sort([](const BssInfo& a, const BssInfo& b){ return b.rssi - a.rssi; } );
 }
 
-void setRelayState(boolean state) {
-	if (state != relayState) {
-		relayState = state;
-//		digitalWrite(relayPin, (relayState ? HIGH : LOW));
-		digitalWrite(relayPin, (relayState ? LOW : HIGH));
-	}
-}
+//void setRelayState(boolean state) {
+//	if (state != relayState) {
+//		relayState = state;
+////		digitalWrite(relayPin, (relayState ? HIGH : LOW));
+//		digitalWrite(relayPin, (relayState ? LOW : HIGH));
+//	}
+//}
 
-//Temp
-DS18S20 ReadTemp;
-Timer readTempTimer;
+////Temp
+//DS18S20 ReadTemp;
+//Timer readTempTimer;
 
-void IRAM_ATTR checkTempTriggerRelay(float temp) {
-	//move on this only when Sousvide, do not interfere with manual mode
-	if (operationMode == Sousvide)
-	{
-		int trigger = (int)sousController->Setpoint;
-		if((int)temp < trigger && !relayState ) {
-			debugf("current temp is below %i, so starting relay", temp);
-//			Serial.println("temp is " + String(trigger) + ", starting relay");
-			handleCommands("toggleRelay:true");
-		} else if((int)temp >= trigger && relayState){
-			debugf("current temp is %i, so stopping relay", temp);
-//			Serial.println("temp is <  " + String(trigger) + ",stopping relay");
-			handleCommands("toggleRelay:false");
-		}
-	}
-}
+//void IRAM_ATTR checkTempTriggerRelay(float temp) {
+//	//move on this only when Sousvide, do not interfere with manual mode
+//	if (operationMode == Sousvide)
+//	{
+//		int trigger = (int)sousController->Setpoint;
+//		if((int)temp < trigger && !relayState ) {
+//			debugf("current temp is below %i, so starting relay", temp);
+////			Serial.println("temp is " + String(trigger) + ", starting relay");
+//			handleCommands("toggleRelay:true");
+//		} else if((int)temp >= trigger && relayState){
+//			debugf("current temp is %i, so stopping relay", temp);
+////			Serial.println("temp is <  " + String(trigger) + ",stopping relay");
+//			handleCommands("toggleRelay:false");
+//		}
+//	}
+//}
 
-void readData()
-{
-	uint8_t a;
-	uint64_t info;
-
-	if (!ReadTemp.MeasureStatus())  // the last measurement completed
-	{
-      if (ReadTemp.GetSensorsCount()) {  // is minimum 1 sensor detected ?
-	    Serial.println(" Reading temperature");
-	    //only read first
-	    int a=0;
-	    float celsius=0;
-	      Serial.print(" T");
-	      Serial.print(a+1);
-	      Serial.print(" = ");
-
-	      if (ReadTemp.IsValidTemperature(a))   // temperature read correctly ?
-	        {
-	    	  Serial.print(ReadTemp.GetCelsius(a));
-	    	  Serial.print(" Celsius, (");
-	    	  currentTemp = celsius;
-	    	  celsius = ReadTemp.GetCelsius(a);
-	    	  updateWebSockets("temp:" + String(celsius));
-	    	  infos->updateParamValue("temp", String(currentTemp, 2));
-	    	  checkTempTriggerRelay(celsius);
-	        }
-	      else
-	    	  Serial.println("Temperature not valid");
-
-	      ReadTemp.StartMeasure();  // next measure, result after 1.2 seconds * number of sensors
-      }
-	}
-	else
-		Serial.println("No valid Measure so far! wait please");
-}
+//void readData()
+//{
+//	uint8_t a;
+//	uint64_t info;
+//
+//	if (!ReadTemp.MeasureStatus())  // the last measurement completed
+//	{
+//      if (ReadTemp.GetSensorsCount()) {  // is minimum 1 sensor detected ?
+//	    Serial.println(" Reading temperature");
+//	    //only read first
+//	    int a=0;
+//	    float celsius=0;
+//	      Serial.print(" T");
+//	      Serial.print(a+1);
+//	      Serial.print(" = ");
+//
+//	      if (ReadTemp.IsValidTemperature(a))   // temperature read correctly ?
+//	        {
+//	    	  Serial.print(ReadTemp.GetCelsius(a));
+//	    	  Serial.print(" Celsius, (");
+//	    	  currentTemp = celsius;
+//	    	  celsius = ReadTemp.GetCelsius(a);
+//	    	  updateWebSockets("temp:" + String(celsius));
+//	    	  infos->updateParamValue("temp", String(currentTemp, 2));
+//	    	  checkTempTriggerRelay(celsius);
+//	        }
+//	      else
+//	    	  Serial.println("Temperature not valid");
+//
+//	      ReadTemp.StartMeasure();  // next measure, result after 1.2 seconds * number of sensors
+//      }
+//	}
+//	else
+//		Serial.println("No valid Measure so far! wait please");
+//}
 
 //ThingSpeak
 HttpClient thingSpeak;
@@ -654,7 +632,7 @@ void sendData(int field, String data)
 {
 	if (thingSpeak.isProcessing())
 		return; // We need to wait while request processing was completed
-	thingSpeak.downloadString("https://api.thingspeak.com/update?api_key=NSOR6ZIK3WLWY4PIY&field" + String(1) + "=" + String(currentTemp), onDataSent);
+//	thingSpeak.downloadString("https://api.thingspeak.com/update?api_key=NSOR6ZIK3WLWY4PIY&field" + String(1) + "=" + String(currentTemp), onDataSent);
 //	thingSpeak.downloadString("http://api.thingspeak.com/update?key=7XXUJWCWYTMXKN3L&field1=" + String(sensorValue), onDataSent);
 }
 
@@ -667,12 +645,12 @@ void ShowInfo() {
     //Serial.printf("SPI Flash Size: %d\r\n", (1 << ((spi_flash_get_id() >> 16) & 0xff)));
 }
 
-void initFromConfig() {
-	sousController->Setpoint = ActiveConfig.Needed_temp;
-	sousController->Kp = ActiveConfig.Kp;
-	sousController->Ki = ActiveConfig.Ki;
-	sousController->Kd = ActiveConfig.Kd;
-}
+//void initFromConfig() {
+//	sousController->Setpoint = ActiveConfig.Needed_temp;
+//	sousController->Kp = ActiveConfig.Kp;
+//	sousController->Ki = ActiveConfig.Ki;
+//	sousController->Kd = ActiveConfig.Kd;
+//}
 
 const String WS_HEARTBEAT = "--heartbeat--";
 
@@ -695,8 +673,9 @@ void init()
 
 	ActiveConfig = loadConfig();
 
-	sousController = new SousVideController();
-	initFromConfig();
+	sousCommand.initCommand(ActiveConfig.Needed_temp, ActiveConfig.Kp, ActiveConfig.Ki, ActiveConfig.Kd);
+//	sousController = new SousVideController();
+//	initFromConfig();
 
 	debugf("======= SousVide ==========");
 	Serial.println();
@@ -709,17 +688,9 @@ void init()
 	initInfoScreens();
 	infos->initMFButton(encoderSwitchPin);
 
-	pinMode(encoderCLK, INPUT_PULLUP);
-	pinMode(encoderDT, INPUT_PULLUP);
-	digitalWrite(encoderCLK, HIGH); //turn pullup resistor on
-	digitalWrite(encoderDT, HIGH); //turn pullup resistor on
-
-	pinMode(relayPin, OUTPUT);
-//	setRelayState(false);
-	digitalWrite(relayPin, HIGH);
-
-	pinMode(encoderSwitchPin, INPUT);
-	digitalWrite(encoderSwitchPin, HIGH); //turn pullup resistor on
+//	pinMode(relayPin, OUTPUT);
+////	setRelayState(false);
+//	digitalWrite(relayPin, HIGH);
 
 	DateTime date = SystemClock.now();
 	lastActionTime = date.Milliseconds;
@@ -732,10 +703,10 @@ void init()
 //	ds.begin(); // It's required for one-wire initialization!
 //	readTempTimer.initializeMs(1000, readTempData).startOnce();
 
-	ReadTemp.Init(dsTempPin);  			// select PIN It's required for one-wire initialization!
-	ReadTemp.StartMeasure(); // first measure start,result after 1.2 seconds * number of sensors
-
-	readTempTimer.initializeMs(10000, readData).start();   // every 10 seconds
+//	ReadTemp.Init(dsTempPin);  			// select PIN It's required for one-wire initialization!
+//	ReadTemp.StartMeasure(); // first measure start,result after 1.2 seconds * number of sensors
+//
+//	readTempTimer.initializeMs(10000, readData).start();   // every 10 seconds
 
 	WifiStation.enable(true);
 	WifiStation.config(ActiveConfig.NetworkSSID, ActiveConfig.NetworkPassword);
