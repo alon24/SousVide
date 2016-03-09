@@ -24,6 +24,7 @@ public:
 	virtual ~SousvideCommand();
 	void initCommand(int setpoint, int Kp, int Ki, int Kd);
 	void setOnUpdateOutsideWorld(InfoUpdateSousDelegate delegate);
+	void startwork();
 
 private:
 	int relayPin;

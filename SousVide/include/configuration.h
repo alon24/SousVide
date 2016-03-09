@@ -32,15 +32,15 @@
 #define sdaPin 14
 
 // Pin for communication with Temp sensor
-#define DS_TEMP_PIN 5
+#define DS_TEMP_PIN 12
 
 // Pin for trigger control output
 #define RELAY_PIN 2
 
-//Rotary Pins
+////Rotary Pins
 #define encoderSwitchPin 0 //push button switch
-#define encoderCLK 4
-#define encoderDT 12
+//#define encoderCLK 4
+//#define encoderDT 12
 
 #define lightPin = 14;
 

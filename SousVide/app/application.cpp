@@ -113,6 +113,40 @@ String getCommandAndData(String &cmd) {
 	return retCmd;
 }
 
+void processAppCommands(Command inputCommand, CommandOutput* commandOutput)
+{
+    commandOutput->printf("App : %s\r\n",inputCommand.getCmdString().c_str());
+
+    JsonObject & jsonCommand = inputCommand.getRoot();
+    if  (jsonCommand.success())
+    {
+    	if(jsonCommand.containsKey("reboot")) {
+    		debugf("jsonCommand=%s", jsonCommand["reboot"][0]);
+//			debugf("Rebooting");
+//			System.restart();
+		}
+
+    	if(jsonCommand.containsKey("saveSettings")) {
+
+//			ActiveConfig.Kp = sousController->Kp;
+//			ActiveConfig.Ki = sousController->Ki;
+//			ActiveConfig.Kd = sousController->Kd;
+//			ActiveConfig.Needed_temp = sousController->Setpoint;
+//			saveConfig(ActiveConfig);
+			//TODO: save changes to file
+		}
+
+    	if(jsonCommand.containsKey("wifi")) {
+//			ActiveConfig.NetworkSSID = commandToken[2];
+//			ActiveConfig.NetworkPassword = commandToken[3];
+		}
+    }
+    else
+    {
+        Serial.printf("App debug : %s\r\n",inputCommand.getCmdString().c_str() );
+    }
+}
+
 void handleCommands(String commands) {
 ////	debugf("handleCommands::now handling %s", commands.c_str());
 //
@@ -327,7 +361,9 @@ void initInfoScreens() {
 
 	InfoLine* staLine = p1->createLine("ssid: ");
 	staLine->addParam("staState", "off:");
-	p1->createLine("sta:")->addParam("stationIp", "");
+	InfoLine* lsta = p1->createLine("sta:");
+	lsta->addParam("stationIP", "unknown");
+//	p1->createLine("sta:")->addParam("stationIp", "");
 
 	InfoPage* p2 = infos->createPage("Sous");
 	InfoLine* line = p2->createLine("SousVide");
@@ -658,80 +694,115 @@ void sendHeartBeat() {
 	 updateWebSockets(WS_HEARTBEAT);
 }
 
+//void APDisconnect(uint8_t[6] mac, uint8_t aid)
+//{
+//	debugf("DISCONNECT - SSID: %s, REASON: %d\n", ssid.c_str(), reason);
+//
+////	if (!WifiAccessPoint.isEnabled())
+////	{
+////		debugf("Starting OWN AP");
+////		WifiStation.disconnect();
+////		WifiAccessPoint.enable(true);
+////		WifiStation.connect();
+////	}
+//}
+
+void APAGotIP(uint8_t mac[6], uint8_t aid)
+{
+	debugf("GotIp AP=%s", WifiAccessPoint.getIP().toString().c_str());
+//	debugf("GOTIP - IP: %s, MASK: %s, GW: %s\n", ip.toString().c_str(),
+//
+//	mask.toString().c_str(),
+//	gateway.toString().c_str());
+
+//	if (WifiAccessPoint.isEnabled())
+//	{
+//		debugf("Shutdown OWN AP");
+//		WifiAccessPoint.enable(false);
+//	}
+	// Add commands to be executed after successfully connecting to AP and got IP from it
+}
+
 void init()
 {
-	Serial.begin(SERIAL_BAUD_RATE); // 115200
+	Serial.begin(74880); // 115200
 	Serial.systemDebugOutput(true); // Debug output to serial
 
 	initSpiff();
 
 //	//Change CPU freq. to 160MHZ
-	System.setCpuFrequency(eCF_160MHz);
+//	System.setCpuFrequency(eCF_160MHz);
 
 	//setup i2c pins
 	Wire.pins(sclPin, sdaPin);
 
-	ActiveConfig = loadConfig();
-
-	sousCommand.initCommand(ActiveConfig.Needed_temp, ActiveConfig.Kp, ActiveConfig.Ki, ActiveConfig.Kd);
-//	sousController = new SousVideController();
-//	initFromConfig();
-
-	debugf("======= SousVide ==========");
-	Serial.println();
-
+//	ActiveConfig = loadConfig();
+//
+//	sousCommand.initCommand(ActiveConfig.Needed_temp, ActiveConfig.Kp, ActiveConfig.Ki, ActiveConfig.Kd);
+////	sousCommand.startwork();
+//	commandHandler.registerCommand(CommandDelegate("App","Application commands","Application",processAppCommands));
+//////	sousController = new SousVideController();
+//////	initFromConfig();
+////
+//	debugf("======= SousVide ==========");
+////	Serial.println();
+////
 	display = new SSD1306_Driver(4);
 	display->init();
-
-	initInfoScreens();
+//
 	infos = new InfoScreens(display);
 	initInfoScreens();
 	infos->initMFButton(encoderSwitchPin);
-
-//	pinMode(relayPin, OUTPUT);
-////	setRelayState(false);
-//	digitalWrite(relayPin, HIGH);
-
-	DateTime date = SystemClock.now();
-	lastActionTime = date.Milliseconds;
-
-	//ilan
-	keepAliveTimer.initializeMs(1000, updateTimeTimerAction).start();
-
-//	AppSettings.load();
-
-//	ds.begin(); // It's required for one-wire initialization!
-//	readTempTimer.initializeMs(1000, readTempData).startOnce();
-
-//	ReadTemp.Init(dsTempPin);  			// select PIN It's required for one-wire initialization!
-//	ReadTemp.StartMeasure(); // first measure start,result after 1.2 seconds * number of sensors
+	infos->show();
 //
-//	readTempTimer.initializeMs(10000, readData).start();   // every 10 seconds
-
-	WifiStation.enable(true);
-	WifiStation.config(ActiveConfig.NetworkSSID, ActiveConfig.NetworkPassword);
-	infos->updateParamValue("ssid", ActiveConfig.NetworkSSID);
-//	if (AppSettings.exist())
-//	{
-//		WifiStation.config(AppSettings.ssid, AppSettings.password);
-////		if (!AppSettings.dhcp && !AppSettings.ip.isNull())
-////			WifiStation.setIP(AppSettings.ip, AppSettings.netmask, AppSettings.gateway);
-//	}
-
-//	debugf("net=%s, pass=%s", WIFI_SSID, WIFI_PWD);
-
-//	WifiStation.config(WIFI_SSID, WIFI_PWD);
-
-//	WifiStation.startScan(networkScanCompleted);
-
-
+////	pinMode(relayPin, OUTPUT);
+//////	setRelayState(false);
+////	digitalWrite(relayPin, HIGH);
+//
+//	DateTime date = SystemClock.now();
+//	lastActionTime = date.Milliseconds;
+//
+//	//ilan
+//	keepAliveTimer.initializeMs(1000, updateTimeTimerAction).start();
+//
+////	AppSettings.load();
+//
+////	ds.begin(); // It's required for one-wire initialization!
+////	readTempTimer.initializeMs(1000, readTempData).startOnce();
+//
+////	ReadTemp.Init(dsTempPin);  			// select PIN It's required for one-wire initialization!
+////	ReadTemp.StartMeasure(); // first measure start,result after 1.2 seconds * number of sensors
+////
+////	readTempTimer.initializeMs(10000, readData).start();   // every 10 seconds
+//
+	WifiStation.enable(false);
+//	WifiStation.config(ActiveConfig.NetworkSSID, ActiveConfig.NetworkPassword);
+//	infos->updateParamValue("ssid", ActiveConfig.NetworkSSID);
+////	if (AppSettings.exist())
+////	{
+////		WifiStation.config(AppSettings.ssid, AppSettings.password);
+//////		if (!AppSettings.dhcp && !AppSettings.ip.isNull())
+//////			WifiStation.setIP(AppSettings.ip, AppSettings.netmask, AppSettings.gateway);
+////	}
+//
+////	debugf("net=%s, pass=%s", WIFI_SSID, WIFI_PWD);
+//
+////	WifiStation.config(WIFI_SSID, WIFI_PWD);
+//
+////	WifiStation.startScan(networkScanCompleted);
+//
+//
 	// Start AP for configuration
 	WifiAccessPoint.enable(true);
 	WifiAccessPoint.config("Sousvide Config", "", AUTH_OPEN);
 
-	// Run WEB server on system ready
-//	System.onReady(startServers);
-	startServers();
-	WifiStation.waitConnection(connectOk, 20, connectFail); // We recommend 20+ seconds for connection timeout at start
-	heartBeat.initializeMs(4000, sendHeartBeat).start();
+	// Attach Wifi events handlers
+//	WifiEvents.onAccessPointDisconnect(APDisconnect)
+//	WifiEvents.onAccessPointConnect(APAGotIP);
+//
+//	// Run WEB server on system ready
+////	System.onReady(startServers);
+//	startServers();
+//	WifiStation.waitConnection(connectOk, 20, connectFail); // We recommend 20+ seconds for connection timeout at start
+//	heartBeat.initializeMs(4000, sendHeartBeat).start();
 }

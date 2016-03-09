@@ -17,9 +17,12 @@ SousvideCommand::SousvideCommand(int relayPin, int dsTempPin, InfoUpdateSousDele
 
 	sousController = new SousVideController();
 
-	ReadTemp.Init(dsTempPin);  			// select PIN It's required for one-wire initialization!
-	ReadTemp.StartMeasure(); // first measure start,result after 1.2 seconds * number of sensors
+//	ReadTemp.Init(dsTempPin);  			// select PIN It's required for one-wire initialization!
 
+}
+
+void SousvideCommand::startwork() {
+	ReadTemp.StartMeasure(); // first measure start,result after 1.2 seconds * number of sensors
 	readTempTimer.initializeMs(10000, TimerDelegate(&SousvideCommand::readData, this)).start();   // every 10 seconds
 }
 
@@ -31,7 +34,7 @@ SousvideCommand::~SousvideCommand()
 
 void SousvideCommand::initCommand(int setpoint, int Kp, int Ki, int Kd)
 {
-	commandHandler.registerCommand(CommandDelegate("sousvide","Example Command from Class","Application",commandFunctionDelegate(&SousvideCommand::processSousvideCommands,this)));
+	commandHandler.registerCommand(CommandDelegate("sousvide","Sousvide commands", "Application",commandFunctionDelegate(&SousvideCommand::processSousvideCommands,this)));
 	sousController->Setpoint = setpoint;
 	sousController->Kp = Kp;
 	sousController->Ki = Ki;
@@ -52,28 +55,26 @@ void SousvideCommand::processSousvideCommands(String commandLine, CommandOutput*
 	}
 	else
 	{
-		if (commandToken[1] == "change-val-d") {
-
-		}else if(commandToken[1].equals("change-val-SetPoint")) {
-				double temp = atof(commandToken[2].c_str());
-				sousController->Setpoint = temp;
-				updateOutsideWorld("Setpoint", commandToken[2]);
-			}
-			else if(commandToken[1].equals("change-val-p")) {
-				double p = atof(commandToken[2].c_str());
-				sousController->Kp = p;
-				updateOutsideWorld("Kp", commandToken[2]);
-			}
-			else if(commandToken[1].equals("change-val-i")) {
-				double i = atof(commandToken[2].c_str());
-				sousController->Ki = i;
-				updateOutsideWorld("Ki", commandToken[2]);
-			}
-			else if(commandToken[1].equals("change-val-d")) {
-				double d = atof(commandToken[2].c_str());
-				sousController->Kd = d;
-				updateOutsideWorld("Kd", commandToken[2]);
-			}
+		if(commandToken[1].equals("change-val-SetPoint")) {
+			double temp = atof(commandToken[2].c_str());
+			sousController->Setpoint = temp;
+			updateOutsideWorld("Setpoint", commandToken[2]);
+		}
+		else if(commandToken[1].equals("change-val-p")) {
+			double p = atof(commandToken[2].c_str());
+			sousController->Kp = p;
+			updateOutsideWorld("Kp", commandToken[2]);
+		}
+		else if(commandToken[1].equals("change-val-i")) {
+			double i = atof(commandToken[2].c_str());
+			sousController->Ki = i;
+			updateOutsideWorld("Ki", commandToken[2]);
+		}
+		else if(commandToken[1].equals("change-val-d")) {
+			double d = atof(commandToken[2].c_str());
+			sousController->Kd = d;
+			updateOutsideWorld("Kd", commandToken[2]);
+		}
 	}
 }
 
