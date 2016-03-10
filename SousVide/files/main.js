@@ -1,73 +1,10 @@
-var output;
-
-if (typeof String.prototype.startsWith != 'function') {
-  // see below for better implementation!
-  String.prototype.startsWith = function(str) {
-    return this.indexOf(str) === 0;
-  };
-}
-
-// change the slider val for id
-function updateVal(id, val) {
-	if ($('#' + id).val() == val) {
-		return;
-	}
-	$('#' + id).val(val);
-	$('#' + id).slider('refresh');
-}
-
-function setSliderListeners(id) {
-  var sl = $('#' + id);
-  sl.slider().on('slideStop', function (ev) {
-      console.log('sl:' + sl.slider('getValue'));
-   });
-
-   $('#' + id).slider().on('slide', function (ev) {
-     $('#' + id+"_val").val( sl.slider('getValue'));
-     // console.log('sl:' + mySlider.slider('getValue'));
-   });
-   $('#' + id+"_val").val( sl.slider('getValue'));
-}
-
-function addTemp(id) {
-    var el = $(id);
-    var contentB = "<div> sss </div>";
-    $("<div> sss </div>").prepend(el);
-
-}
-
 var websocketServerLocation;
 var heartbeat_msg = '--heartbeat--', heartbeat_interval = null, missed_heartbeats = 0;
 
+var timerID=0;
+var socket;
+
 function init() {
-
-  // $("#ex13").slider({
-  //     ticks: [0, 100],
-  //     ticks_labels: ['0', '100']
-  // });
-  // setSliderListeners('ex13');
-  //
-  // $("[name='my-checkbox']").bootstrapSwitch();
-  // // $("[name='my-checkbox']").bootstrapSwitch("state", false);
-  // // console.log($("[name='my-checkbox']").bootstrapSwitch("state"));
-  //
-  // // .on('switchChange.bootstrapSwitch', function (event, state) {});
-  // $("[name='my-checkbox']").bootstrapSwitch().on('switchChange.bootstrapSwitch', function (event, state) {
-  //     console.log(state);
-  //  });
-  //
-  //  $("[name='relay1_state_1']").bootstrapSwitch();
-
-  //  $("ex14")
-
-  // mySlider.on('slideStop', function (ev) {
-  //      var min = ev.value[0];
-  //      var max = ev.value[1];
-  //      $("#minval").val(ev.value[0]);
-  //      $("#maxval").val(ev.value[1]);
-  //
-  //  });
-
   output = document.getElementById("output");
 
   toggleShowOverlay(true);
@@ -82,22 +19,22 @@ function init() {
 //    $("#flip_sous_state").attr("disabled", false);
 //    $("#relay1_state").attr("disabled", false);
 //
-   $("#flip_sous_state").val("leave").flipswitch('refresh');
-   $("#relay1_state").val("leave").flipswitch('refresh');
+//    $("#flip_sous_state").val("leave").flipswitch('refresh');
+//    $("#relay1_state").val("leave").flipswitch('refresh');
 
-    $("#flip_sous_state").change(
-      function(){
-//  	        $(this).toggleClass("down");
-        // $(this).toggleClass('off');
-        doSend('toggleSousvideOperation:' + (this.value === 'arrive' ? 'true' : 'false') );
-        console.log("flip_sous_state clicked " + this.value);
-      });
+//     $("#flip_sous_state").change(
+//       function(){
+// //            $(this).toggleClass("down");
+//         // $(this).toggleClass('off');
+//         doSend('toggleSousvideOperation:' + (this.value === 'arrive' ? 'true' : 'false') );
+//         console.log("flip_sous_state clicked " + this.value);
+//       });
 
-    $("#relay1_state").change(
-      function(){
-        doSend('toggleRelay:' + (this.value === 'arrive' ? 'true' : 'false'));
-        // console.log("relay1_state clicked " + this.value);
-      });
+//     $("#relay1_state").change(
+//       function(){
+//         doSend('toggleRelay:' + (this.value === 'arrive' ? 'true' : 'false'));
+//         // console.log("relay1_state clicked " + this.value);
+//       });
 
     var loc = location.host;
     if (loc==="") {
@@ -113,34 +50,6 @@ function init() {
   });
 }
 
-function toggleShowOverlay(state) {
-    if (state === true) {
-      $("#NotConnectedDiv").prop('hidden',false);
-      $("#ConnectedDIv").prop('hidden', true);
-    }
-    else {
-      $("#NotConnectedDiv").prop('hidden',true);
-      $("#ConnectedDIv").prop('hidden', false);
-    }
-}
-
-function setFormState(enabled) {
-  // $('.flip_sous_state').slider('disable');
-  if (enabled === true) {
-    $('#SetPoint, #p, #i, #d').slider('enable');
-    // $('#flip_sous_state').slider('enable');
-    $("#savesettings").removeClass('disabled');
-    $('#connected').prop("hidden", false);
-  } else {
-    $('#SetPoint, #p, #i, #d').slider('disable');
-    // $('#flip_sous_state').slider('disable');
-    $("#savesettings").addClass('disabled');
-    $('#connected').prop("hidden", true);
-  }
-}
-
-var timerID=0;
-var socket;
 
 function startWebSocket(){
   console.log("Trying to connect to ws at " + websocketServerLocation);
@@ -218,52 +127,52 @@ function onMessage(evt) {
 }
 
 function parseCommand(com) {
-	i = com.indexOf(":");
-	var ret = new Array();
-	ret[0] = com.substring(0, i);
-	ret[1] = com.substring(i+1);
-	return ret;
+  i = com.indexOf(":");
+  var ret = new Array();
+  ret[0] = com.substring(0, i);
+  ret[1] = com.substring(i+1);
+  return ret;
 }
 
 //updates from webserver
 function handlePayload(payload) {
-	var commands = payload.split(";");
-	for (var i = 0; i < commands.length; i++) {
-	    var command = commands[i];
-	    var cmd = parseCommand(command);
-	  //check if need to change the realy button state
-		if (cmd[0].startsWith('relayState')) {
-			var state = cmd[1];
-		    // console.log('state = ' + state + ", relay1 = " + $("#relay1_state").val());
-		    if( (state == 'true' && $("#relay1_state").val() == 'leave') ||
-		        (state == 'false' && $("#relay1_state").val() == 'arrive')      )
-		    {
-		        if (state == 'true') {
-		          $("#relay1_state").val('arrive').flipswitch('refresh');
-		    		} else {
-		          $("#relay1_state").val('leave').flipswitch('refresh');
-		        }
-		    }
-		    else {
-		    //  console.log('do nothing');
-		    }
-		}
-		else if (cmd[0].startsWith('updatetime')) {
-			updateTime(cmd[1]);
-		}
-		else if (cmd[0].startsWith('temp')) {
-			updateTemp(cmd[1]);
-		}
-		else if (cmd[0].startsWith('updatePID')) {
-			updatePID(cmd[1]);
-		}
-		else if (cmd[0].startsWith('updateSetPoint')) {
-			updateVal("SetPoint", cmd[1]);
-		}
+  var commands = payload.split(";");
+  for (var i = 0; i < commands.length; i++) {
+      var command = commands[i];
+      var cmd = parseCommand(command);
+    //check if need to change the realy button state
+    if (cmd[0].startsWith('relayState')) {
+      var state = cmd[1];
+        // console.log('state = ' + state + ", relay1 = " + $("#relay1_state").val());
+        if( (state == 'true' && $("#relay1_state").val() == 'leave') ||
+            (state == 'false' && $("#relay1_state").val() == 'arrive')      )
+        {
+            if (state == 'true') {
+              $("#relay1_state").val('arrive').flipswitch('refresh');
+            } else {
+              $("#relay1_state").val('leave').flipswitch('refresh');
+            }
+        }
+        else {
+        //  console.log('do nothing');
+        }
+    }
+    else if (cmd[0].startsWith('updatetime')) {
+      updateTime(cmd[1]);
+    }
+    else if (cmd[0].startsWith('temp')) {
+      updateTemp(cmd[1]);
+    }
+    else if (cmd[0].startsWith('updatePID')) {
+      updatePID(cmd[1]);
+    }
+    else if (cmd[0].startsWith('updateSetPoint')) {
+      updateVal("SetPoint", cmd[1]);
+    }
     else if (cmd[0].startsWith('updateWIFI')) {
-			updateWifi(cmd[1]);
-		}
-	}
+      updateWifi(cmd[1]);
+    }
+  }
 }
 
 function connect() {
@@ -271,55 +180,22 @@ function connect() {
       doSend('connect:' + wifiCmd);
 }
 
-function updateWifi(data) {
-    var wifiParts = data.split(",");
-    $('#SSID').val(wifiParts[0]);
-    $('#Password').val(wifiParts[1]);
+function toggleShowOverlay(state) {
+    // if (state === true) {
+    //   $("#NotConnectedDiv").prop('hidden',false);
+    //   $("#ConnectedDIv").prop('hidden', true);
+    // }
+    // else {
+    //   $("#NotConnectedDiv").prop('hidden',true);
+    //   $("#ConnectedDIv").prop('hidden', false);
+    // }
 }
-
-var sliderChange = function(sliderValue) {
-  console.log("Slider changed: " + sliderValue);
-};
 
 function sendValueChanged(id, value) {
 
 
   // console.log(id + "="  + value);
   doSend('change-val-' + id + ':' + value);
-}
-
-function saveSettings() {
-  console.log("save settings");
-  var wifiCmd = "wifi:" + $('#SSID').val() + "," + $('#Password').val();
-  doSend(wifiCmd);
-  doSend("saveSettings:");
-}
-
-function updatePID(pid) {
-    var pidParts = pid.split(",");
-    updateVal("p", pidParts[0]);
-    updateVal("i", pidParts[1]);
-    updateVal("d", pidParts[2]);
-    console.log(pid);
-}
-
-function updateTime(newTime) {
-    // newTime = "11:22:33";
-    var timeParts = newTime.split(":");
-    $('#hour').text(timeParts[0]);
-    $('#min').text(timeParts[1]);
-    $('#sec').text(timeParts[2]);
-//    console.log(newTime);
-}
-
-function updateTemp(newTemp) {
-    $('#temperature').text(newTemp);
-    $('#svid_current_temp').text(newTemp);
-//    console.log("temp=" + newTemp);
-}
-
-function onError(evt) {
-  // writeToScreen('<span style="color: red;">ERROR:</span> ' + evt.data);
 }
 
 function doSend(message) {
@@ -330,18 +206,3 @@ function doSend(message) {
     console.log("ws not initialized could not send message " + message);
   }
 }
-
-function writeToScreen(message) {
-//  var pre = document.createElement("p");
-//  pre.style.wordWrap = "break-word";
-//  pre.innerHTML = message;
-//  output.appendChild(pre);
-}
-
-function doDisconnect() {
-  var disconnect = document.getElementById("disconnect");
-  disconnect.disabled = true;
-  socket.close();
-}
-
-window.addEventListener("load", init, false);

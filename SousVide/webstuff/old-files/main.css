@@ -1,4 +1,22 @@
+.parent{
+    display:table;
+}
+.child{
+    display:table-cell;
+    vertical-align:middle;
+    padding-left:20px;
+}
+.sousActions{
+  background: yellow
+}
 
+.sousActions2{
+  background: yellow
+}
+
+.tr_1 {
+  height: 4em
+}
 
 .cmn-toggle {
     position: absolute;

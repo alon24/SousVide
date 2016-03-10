@@ -104,3 +104,5 @@ input.cmn-toggle-yes-no:checked + label:before {
 input.cmn-toggle-yes-no:checked + label:after {
   transform: rotateY(0);
 }
+
+.bottom-border { border-bottom: 1px dashed black; }

@@ -399,7 +399,7 @@ void updateTimeTimerAction()
 //	unsigned long start = millis();
 	currentTime = SystemClock.now().toShortTimeString(true);
 //	debugf("%s", currentTime.c_str());
-//	debugf("mem %d",system_get_free_heap_size());
+	debugf("updateTimeTimerAction - mem %d",system_get_free_heap_size());
 //	Serial.println(currentTime);
 
 	refreshTimeForUi();
@@ -707,13 +707,13 @@ void sendHeartBeat() {
 ////	}
 //}
 
-void APAGotIP(uint8_t mac[6], uint8_t aid)
+void STAGotIP(IPAddress ip, IPAddress mask, IPAddress gateway)
 {
-	debugf("GotIp AP=%s", WifiAccessPoint.getIP().toString().c_str());
-//	debugf("GOTIP - IP: %s, MASK: %s, GW: %s\n", ip.toString().c_str(),
-//
-//	mask.toString().c_str(),
-//	gateway.toString().c_str());
+	infos->updateParamValue("stationIP", ip.toString().c_str());
+	debugf("GOTIP - IP: %s, MASK: %s, GW: %s\n", ip.toString().c_str(),
+
+	mask.toString().c_str(),
+	gateway.toString().c_str());
 
 //	if (WifiAccessPoint.isEnabled())
 //	{
@@ -725,22 +725,23 @@ void APAGotIP(uint8_t mac[6], uint8_t aid)
 
 void init()
 {
-	Serial.begin(74880); // 115200
+	Serial.begin(74880); // 74880
 	Serial.systemDebugOutput(true); // Debug output to serial
 
 	initSpiff();
 
-//	//Change CPU freq. to 160MHZ
-//	System.setCpuFrequency(eCF_160MHz);
+	//Change CPU freq. to 160MHZ
+	System.setCpuFrequency(eCF_160MHz);
 
 	//setup i2c pins
 	Wire.pins(sclPin, sdaPin);
 
 //	ActiveConfig = loadConfig();
 //
-//	sousCommand.initCommand(ActiveConfig.Needed_temp, ActiveConfig.Kp, ActiveConfig.Ki, ActiveConfig.Kd);
-////	sousCommand.startwork();
-//	commandHandler.registerCommand(CommandDelegate("App","Application commands","Application",processAppCommands));
+	sousCommand.initCommand(ActiveConfig.Needed_temp, ActiveConfig.Kp, ActiveConfig.Ki, ActiveConfig.Kd);
+	sousCommand.startwork();
+	commandHandler.registerCommand(CommandDelegate("App","Application commands","Application",processAppCommands));
+
 //////	sousController = new SousVideController();
 //////	initFromConfig();
 ////
@@ -754,18 +755,13 @@ void init()
 	initInfoScreens();
 	infos->initMFButton(encoderSwitchPin);
 	infos->show();
+	DateTime date = SystemClock.now();
+	lastActionTime = date.Milliseconds;
+
+	//ilan
+	keepAliveTimer.initializeMs(1000, updateTimeTimerAction).start();
 //
-////	pinMode(relayPin, OUTPUT);
-//////	setRelayState(false);
-////	digitalWrite(relayPin, HIGH);
-//
-//	DateTime date = SystemClock.now();
-//	lastActionTime = date.Milliseconds;
-//
-//	//ilan
-//	keepAliveTimer.initializeMs(1000, updateTimeTimerAction).start();
-//
-////	AppSettings.load();
+//	AppSettings.load();
 //
 ////	ds.begin(); // It's required for one-wire initialization!
 ////	readTempTimer.initializeMs(1000, readTempData).startOnce();
@@ -787,22 +783,30 @@ void init()
 //
 ////	debugf("net=%s, pass=%s", WIFI_SSID, WIFI_PWD);
 //
-////	WifiStation.config(WIFI_SSID, WIFI_PWD);
+
+	bool staOn = false;
+	WifiStation.enable(staOn);
+	if(staOn) {
+		WifiStation.config(WIFI_SSID, WIFI_PWD);
+		WifiStation.connect();
+	}
 //
 ////	WifiStation.startScan(networkScanCompleted);
 //
 //
 	// Start AP for configuration
 	WifiAccessPoint.enable(true);
+
 	WifiAccessPoint.config("Sousvide Config", "", AUTH_OPEN);
+	infos->updateParamValue("apIp", "192.168.4.1");
 
 	// Attach Wifi events handlers
 //	WifiEvents.onAccessPointDisconnect(APDisconnect)
-//	WifiEvents.onAccessPointConnect(APAGotIP);
+	WifiEvents.onStationGotIP(STAGotIP);
 //
 //	// Run WEB server on system ready
 ////	System.onReady(startServers);
-//	startServers();
+	startServers();
 //	WifiStation.waitConnection(connectOk, 20, connectFail); // We recommend 20+ seconds for connection timeout at start
-//	heartBeat.initializeMs(4000, sendHeartBeat).start();
+	heartBeat.initializeMs(4000, sendHeartBeat).start();
 }
