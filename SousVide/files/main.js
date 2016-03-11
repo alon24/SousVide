@@ -195,7 +195,7 @@ function sendValueChanged(id, value) {
 
 
   // console.log(id + "="  + value);
-  doSend('change-val-' + id + ':' + value);
+  doSend('fromClient change-val-' + id + ':' + value);
 }
 
 function doSend(message) {
@@ -206,3 +206,15 @@ function doSend(message) {
     console.log("ws not initialized could not send message " + message);
   }
 }
+
+function updateTime(newTime) {
+    // newTime = "11:22:33";
+    $('#currentTime').text(newTime);
+    // var timeParts = newTime.split(":");
+    // $('#hour').text(timeParts[0]);
+    // $('#min').text(timeParts[1]);
+    // $('#sec').text(timeParts[2]);
+//    console.log(newTime);
+}
+
+window.addEventListener("load", init, false);

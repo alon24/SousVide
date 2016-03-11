@@ -46,7 +46,7 @@ void SousvideCommand::processSousvideCommands(String commandLine, CommandOutput*
 	Vector<String> commandToken;
 	int numToken = splitString(commandLine, ' ' , commandToken);
 
-	debugf("Got commandLine = %s", commandLine.c_str());
+	debugf("**** SousvideCommand Got commandLine = %s", commandLine.c_str());
 	if (numToken == 1)
 	{
 		commandOutput->printf("Move Commands available : \r\n");

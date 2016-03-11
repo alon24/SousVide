@@ -1,26 +1,23 @@
 #include "../include/configuration.h"
 
-#include "SmingCore.h"
+#include <SmingCore.h>
 
 SousvideConfig ActiveConfig;
 
 SousvideConfig loadConfig()
 {
-	DynamicJsonBuffer jsonBuffer;
+	StaticJsonBuffer<ConfigJsonBufferSize> jsonBuffer;
 	SousvideConfig cfg;
 	if (fileExist(SOUSVIDE_CONFIG_FILE))
 	{
-		Serial.printf("loadConfig::dumping file %s:\r\n", SOUSVIDE_CONFIG_FILE);
-		Serial.println(fileGetContent(SOUSVIDE_CONFIG_FILE));
-
 		int size = fileGetSize(SOUSVIDE_CONFIG_FILE);
 		char* jsonString = new char[size + 1];
 		fileGetContent(SOUSVIDE_CONFIG_FILE, jsonString, size + 1);
 		JsonObject& root = jsonBuffer.parseObject(jsonString);
 
 		JsonObject& network = root["network"];
-		cfg.NetworkSSID = String((const char*)network["ssid"]);
-		cfg.NetworkPassword = String((const char*)network["password"]);
+		cfg.NetworkSSID = String((const char*)network["StaSSID"]);
+		cfg.NetworkPassword = String((const char*)network["StaPassword"]);
 
 		JsonObject& sousvide = root["Sousvide"];
 		cfg.Needed_temp = sousvide["T"];
@@ -35,6 +32,7 @@ SousvideConfig loadConfig()
 	}
 	else
 	{
+		//Factory defaults if no config file present
 		cfg.NetworkSSID = WIFI_SSID;
 		cfg.NetworkPassword = WIFI_PWD;
 	}
@@ -43,15 +41,13 @@ SousvideConfig loadConfig()
 
 void saveConfig(SousvideConfig& cfg)
 {
-	ActiveConfig = cfg;
-
-	DynamicJsonBuffer jsonBuffer;
+	StaticJsonBuffer<ConfigJsonBufferSize> jsonBuffer;
 	JsonObject& root = jsonBuffer.createObject();
 
 	JsonObject& network = jsonBuffer.createObject();
 	root["network"] = network;
 	network["ssid"] = cfg.NetworkSSID.c_str();
-	network["password"] = cfg.NetworkPassword.c_str();
+	network["StaPassword"] = cfg.NetworkPassword.c_str();
 
 	JsonObject& sousvide = jsonBuffer.createObject();
 	root["Sousvide"] = sousvide;
@@ -64,12 +60,9 @@ void saveConfig(SousvideConfig& cfg)
 	root["trigger"] = trigger;
 	trigger["type"] = (int)cfg.operationMode;
 
-	char buf[3048];
+	char buf[ConfigFileBufferSize];
 	root.prettyPrintTo(buf, sizeof(buf));
 	fileSetContent(SOUSVIDE_CONFIG_FILE, buf);
-
-	Serial.printf("saveConfig::dumping file %s:\r\n", SOUSVIDE_CONFIG_FILE);
-	Serial.println(fileGetContent(SOUSVIDE_CONFIG_FILE));
 }
 
 

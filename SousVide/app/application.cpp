@@ -66,6 +66,7 @@ SousvideCommand sousCommand(RELAY_PIN, DS_TEMP_PIN, handleSousInfoUpdates);
 
 void wsConnected(WebSocket& socket)
 {
+	debugf("******* wsConnected");
 	totalActiveSockets++;
 	// Notify everybody about new connection
 	WebSocketsList &clients = server.getActiveWebSockets();
@@ -76,20 +77,21 @@ void wsConnected(WebSocket& socket)
 
 void wsMessageReceived(WebSocket& socket, const String& message)
 {
+	debugf("******* Incomming ws message:%s",message.c_str());
 	handleCommands(message);
 }
 
 void updateInitWebSockets(WebSocket client) {
 	char buf[1000];
-	sprintf(buf, "updatePID:[%s,%s,%s];updateSetPoint:%s;updateWIFI:%s,%s;relayState:%s",
-			String(sousCommand.sousController->Kp, 1).c_str(),
-			String(sousCommand.sousController->Ki, 1).c_str(),
-			String(sousCommand.sousController->Kd, 1).c_str(),
-			String(sousCommand.sousController->Setpoint, 1).c_str(),
-			ActiveConfig.NetworkSSID.c_str(), ActiveConfig.NetworkPassword.c_str(),
-			(sousCommand.relayState == true ? "true" : "false"));
-
-	client.sendString(String(buf));
+//	sprintf(buf, "updatePID:[%s,%s,%s];updateSetPoint:%s;updateWIFI:%s,%s;relayState:%s",
+//			String(sousCommand.sousController->Kp, 1).c_str(),
+//			String(sousCommand.sousController->Ki, 1).c_str(),
+//			String(sousCommand.sousController->Kd, 1).c_str(),
+//			String(sousCommand.sousController->Setpoint, 1).c_str(),
+//			ActiveConfig.NetworkSSID.c_str(), ActiveConfig.NetworkPassword.c_str(),
+//			(sousCommand.relayState == true ? "true" : "false"));
+//
+//	client.sendString(String(buf));
 }
 
 void updateWebSockets(String cmd) {
@@ -399,7 +401,7 @@ void updateTimeTimerAction()
 //	unsigned long start = millis();
 	currentTime = SystemClock.now().toShortTimeString(true);
 //	debugf("%s", currentTime.c_str());
-	debugf("updateTimeTimerAction - mem %d",system_get_free_heap_size());
+//	debugf("updateTimeTimerAction - mem %d",system_get_free_heap_size());
 //	Serial.println(currentTime);
 
 	refreshTimeForUi();
@@ -422,8 +424,8 @@ void doInit() {
 // Will be called when WiFi station was connected to AP
 void connectOk()
 {
-	infos->updateParamValue("station", WifiStation.getIP().toString());
-	infos->updateParamValue("ssid", WifiStation.getSSID());
+//	infos->updateParamValue("station", WifiStation.getIP().toString());
+//	infos->updateParamValue("ssid", WifiStation.getSSID());
 //	Serial.println("I'm CONNECTED");
 //
 //	if (!mqtt)
@@ -443,8 +445,8 @@ void connectOk()
 void connectFail()
 {
 	Serial.println("I'm NOT CONNECTED. Need help :(");
-	infos->updateParamValue("station", "Disconnected");
-	infos->updateParamValue("ssid", "no:" + ActiveConfig.NetworkSSID);
+//	infos->updateParamValue("station", "Disconnected");
+//	infos->updateParamValue("ssid", "no:" + ActiveConfig.NetworkSSID);
 	WifiStation.enable(false);
 	// .. some you code for device configuration ..
 }
@@ -560,7 +562,7 @@ void startFTP()
 // Will be called when system initialization was completed
 void startServers()
 {
-	infos->updateParamValue("ap", WifiAccessPoint.getIP().toString());
+//	infos->updateParamValue("ap", WifiAccessPoint.getIP().toString());
 	Serial.println("Starting servers");
 ////	startFTP();
 	startWebServer();
@@ -681,12 +683,12 @@ void ShowInfo() {
     //Serial.printf("SPI Flash Size: %d\r\n", (1 << ((spi_flash_get_id() >> 16) & 0xff)));
 }
 
-//void initFromConfig() {
-//	sousController->Setpoint = ActiveConfig.Needed_temp;
-//	sousController->Kp = ActiveConfig.Kp;
-//	sousController->Ki = ActiveConfig.Ki;
-//	sousController->Kd = ActiveConfig.Kd;
-//}
+void initFromConfig() {
+//	sousCommand.sousController->Setpoint = ActiveConfig.Needed_temp;
+//	sousCommand.sousController->Kp = ActiveConfig.Kp;
+//	sousCommand.sousController->Ki = ActiveConfig.Ki;
+//	sousCommand.sousController->Kd = ActiveConfig.Kd;
+}
 
 const String WS_HEARTBEAT = "--heartbeat--";
 
@@ -694,33 +696,24 @@ void sendHeartBeat() {
 	 updateWebSockets(WS_HEARTBEAT);
 }
 
-//void APDisconnect(uint8_t[6] mac, uint8_t aid)
-//{
-//	debugf("DISCONNECT - SSID: %s, REASON: %d\n", ssid.c_str(), reason);
-//
-////	if (!WifiAccessPoint.isEnabled())
-////	{
-////		debugf("Starting OWN AP");
-////		WifiStation.disconnect();
-////		WifiAccessPoint.enable(true);
-////		WifiStation.connect();
-////	}
-//}
-
-void STAGotIP(IPAddress ip, IPAddress mask, IPAddress gateway)
+void STADisconnect(String ssid, uint8_t ssid_len, uint8_t bssid[6], uint8_t reason)
 {
-	infos->updateParamValue("stationIP", ip.toString().c_str());
-	debugf("GOTIP - IP: %s, MASK: %s, GW: %s\n", ip.toString().c_str(),
+	debugf("DISCONNECT - SSID: %s, REASON: %d\n", ssid.c_str(), reason);
 
-	mask.toString().c_str(),
-	gateway.toString().c_str());
+	if (!WifiAccessPoint.isEnabled())
+	{
+		debugf("Starting OWN AP");
+		WifiStation.disconnect();
+		WifiAccessPoint.enable(true);
+		WifiStation.connect();
+	}
+}
+void STAConnected(String ssid, uint8_t ssid_len, uint8_t bssid[6], uint8_t reason) {
 
-//	if (WifiAccessPoint.isEnabled())
-//	{
-//		debugf("Shutdown OWN AP");
-//		WifiAccessPoint.enable(false);
-//	}
-	// Add commands to be executed after successfully connecting to AP and got IP from it
+}
+
+void onConnect() {
+	infos->updateParamValue("stationIP", WifiStation.getIP().toString());
 }
 
 void init()
@@ -732,18 +725,20 @@ void init()
 
 	//Change CPU freq. to 160MHZ
 	System.setCpuFrequency(eCF_160MHz);
+	wifi_set_sleep_type(NONE_SLEEP_T);
 
 	//setup i2c pins
 	Wire.pins(sclPin, sdaPin);
 
-//	ActiveConfig = loadConfig();
-//
+	ActiveConfig = loadConfig();
+
 	sousCommand.initCommand(ActiveConfig.Needed_temp, ActiveConfig.Kp, ActiveConfig.Ki, ActiveConfig.Kd);
+//	sousCommand.initCommand(0,0,0,0);
 	sousCommand.startwork();
 	commandHandler.registerCommand(CommandDelegate("App","Application commands","Application",processAppCommands));
 
 //////	sousController = new SousVideController();
-//////	initFromConfig();
+////	initFromConfig();
 ////
 //	debugf("======= SousVide ==========");
 ////	Serial.println();
@@ -784,7 +779,7 @@ void init()
 ////	debugf("net=%s, pass=%s", WIFI_SSID, WIFI_PWD);
 //
 
-	bool staOn = false;
+	bool staOn = true;
 	WifiStation.enable(staOn);
 	if(staOn) {
 		WifiStation.config(WIFI_SSID, WIFI_PWD);
@@ -801,8 +796,11 @@ void init()
 	infos->updateParamValue("apIp", "192.168.4.1");
 
 	// Attach Wifi events handlers
-//	WifiEvents.onAccessPointDisconnect(APDisconnect)
-	WifiEvents.onStationGotIP(STAGotIP);
+	WifiEvents.onStationDisconnect(STADisconnect);
+	WifiEvents.onStationConnect(STAConnected);
+
+	WifiStation.waitConnection(onConnect);
+//	WifiEvents.onStationGotIP(STAGotIP);
 //
 //	// Run WEB server on system ready
 ////	System.onReady(startServers);

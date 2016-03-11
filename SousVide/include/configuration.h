@@ -1,7 +1,7 @@
 #ifndef INCLUDE_CONFIGURATION_H_
 #define INCLUDE_CONFIGURATION_H_
 
-#include "SmingCore.h"
+#include <SmingCore.h>
 #include <basicStructures.h>
 
 // If you want, you can define WiFi settings globally in Eclipse Environment Variables
@@ -9,6 +9,9 @@
 	#define WIFI_SSID "PleaseEnterSSID" // Put you SSID and Password here
 	#define WIFI_PWD "PleaseEnterPass"
 #endif
+
+const uint8_t ConfigJsonBufferSize = 200; // Application configuration JsonBuffer size ,increase it if you have large config
+const uint16_t ConfigFileBufferSize = 2048; // Application configuration FileBuffer size ,increase it if you have large config
 
 //// Pin for communication with DHT sensor
 ////#define DHT_PIN 1 // UART0 TX pin
@@ -44,7 +47,7 @@
 
 #define lightPin = 14;
 
-#define SOUSVIDE_CONFIG_FILE ".sousvide.conf" // leading point for security reasons :)
+const char SOUSVIDE_CONFIG_FILE[] = ".sousvide.conf"; // leading point for security reasons :)
 
 //enum OperationMode
 //{
@@ -72,7 +75,7 @@ struct SousvideConfig
 	float Kd;
 	OperationMode operationMode;
 };
-
+//
 SousvideConfig loadConfig();
 void saveConfig(SousvideConfig& cfg);
 //extern void startWebClock();
