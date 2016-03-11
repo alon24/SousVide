@@ -40,6 +40,7 @@
         </div>
       </div>
     </div>
+    <div id="ConnectedDIv" hidden='true'>
     <div class="section">
       <div class="container">
         <div class="row">
@@ -101,7 +102,7 @@
                 <tr>
                   <th class="warning">PID Attribute</th>
                   <th class="warning">Value</th>
-                  
+
                 </tr>
               </thead>
               <tbody>
@@ -112,7 +113,7 @@
                     <input type="range" id="p" min="0" max="10" value="8" step="0.1" onchange="sendValueChanged('p', this.value)">
                     <span>0</span>
                   </td>
-                  
+
                 </tr>
                 <tr></tr>
                 <tr class="tr_1">
@@ -121,7 +122,7 @@
                     <input type="range" id="i" min="0" max="10" value="8" step="0.1" onchange="sendValueChanged('i', this.value)">
                     <span>0</span>
                   </td>
-                  
+
                 </tr>
                 <tr></tr>
                 <tr class="tr_1">
@@ -130,7 +131,7 @@
                     <input type="range" id="d" min="0" max="10" value="8" step="0.1" onchange="sendValueChanged('d', this.value)">
                   	<span>0</span>
                   </td>
-                  
+
                 </tr>
               </tbody>
             </table>
@@ -152,6 +153,18 @@
         </div>
       </div>
     </div>
-  
+</div>
+    <div id='NotConnectedDiv'>
+        <div class="row">
+          <div class="col-md-12 text-center">
+            <h2>NOT CONNECTED</h2>
+            <!-- <div data-role="fieldcontain" id="div-sliderPrincipleAmnt">
+              <label for="slider1">Amount:</label>
+              <input type="range" name="slider1" id="slider-PrincipleAmnt" value="100" min="20" max="999" data-highlight="true">
+            </div> -->
+            <a class="active btn btn-lg btn-warning" id="ReconnnectToWS" data-role="button" onclick="startWebSocket();">Try Connecting NOW</a>
+          </div>
+        </div>
+    </div>
 
 </body></html>

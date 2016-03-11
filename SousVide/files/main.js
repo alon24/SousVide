@@ -207,8 +207,8 @@ function toggleShowOverlay(state) {
     //   $("#ConnectedDIv").prop('hidden', true);
     // }
     // else {
-    //   $("#NotConnectedDiv").prop('hidden',true);
-    //   $("#ConnectedDIv").prop('hidden', false);
+      $("#NotConnectedDiv").prop('hidden',true);
+      $("#ConnectedDIv").prop('hidden', false);
     // }
 }
 
