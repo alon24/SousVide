@@ -15,7 +15,22 @@ function init() {
 //
 //  $("#relay1").attr("disabled", true);
 //
+
  $(document).ready(function(){
+  //  $('#target').on("change mousemove", function() {
+  //   $(this).next().html($(this).val());
+  //  });
+  addValListener("target");
+  addValListener("p");
+  addValListener("i");
+  addValListener("d");
+
+  $('#target').trigger('mousemove', {type:'custom mouse move'});
+  $('#p').trigger('mousemove', {type:'custom mouse move'});
+  $('#i').trigger('mousemove', {type:'custom mouse move'});
+  $('#d').trigger('mousemove', {type:'custom mouse move'});
+
+
 //    $("#flip_sous_state").attr("disabled", false);
 //    $("#relay1_state").attr("disabled", false);
 //
@@ -50,6 +65,12 @@ function init() {
   });
 }
 
+function addValListener(target) {
+  $('#'+ target).on("change mousemove", function() {
+   $(this).next().html($(this).val());
+  });
+
+}
 
 function startWebSocket(){
   console.log("Trying to connect to ws at " + websocketServerLocation);
@@ -208,7 +229,7 @@ function doSend(message) {
 }
 
 function updateTime(newTime) {
-    // newTime = "11:22:33";
+    // new  Time = "11:22:33";
     $('#currentTime').text(newTime);
     // var timeParts = newTime.split(":");
     // $('#hour').text(timeParts[0]);

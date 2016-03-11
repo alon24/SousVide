@@ -64,28 +64,24 @@
                         <strong>Current Temp:</strong>
                       </td>
                       <td class="bottom-border info text-center">
-                        <div class="text-danger" id="dVal">#</div>
+                        <div class="text-danger" id="currentVal">#</div>
                       </td>
-                      <td class="bottom-border info text-center"></td>
                     </tr>
                     <tr>
                       <td class="bottom-border info text-danger">
                         <strong>Target Temp: 20-100</strong>
                       </td>
                       <td class="bottom-border info">
-                        <input type="range" id="current" min="20" max="100" value="30" step="0.1" onchange="sendValueChanged('target', this.value)">
-                      </td>
-                      <td class="bottom-border info text-center">
-                        <div class="text-danger" id="dVal">#</div>
+                        <input type="range" id="target" min="20" max="100" value="30" step="0.1" onchange="sendValueChanged('target', this.value)">
+                        <span>0</span>
                       </td>
                     </tr>
                     <tr>
                       <td class="info text-danger">
                         <div>Working Time:
-                          <span id="workCounter">00:00:00</span>
+                          <span id="workCounterVal">00:00:00</span>
                         </div>
                       </td>
-                      <td class="info text-center"></td>
                       <td class="info text-center"></td>
                     </tr>
                   </tbody>
@@ -105,7 +101,7 @@
                 <tr>
                   <th class="warning">PID Attribute</th>
                   <th class="warning">Value</th>
-                  <th class="warning bottom-border"></th>
+                  
                 </tr>
               </thead>
               <tbody>
@@ -114,30 +110,27 @@
                   <td class="danger">Proportional: 0-10</td>
                   <td class="success">
                     <input type="range" id="p" min="0" max="10" value="8" step="0.1" onchange="sendValueChanged('p', this.value)">
+                    <span>0</span>
                   </td>
-                  <td class="success text-center">
-                    <div id="pVal">#</div>
-                  </td>
+                  
                 </tr>
                 <tr></tr>
                 <tr class="tr_1">
                   <td class="danger">Integral: 0-10</td>
                   <td class="success">
                     <input type="range" id="i" min="0" max="10" value="8" step="0.1" onchange="sendValueChanged('i', this.value)">
+                    <span>0</span>
                   </td>
-                  <td class="success text-center">
-                    <div id="iVal">#</div>
-                  </td>
+                  
                 </tr>
                 <tr></tr>
                 <tr class="tr_1">
                   <td class="danger">Derivable: 0-10</td>
                   <td class="success">
                     <input type="range" id="d" min="0" max="10" value="8" step="0.1" onchange="sendValueChanged('d', this.value)">
+                  	<span>0</span>
                   </td>
-                  <td class="success text-center">
-                    <div id="dVal">#</div>
-                  </td>
+                  
                 </tr>
               </tbody>
             </table>
