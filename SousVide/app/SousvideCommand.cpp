@@ -14,6 +14,7 @@ SousvideCommand::SousvideCommand(int relayPin, int dsTempPin, InfoUpdateSousDele
 	//init the relay
 	pinMode(relayPin, OUTPUT);
 	digitalWrite(relayPin, HIGH);
+	updateSousDelegate = delegate;
 
 	sousController = new SousVideController();
 
@@ -55,10 +56,11 @@ void SousvideCommand::processSousvideCommands(String commandLine, CommandOutput*
 	}
 	else
 	{
-		if(commandToken[1].equals("change-val-SetPoint")) {
+//		debugf("**** SousvideCommand cmd is:%s",commandToken[1].c_str());
+		if(commandToken[1].equals("change-val-target")) {
 			double temp = atof(commandToken[2].c_str());
 			sousController->Setpoint = temp;
-			updateOutsideWorld("Setpoint", commandToken[2]);
+			updateOutsideWorld("target", commandToken[2]);
 		}
 		else if(commandToken[1].equals("change-val-p")) {
 			double p = atof(commandToken[2].c_str());
@@ -74,6 +76,19 @@ void SousvideCommand::processSousvideCommands(String commandLine, CommandOutput*
 			double d = atof(commandToken[2].c_str());
 			sousController->Kd = d;
 			updateOutsideWorld("Kd", commandToken[2]);
+		}
+		else if (commandToken[1].equals("toggleRelay")) {
+//			String state = commands.substring(12);
+//			setRelayState(state.equals("true"));
+
+			setRelayState(commandToken[2].equals("true"));
+
+	//		Serial.println("handleCommands::toggeled relay " + String(state));
+	//		relayState = state.equals("true") ? true : false;
+	//		digitalWrite(relayPin, (state.equals("true") ? HIGH : LOW));
+
+//			Serial.println("handleCommand:: state.equals(true)==" + String(command.equals("true")));
+//			updateWebSockets("relayState:" + String(relayState == true ? "true" : "false"));
 		}
 	}
 }

@@ -57,7 +57,8 @@ Timer connectionTimer;
 
 
 void handleSousInfoUpdates(String param, String value) {
-
+	debugf("*********** handleSousInfoUpdates %s=%s", param.c_str(), value.c_str());
+	infos->updateParamValue(param.c_str(), value.c_str());
 }
 
 SousvideCommand sousCommand(RELAY_PIN, DS_TEMP_PIN, handleSousInfoUpdates);
@@ -124,17 +125,16 @@ void processAppCommands(Command inputCommand, CommandOutput* commandOutput)
     {
     	if(jsonCommand.containsKey("reboot")) {
     		debugf("jsonCommand=%s", jsonCommand["reboot"][0]);
-//			debugf("Rebooting");
-//			System.restart();
+			debugf("Rebooting");
+			System.restart();
 		}
 
     	if(jsonCommand.containsKey("saveSettings")) {
-
-//			ActiveConfig.Kp = sousController->Kp;
-//			ActiveConfig.Ki = sousController->Ki;
-//			ActiveConfig.Kd = sousController->Kd;
-//			ActiveConfig.Needed_temp = sousController->Setpoint;
-//			saveConfig(ActiveConfig);
+			ActiveConfig.Kp = sousCommand.sousController->Kp;
+			ActiveConfig.Ki = sousCommand.sousController->Ki;
+			ActiveConfig.Kd = sousCommand.sousController->Kd;
+			ActiveConfig.Needed_temp = sousCommand.sousController->Setpoint;
+			saveConfig(ActiveConfig);
 			//TODO: save changes to file
 		}
 
@@ -372,10 +372,10 @@ void initInfoScreens() {
 	line->addParam("state", "off", true, 3);
 	line->addParam("time", currentTime)->t.x = getXOnScreenForString(currentTime, 1);
 	p2->createLine("Current Temp:")->addParam("temp", "init");
-	p2->createLine("Setpoint Temp:")->addParam("Setpoint", "init");
-	p2->createLine("Kp:")->addParam("kp", "init", true, 5);
-	p2->createLine("Ki:")->addParam("kp", "init", true, 5);
-	p2->createLine("Kd:")->addParam("kp", "init", true, 5);
+	p2->createLine("Setpoint Temp:")->addParam("target", "init");
+	p2->createLine("Kp:")->addParam("Kp", "init", true, 5);
+	p2->createLine("Ki:")->addParam("Ki", "init", true, 5);
+	p2->createLine("Kd:")->addParam("Kd", "init", true, 5);
 
 	//add a list of static Values
 	paramDataValues* ofOnVals = new paramDataValues();
@@ -392,7 +392,7 @@ void initInfoScreens() {
 void refreshTimeForUi()
 {
 	infos->updateParamValue("time", currentTime);
-	updateWebSockets("updatetime:" + currentTime);
+//	updateWebSockets("updatetime:" + currentTime);
 }
 
 //void IRAM_ATTR updateTimeTimerAction()
@@ -542,6 +542,11 @@ void startWebServer()
 
 	// Web Sockets configuration
 	server.enableWebSockets(true);
+	// Web Sockets configuration
+	server.enableWebSockets(true);
+	server.commandProcessing(true,"command");
+
+
 	server.setWebSocketConnectionHandler(wsConnected);
 	server.setWebSocketMessageHandler(wsMessageReceived);
 	server.setWebSocketBinaryHandler(wsBinaryReceived);
@@ -549,15 +554,15 @@ void startWebServer()
 
 }
 
-void startFTP()
-{
-	if (!fileExist("index.html"))
-		fileSetContent("index.html", "<h3>Please connect to FTP and upload files from folder 'web/build' (details in code)</h3>");
-
-	// Start FTP server
-	ftp.listen(21);
-	ftp.addUser("me", "123"); // FTP account
-}
+//void startFTP()
+//{
+//	if (!fileExist("index.html"))
+//		fileSetContent("index.html", "<h3>Please connect to FTP and upload files from folder 'web/build' (details in code)</h3>");
+//
+//	// Start FTP server
+//	ftp.listen(21);
+//	ftp.addUser("me", "123"); // FTP account
+//}
 
 // Will be called when system initialization was completed
 void startServers()
@@ -698,14 +703,14 @@ void sendHeartBeat() {
 
 void STADisconnect(String ssid, uint8_t ssid_len, uint8_t bssid[6], uint8_t reason)
 {
-	debugf("DISCONNECT - SSID: %s, REASON: %d\n", ssid.c_str(), reason);
-
+//	debugf("DISCONNECT - SSID: %s, REASON: %d\n", ssid.c_str(), reason);
+	WifiStation.enable(false);
 	if (!WifiAccessPoint.isEnabled())
 	{
 		debugf("Starting OWN AP");
 		WifiStation.disconnect();
 		WifiAccessPoint.enable(true);
-		WifiStation.connect();
+//		WifiStation.connect();
 	}
 }
 void STAConnected(String ssid, uint8_t ssid_len, uint8_t bssid[6], uint8_t reason) {
@@ -714,6 +719,13 @@ void STAConnected(String ssid, uint8_t ssid_len, uint8_t bssid[6], uint8_t reaso
 
 void onConnect() {
 	infos->updateParamValue("stationIP", WifiStation.getIP().toString());
+}
+
+void updateInfoOnStart() {
+	infos->updateParamValue("target", String(ActiveConfig.Needed_temp));
+	infos->updateParamValue("Kp", String(ActiveConfig.Kp));
+	infos->updateParamValue("Ki", String(ActiveConfig.Ki));
+	infos->updateParamValue("Kd", String(ActiveConfig.Kd));
 }
 
 void init()
@@ -730,19 +742,6 @@ void init()
 	//setup i2c pins
 	Wire.pins(sclPin, sdaPin);
 
-	ActiveConfig = loadConfig();
-
-	sousCommand.initCommand(ActiveConfig.Needed_temp, ActiveConfig.Kp, ActiveConfig.Ki, ActiveConfig.Kd);
-//	sousCommand.initCommand(0,0,0,0);
-	sousCommand.startwork();
-	commandHandler.registerCommand(CommandDelegate("App","Application commands","Application",processAppCommands));
-
-//////	sousController = new SousVideController();
-////	initFromConfig();
-////
-//	debugf("======= SousVide ==========");
-////	Serial.println();
-////
 	display = new SSD1306_Driver(4);
 	display->init();
 //
@@ -750,6 +749,24 @@ void init()
 	initInfoScreens();
 	infos->initMFButton(encoderSwitchPin);
 	infos->show();
+
+	ActiveConfig = loadConfig();
+	sousCommand.initCommand(ActiveConfig.Needed_temp, ActiveConfig.Kp, ActiveConfig.Ki, ActiveConfig.Kd);
+
+	updateInfoOnStart();
+
+//	sousCommand.initCommand(0,0,0,0);
+	sousCommand.startwork();
+//	commandHandler.registerCommand(CommandDelegate("fromClient","Application commands","Application",processAppCommands));
+	commandHandler.registerCommand(CommandDelegate("app","Application commands","Application",processAppCommands));
+
+//////	sousController = new SousVideController();
+////	initFromConfig();
+////
+//	debugf("======= SousVide ==========");
+////	Serial.println();
+////
+
 	DateTime date = SystemClock.now();
 	lastActionTime = date.Milliseconds;
 

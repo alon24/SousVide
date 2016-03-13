@@ -35,6 +35,10 @@ SousvideConfig loadConfig()
 		//Factory defaults if no config file present
 		cfg.NetworkSSID = WIFI_SSID;
 		cfg.NetworkPassword = WIFI_PWD;
+		cfg.Needed_temp =54;
+		cfg.Kp =9;
+		cfg.Ki =9;
+		cfg.Kd =9;
 	}
 	return cfg;
 }

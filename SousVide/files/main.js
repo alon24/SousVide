@@ -59,7 +59,7 @@ function init() {
 
 //    setFormState(false);
 
-    websocketServerLocation = "ws://" + loc + "/";
+    websocketServerLocation = "ws://" + loc + "/index.html?command=true";
     startWebSocket();
     // testWebSocket();
   });
@@ -108,7 +108,7 @@ function onOpen(event){
                 missed_heartbeats++;
                 if (missed_heartbeats >= 2)
                     throw new Error("Too many missed heartbeats.");
-                socket.send(heartbeat_msg);
+                socket.send("app " + heartbeat_msg);
             } catch(e) {
                 clearInterval(heartbeat_interval);
                 heartbeat_interval = null;
@@ -202,21 +202,36 @@ function connect() {
 }
 
 function toggleShowOverlay(state) {
-    // if (state === true) {
-    //   $("#NotConnectedDiv").prop('hidden',false);
-    //   $("#ConnectedDIv").prop('hidden', true);
-    // }
-    // else {
+    if (state === true) {
+      $("#NotConnectedDiv").prop('hidden',false);
+      $("#ConnectedDIv").prop('hidden', true);
+    }
+    else {
       $("#NotConnectedDiv").prop('hidden',true);
       $("#ConnectedDIv").prop('hidden', false);
-    // }
+    }
 }
 
 function sendValueChanged(id, value) {
 
 
   // console.log(id + "="  + value);
-  doSend('fromClient change-val-' + id + ':' + value);
+  doSend('sousvide change-val-' + id + ' ' + value);
+}
+
+var sousvideOnState = false;
+function toggleSousState(newState) {
+    if (newState) {
+      $('#work');
+    }
+}
+
+function reset() {
+  doSend("app reset");
+}
+
+function sendStateChange(newState) {
+    doSend("app state " + newState);
 }
 
 function doSend(message) {
