@@ -168,6 +168,13 @@ void initSpiff()
 	Serial.println();
 }
 
-
+String getElapsedime(long elapsed)
+{
+	char *buf = new char[20];
+	sprintf(buf, "%01.0f:%02.0f:%02.2f", floor(elapsed/3600.0), floor(fmod(elapsed,3600.0)/60.0), fmod(elapsed,60.0));
+	String ret = String(buf);
+	delete buf;
+	return ret;
+}
 
 #endif /* INCLUDE_UTILS_H_ */

@@ -19,7 +19,7 @@
 //void process();
 void  connectOk();
 void  connectFail();
-void  handleCommands(String commands);
+//void  handleCommands(String commands);
 void  updateInitWebSockets(WebSocket client);
 void  setRelayState(boolean state);
 
@@ -33,13 +33,11 @@ Base_Display_Driver* display;
 
 //Timers
 Timer procTimer;
-Timer keepAliveTimer;
+Timer currentWorkTimeTimer;
 Timer initTimer;
 Timer heartBeat;
-time_t lastActionTime = 0;
-String currentTime = "00:00:00";
-
-//float currentTemp = 0;
+//time_t lastActionTime = 0;
+long currentWorkTime = 0;
 
 int totalActiveSockets = 0;
 
@@ -53,11 +51,8 @@ BssList networks;
 String network, password;
 Timer connectionTimer;
 
-//bool relayState = false;
-
-
 void handleSousInfoUpdates(String param, String value) {
-	debugf("*********** handleSousInfoUpdates %s=%s", param.c_str(), value.c_str());
+//	debugf("*********** handleSousInfoUpdates %s=%s", param.c_str(), value.c_str());
 	infos->updateParamValue(param.c_str(), value.c_str());
 }
 
@@ -67,7 +62,7 @@ SousvideCommand sousCommand(RELAY_PIN, DS_TEMP_PIN, handleSousInfoUpdates);
 
 void wsConnected(WebSocket& socket)
 {
-	debugf("******* wsConnected");
+//	debugf("******* wsConnected");
 	totalActiveSockets++;
 	// Notify everybody about new connection
 	WebSocketsList &clients = server.getActiveWebSockets();
@@ -78,21 +73,29 @@ void wsConnected(WebSocket& socket)
 
 void wsMessageReceived(WebSocket& socket, const String& message)
 {
-	debugf("******* Incomming ws message:%s",message.c_str());
-	handleCommands(message);
+//	debugf("******* Incomming ws message:%s",message.c_str());
+//	handleCommands(message);
 }
 
 void updateInitWebSockets(WebSocket client) {
-	char buf[1000];
-//	sprintf(buf, "updatePID:[%s,%s,%s];updateSetPoint:%s;updateWIFI:%s,%s;relayState:%s",
-//			String(sousCommand.sousController->Kp, 1).c_str(),
-//			String(sousCommand.sousController->Ki, 1).c_str(),
-//			String(sousCommand.sousController->Kd, 1).c_str(),
-//			String(sousCommand.sousController->Setpoint, 1).c_str(),
-//			ActiveConfig.NetworkSSID.c_str(), ActiveConfig.NetworkPassword.c_str(),
-//			(sousCommand.relayState == true ? "true" : "false"));
-//
-//	client.sendString(String(buf));
+//	String st = "updatePID:" +  String(sousCommand.sousController->Kp, 1) +","
+//			+ String(sousCommand.sousController->Ki, 1) +","
+//		+ String(sousCommand.sousController->Kd, 1)
+//		+ ";updateSetPoint:" + String(sousCommand.sousController->Setpoint, 1);
+//////		+ String(sousCommand.sousController->Kp, 1).c_str();
+
+	char *buf = new char[100];
+	sprintf(buf, "updatePID:%s,%s,%s;updateSetPoint:%s;updateWIFI:%s,%s;relayState:%s",
+			String(sousCommand.sousController->Kp, 1).c_str(),
+			String(sousCommand.sousController->Ki, 1).c_str(),
+			String(sousCommand.sousController->Kd, 1).c_str(),
+			String(sousCommand.sousController->Setpoint, 1).c_str(),
+			ActiveConfig.NetworkSSID.c_str(), ActiveConfig.NetworkPassword.c_str(),
+			(sousCommand.relayState == true ? "true" : "false"));
+
+	String ret = String(buf);
+	delete buf;
+	client.sendString(ret);
 }
 
 void updateWebSockets(String cmd) {
@@ -102,7 +105,7 @@ void updateWebSockets(String cmd) {
 	}
 }
 
-//should return the command and make the cmd string hold data only
+//should return the command and make the cmd string hold data onl
 String getCommandAndData(String &cmd) {
 	int cmdEnd = cmd.indexOf(":");
 //	debugf("in getCommand:: orig=%s, deli=%i", cmd.c_str(), cmdEnd );
@@ -134,6 +137,7 @@ void processAppCommands(Command inputCommand, CommandOutput* commandOutput)
 			ActiveConfig.Ki = sousCommand.sousController->Ki;
 			ActiveConfig.Kd = sousCommand.sousController->Kd;
 			ActiveConfig.Needed_temp = sousCommand.sousController->Setpoint;
+			ActiveConfig.enabled = sousCommand.enabled;
 			saveConfig(ActiveConfig);
 			//TODO: save changes to file
 		}
@@ -146,6 +150,39 @@ void processAppCommands(Command inputCommand, CommandOutput* commandOutput)
     else
     {
         Serial.printf("App debug : %s\r\n",inputCommand.getCmdString().c_str() );
+
+        Vector<String> commandToken;
+        String cmd = inputCommand.getCmdString();
+        int numToken = splitString(cmd, ' ' , commandToken);
+        if(commandToken[1].equals("reset")) {
+        	if (currentWorkTimeTimer.isStarted()) {
+				currentWorkTimeTimer.stop();
+			}
+
+        	currentWorkTime = 0;
+		}
+		else if(commandToken[1].equals("play")) {
+			if (!currentWorkTimeTimer.isStarted()) {
+				currentWorkTimeTimer.start();
+			}
+		}
+		else if(commandToken[1].equals("stop")) {
+			if (currentWorkTimeTimer.isStarted()) {
+				currentWorkTimeTimer.stop();
+			}
+		}
+		else if(commandToken[1].equals("toggleEnable")) {
+			//enable work
+			if (currentWorkTimeTimer.isStarted()) {
+				currentWorkTimeTimer.stop();
+			}
+		}
+		else if(commandToken[1].equals("toggleDisable")) {
+			//disable work
+			if (currentWorkTimeTimer.isStarted()) {
+				currentWorkTimeTimer.stop();
+			}
+		}
     }
 }
 
@@ -353,10 +390,20 @@ boolean shouldDimScreen = false;
  * setup infoscreens moved by the rotary
  */
 void initInfoScreens() {
+	InfoPage* p2 = infos->createPage("Sous");
+	InfoLine* line = p2->createLine("Cook");
+	line->addParam("state", "off", true, 3);
+	line->addParam("workTime", "00:00:00")->t.x = getXOnScreenForString("00:00:00", 1);
+	p2->createLine("Current Temp:")->addParam("temp", "init");
+	p2->createLine("Setpoint Temp:")->addParam("target", "init");
+	p2->createLine("Kp:")->addParam("Kp", "init", true, 5);
+	p2->createLine("Ki:")->addParam("Ki", "init", true, 5);
+	p2->createLine("Kd:")->addParam("Kd", "init", true, 5);
+
 	// Add a new Page
 	InfoPage* p1 = infos->createPage("Main");
 	//Add a line item
-	p1->createLine("Network")->addParam("time", currentTime)->t.x = getXOnScreenForString(currentTime, 1);
+	p1->createLine("Network")->addParam("workTime", "00:00:00")->t.x = getXOnScreenForString("00:00:00", 1);
 	InfoLine *apLine = p1->createLine("ap ");
 	apLine->addParam("apState", "on: ", true, 4);
 	apLine->addParam("apIp", "Not Connected");
@@ -367,15 +414,7 @@ void initInfoScreens() {
 	lsta->addParam("stationIP", "unknown");
 //	p1->createLine("sta:")->addParam("stationIp", "");
 
-	InfoPage* p2 = infos->createPage("Sous");
-	InfoLine* line = p2->createLine("SousVide");
-	line->addParam("state", "off", true, 3);
-	line->addParam("time", currentTime)->t.x = getXOnScreenForString(currentTime, 1);
-	p2->createLine("Current Temp:")->addParam("temp", "init");
-	p2->createLine("Setpoint Temp:")->addParam("target", "init");
-	p2->createLine("Kp:")->addParam("Kp", "init", true, 5);
-	p2->createLine("Ki:")->addParam("Ki", "init", true, 5);
-	p2->createLine("Kd:")->addParam("Kd", "init", true, 5);
+
 
 	//add a list of static Values
 	paramDataValues* ofOnVals = new paramDataValues();
@@ -391,15 +430,14 @@ void initInfoScreens() {
 
 void refreshTimeForUi()
 {
-	infos->updateParamValue("time", currentTime);
+	infos->updateParamValue("workTime", getElapsedime(currentWorkTime));
 //	updateWebSockets("updatetime:" + currentTime);
 }
 
-//void IRAM_ATTR updateTimeTimerAction()
-void updateTimeTimerAction()
+void updateWorkTimeTimerAction()
 {
 //	unsigned long start = millis();
-	currentTime = SystemClock.now().toShortTimeString(true);
+	currentWorkTime++;
 //	debugf("%s", currentTime.c_str());
 //	debugf("updateTimeTimerAction - mem %d",system_get_free_heap_size());
 //	Serial.println(currentTime);
@@ -698,7 +736,8 @@ void initFromConfig() {
 const String WS_HEARTBEAT = "--heartbeat--";
 
 void sendHeartBeat() {
-	 updateWebSockets(WS_HEARTBEAT);
+//	debugf("sendHeartBeat");
+	updateWebSockets(WS_HEARTBEAT);
 }
 
 void STADisconnect(String ssid, uint8_t ssid_len, uint8_t bssid[6], uint8_t reason)
@@ -767,11 +806,11 @@ void init()
 ////	Serial.println();
 ////
 
-	DateTime date = SystemClock.now();
-	lastActionTime = date.Milliseconds;
+//	DateTime date = SystemClock.now();
+//	lastActionTime = date.Milliseconds;
 
 	//ilan
-	keepAliveTimer.initializeMs(1000, updateTimeTimerAction).start();
+//	keepAliveTimer.initializeMs(1000, updateTimeTimerAction).start();
 //
 //	AppSettings.load();
 //

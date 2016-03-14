@@ -64,6 +64,7 @@ struct SousvideConfig
 		Ki = 1;
 		Kd = 1;
 		operationMode = Manual;
+		enabled = false;
 	}
 
 	String NetworkSSID;
@@ -73,6 +74,7 @@ struct SousvideConfig
 	float Kp;
 	float Ki;
 	float Kd;
+	bool enabled;
 	OperationMode operationMode;
 };
 //

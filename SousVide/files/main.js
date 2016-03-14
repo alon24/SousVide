@@ -17,9 +17,7 @@ function init() {
 //
 
  $(document).ready(function(){
-  //  $('#target').on("change mousemove", function() {
-  //   $(this).next().html($(this).val());
-  //  });
+
   addValListener("target");
   addValListener("p");
   addValListener("i");
@@ -29,6 +27,26 @@ function init() {
   $('#p').trigger('mousemove', {type:'custom mouse move'});
   $('#i').trigger('mousemove', {type:'custom mouse move'});
   $('#d').trigger('mousemove', {type:'custom mouse move'});
+
+  $('#reset').click(function() {
+    doSend("app reset");
+  });
+  $('#play').click(function() {
+    doSend("app play");
+  });
+  $('#stop').click(function() {
+    doSend("app stop");
+  });
+  $('#enable').click(function() {
+    if ($(this).hasClass('active')) {
+      doSend("app toggleEnable");
+      $(this).html("Enabled <span><img src=\"enable.png\">");
+    } else {
+      doSend("app toggleDisable");
+      $(this).html("Disabled <span><img src=\"disable.png\">");
+    }
+
+  });
 
 
 //    $("#flip_sous_state").attr("disabled", false);
@@ -119,6 +137,7 @@ function onOpen(event){
     }
 
     toggleShowOverlay(false);
+    // doSend("app getInitData")
     // setFormState(true);
 }
 
@@ -163,37 +182,55 @@ function handlePayload(payload) {
       var cmd = parseCommand(command);
     //check if need to change the realy button state
     if (cmd[0].startsWith('relayState')) {
-      var state = cmd[1];
-        // console.log('state = ' + state + ", relay1 = " + $("#relay1_state").val());
-        if( (state == 'true' && $("#relay1_state").val() == 'leave') ||
-            (state == 'false' && $("#relay1_state").val() == 'arrive')      )
-        {
-            if (state == 'true') {
-              $("#relay1_state").val('arrive').flipswitch('refresh');
-            } else {
-              $("#relay1_state").val('leave').flipswitch('refresh');
-            }
-        }
-        else {
-        //  console.log('do nothing');
-        }
+      // var state = cmd[1];
+      //   // console.log('state = ' + state + ", relay1 = " + $("#relay1_state").val());
+      //   if( (state == 'true' && $("#relay1_state").val() == 'leave') ||
+      //       (state == 'false' && $("#relay1_state").val() == 'arrive')      )
+      //   {
+      //       if (state == 'true') {
+      //         $("#relay1_state").val('arrive').flipswitch('refresh');
+      //       } else {
+      //         $("#relay1_state").val('leave').flipswitch('refresh');
+      //       }
+      //   }
+      //   else {
+      //   //  console.log('do nothing');
+      //   }
     }
-    else if (cmd[0].startsWith('updatetime')) {
+    else if (cmd[0].startsWith('updateWorkCounter')) {
       updateTime(cmd[1]);
     }
-    else if (cmd[0].startsWith('temp')) {
-      updateTemp(cmd[1]);
+    else if (cmd[0].startsWith('updateTemp')) {
+      // updateTemp(cmd[1]);
     }
     else if (cmd[0].startsWith('updatePID')) {
       updatePID(cmd[1]);
     }
     else if (cmd[0].startsWith('updateSetPoint')) {
-      updateVal("SetPoint", cmd[1]);
+      updateVal("target", cmd[1]);
     }
     else if (cmd[0].startsWith('updateWIFI')) {
-      updateWifi(cmd[1]);
+      // updateWifi(cmd[1]);
     }
   }
+}
+
+// change the slider val for id
+function updateVal(id, val) {
+	if ($('#' + id).val() == val) {
+		return;
+	}
+
+	$('#' + id).val(val);
+  $('#' + id).trigger('mousemove', {type:'custom mouse move'});
+}
+
+function updatePID(pid) {
+    var pidParts = pid.split(",");
+    updateVal("p", pidParts[0]);
+    updateVal("i", pidParts[1]);
+    updateVal("d", pidParts[2]);
+    console.log(pid);
 }
 
 function connect() {
@@ -201,7 +238,11 @@ function connect() {
       doSend('connect:' + wifiCmd);
 }
 
+toggelshowWorking = false;
 function toggleShowOverlay(state) {
+  if (toggelshowWorking == false) {
+    return;
+  }
     if (state === true) {
       $("#NotConnectedDiv").prop('hidden',false);
       $("#ConnectedDIv").prop('hidden', true);
@@ -243,14 +284,13 @@ function doSend(message) {
   }
 }
 
-function updateTime(newTime) {
+function updateWorkTime(newTime) {
     // new  Time = "11:22:33";
-    $('#currentTime').text(newTime);
-    // var timeParts = newTime.split(":");
-    // $('#hour').text(timeParts[0]);
-    // $('#min').text(timeParts[1]);
-    // $('#sec').text(timeParts[2]);
-//    console.log(newTime);
+    $('#workCounter').text(newTime);
+}
+
+function handleInitData() {
+
 }
 
 window.addEventListener("load", init, false);

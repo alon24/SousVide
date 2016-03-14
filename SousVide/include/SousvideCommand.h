@@ -19,6 +19,7 @@ class SousvideCommand
 public:
 	SousVideController *sousController;
 	bool relayState = false;
+	bool enabled = false;
 
 	SousvideCommand(int relayPin, int dsTempPin, InfoUpdateSousDelegate delegate = null);
 	virtual ~SousvideCommand();

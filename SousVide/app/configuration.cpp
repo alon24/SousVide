@@ -6,13 +6,14 @@ SousvideConfig ActiveConfig;
 
 SousvideConfig loadConfig()
 {
-	StaticJsonBuffer<ConfigJsonBufferSize> jsonBuffer;
+	DynamicJsonBuffer jsonBuffer;
+//	StaticJsonBuffer<ConfigJsonBufferSize> jsonBuffer;
 	SousvideConfig cfg;
 	if (fileExist(SOUSVIDE_CONFIG_FILE))
 	{
 		int size = fileGetSize(SOUSVIDE_CONFIG_FILE);
-		char* jsonString = new char[size + 1];
-		fileGetContent(SOUSVIDE_CONFIG_FILE, jsonString, size + 1);
+//		char* jsonString = new char[size + 1];
+		String jsonString = fileGetContent(SOUSVIDE_CONFIG_FILE);
 		JsonObject& root = jsonBuffer.parseObject(jsonString);
 
 		JsonObject& network = root["network"];
@@ -24,11 +25,12 @@ SousvideConfig loadConfig()
 		cfg.Kp = sousvide["kp"];
 		cfg.Ki = sousvide["ki"];
 		cfg.Kd = sousvide["kd"];
+		cfg.enabled = sousvide["enabled"];
 
 		JsonObject& trigger = root["trigger"];
 		cfg.operationMode = (OperationMode)(int)trigger["type"];
 
-		delete[] jsonString;
+//		delete[] jsonString;
 	}
 	else
 	{
@@ -45,7 +47,7 @@ SousvideConfig loadConfig()
 
 void saveConfig(SousvideConfig& cfg)
 {
-	StaticJsonBuffer<ConfigJsonBufferSize> jsonBuffer;
+	DynamicJsonBuffer jsonBuffer;
 	JsonObject& root = jsonBuffer.createObject();
 
 	JsonObject& network = jsonBuffer.createObject();
@@ -59,14 +61,17 @@ void saveConfig(SousvideConfig& cfg)
 	sousvide["kp"] = cfg.Kp;
 	sousvide["ki"] = cfg.Ki;
 	sousvide["kd"] = cfg.Kd;
+	sousvide["enabled"] = cfg.enabled;
 
 	JsonObject& trigger = jsonBuffer.createObject();
 	root["trigger"] = trigger;
 	trigger["type"] = (int)cfg.operationMode;
 
-	char buf[ConfigFileBufferSize];
-	root.prettyPrintTo(buf, sizeof(buf));
-	fileSetContent(SOUSVIDE_CONFIG_FILE, buf);
+	String st = "";
+	root.prettyPrintTo(st);
+//	char buf[ConfigFileBufferSize];
+//	root.prettyPrintTo(buf, sizeof(buf));
+	fileSetContent(SOUSVIDE_CONFIG_FILE, st);
 }
 
 
