@@ -383,14 +383,56 @@ void onMessageReceived(String topic, String message)
 	}
 }
 
-//should check screen action
-boolean shouldDimScreen = false;
+bool menuEventLister(paramStruct* data, ViewMode v, InfoScreenMenuAction actionType, String newValue) {
+	if (actionType == InfoScreenMenuAction::InfoNextValue) {
+		if (data->id == "Kp") {
+			float currentKi = sousCommand.sousController->Kp;
+			if (currentKi < 10) {
+				currentKi = currentKi+0.1;
+			}
+			else {
+				currentKi = 0;
+			}
+			debugf("current kp = %d", currentKi);
+			sousCommand.sousController->Kp = currentKi;
+			infos->updateParamValue(data->id, String(currentKi, 2));
+			return true;
+		}
+		else if (data->id == "Ki") {
+			float currentKi = sousCommand.sousController->Ki;
+			if (currentKi < 10) {
+				currentKi = currentKi+0.1;
+			}
+			else {
+				currentKi = 0;
+			}
+			sousCommand.sousController->Ki = currentKi;
+			infos->updateParamValue(data->id, String(currentKi, 2));
+			return true;
+		}
+		else if (data->id == "Kd") {
+			float currentKi = sousCommand.sousController->Kd;
+			if (currentKi < 10) {
+				currentKi = currentKi+0.1;
+			}
+			else {
+				currentKi = 0;
+			}
+			sousCommand.sousController->Kd = currentKi;
+			infos->updateParamValue(data->id, String(currentKi, 2));
+			return true;
+		}
+	}
+
+
+	return false;
+}
 
 /**
  * setup infoscreens moved by the rotary
  */
 void initInfoScreens() {
-	InfoPage* p2 = infos->createPage("Sous");
+	InfoPage* p2 = infos->createPage("Sous   ");
 	InfoLine* line = p2->createLine("Cook");
 	line->addParam("state", "off", true, 3);
 	line->addParam("workTime", "00:00:00")->t.x = getXOnScreenForString("00:00:00", 1);
@@ -415,7 +457,6 @@ void initInfoScreens() {
 //	p1->createLine("sta:")->addParam("stationIp", "");
 
 
-
 	//add a list of static Values
 	paramDataValues* ofOnVals = new paramDataValues();
 	ofOnVals->addValue(new String("off:"));
@@ -426,6 +467,12 @@ void initInfoScreens() {
 	infos->setEditModeValues("apState", ofOnVals);
 	infos->setEditModeValues("staState", ofOnVals);
 
+	paramDataValues* stateVals = new paramDataValues();
+	stateVals->addValue(new String("off"));
+	stateVals->addValue(new String("on "));
+	infos->setEditModeValues("state", stateVals);
+
+	infos->setOnMenuEventDelegate(menuEventLister);
 }
 
 void refreshTimeForUi()

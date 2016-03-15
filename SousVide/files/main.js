@@ -37,17 +37,8 @@ function init() {
   $('#stop').click(function() {
     doSend("app stop");
   });
-  $('#enable').click(function() {
-    if ($(this).hasClass('active')) {
-      doSend("app toggleEnable");
-      $(this).html("Enabled <span><img src=\"enable.png\">");
-    } else {
-      doSend("app toggleDisable");
-      $(this).html("Disabled <span><img src=\"disable.png\">");
-    }
 
-  });
-
+  setupIsHeating();
 
 //    $("#flip_sous_state").attr("disabled", false);
 //    $("#relay1_state").attr("disabled", false);
@@ -78,9 +69,34 @@ function init() {
 //    setFormState(false);
 
     websocketServerLocation = "ws://" + loc + "/index.html?command=true";
-    startWebSocket();
+    startWebSocket(false);
     // testWebSocket();
   });
+}
+
+function setupIsHeating(state) {
+  // <img id="isHeatingIcon " src="enable.png">
+  // $('#isHeatingIcon').attr("src", "disable.png");
+
+  if (state) {
+    $('#isHeating').prev().attr("src", "enable.png");
+    $('#isHeating').html("Heating in progress");
+  } else {
+    $('#isHeating').prev().attr("src", "disable.png");
+    $('#isHeating').html("Not Heating");
+  }
+
+  // $('#isHeatingIcon').click(function() {
+  //   if ($(this).hasClass('active')) {
+  //     doSend("app toggleEnable");
+  //     $(this).html("Disabled <span><img src=\"disable.png\">");
+  //
+  //   } else {
+  //     doSend("app toggleDisable");
+  //     $(this).html("Enabled <span><img src=\"enable.png\">");
+  //   }
+  //
+  // });
 }
 
 function addValListener(target) {

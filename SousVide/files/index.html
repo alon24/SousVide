@@ -81,25 +81,32 @@
                           <span id="workCounter">00:00:00</span>
                         </div>
                       </td>
-                      <td class="info text-center"></td>
+                      <td class="info text-center">
+                        <span>
+                          <span class="image">
+                            <img src="enable.png" id="isHeatingIcon">
+                          </span>
+                          <span id="isHeating" class="text">Heating in progresss</span>
+                        </span>
+                      </td>
                     </tr>
                   </tbody>
                 </table>
               </div>
             </div>
             <div class="row">
-              <div class="col-md-3">
-                <a class="active btn btn-success" data-toggle="button" id="enable">Enabled <span><img src="enable.png"></span></a>
-              </div>
-              <div class="col-md-3 text-center">
+              <div class="col-md-12"></div>
+            </div>
+            <div class="row">
+              <div class="col-md-8 text-center">
                 <a class="btn btn-primary" id="reset">Reset</a>
-                <a class="btn btn-primary" id="play">Play</a>
+                <button class="btn-primary">
+                  <span class="image">
+                    <img src="enable.png">
+                  </span>
+                  <span id="play" class="text">Start work</span>
+                </button>
                 <a class="btn btn-primary" id="stop">Stop</a>
-              </div>
-              <div class="col-md-3">
-                <i class="fa fa-3x fa-mobile fa-fw" id="working">
-                  <img src="enable.png">
-                </i>
               </div>
             </div>
           </div>
