@@ -200,24 +200,12 @@ function handlePayload(payload) {
     if (cmd[0].startsWith('relayState')) {
       var state = cmd[1];
       handleRelayState(state);
-        // console.log('state = ' + state + ", relay1 = " + $("#relay1_state").val());
-      //   if( (state == 'true' && $("#relay1_state").val() == 'leave') ||
-      //       (state == 'false' && $("#relay1_state").val() == 'arrive')      )
-      //   {
-      //       if (state == 'true') {
-      //         $("#relay1_state").val('arrive').flipswitch('refresh');
-      //       } else {
-      //         $("#relay1_state").val('leave').flipswitch('refresh');
-      //       }
-      //   }
-      //   else {
-      //   //  console.log('do nothing');
-      //   }
     }
     else if (cmd[0].startsWith('updateWorkCounter')) {
-      updateTime(cmd[1]);
+      $("#currentTemp").html(cmd[1]);
     }
     else if (cmd[0].startsWith('updateTemp')) {
+      $("#workCounter").html(cmd[1]);
       // updateTemp(cmd[1]);
     }
     else if (cmd[0].startsWith('updatePID')) {
@@ -229,6 +217,21 @@ function handlePayload(payload) {
     else if (cmd[0].startsWith('updateWIFI')) {
       // updateWifi(cmd[1]);
     }
+    else if (cmd[0].startsWith('sousvideMode')) {
+      updateSousvideMode(cmd[1]);
+    }
+  }
+}
+
+function updateSousvideMode(mode) {
+  if (mode==="manual"){
+    if (!$('#enable_override_mode').hasClass('active')) {
+        $('#enable_override_mode').addClass('active');
+    }
+  } else {
+      if ($('#enable_override_mode').hasClass('active')) {
+          $('#enable_override_mode').removeClass('active');
+        }
   }
 }
 
@@ -271,8 +274,6 @@ function toggleShowOverlay(state) {
 }
 
 function sendValueChanged(id, value) {
-
-
   // console.log(id + "="  + value);
   doSend('sousvide change-val-' + id + ' ' + value);
 }

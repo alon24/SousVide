@@ -91,7 +91,8 @@ void updateInitWebSockets(WebSocket client) {
 			String(sousCommand.sousController->Kd, 1).c_str(),
 			String(sousCommand.sousController->Setpoint, 1).c_str(),
 			ActiveConfig.NetworkSSID.c_str(), ActiveConfig.NetworkPassword.c_str(),
-			(sousCommand.relayState == true ? "true" : "false"));
+			(sousCommand.relayState == true ? "true" : "false"),
+			String(sousCommand.currentTemp,2));
 
 	String ret = String(buf);
 	delete buf;

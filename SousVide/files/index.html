@@ -63,7 +63,7 @@
                         <strong>Current Temp:</strong>
                       </td>
                       <td class="bottom-border info text-center">
-                        <div class="text-danger" id="currentVal">#</div>
+                        <div class="text-danger" id="currentTemp">#</div>
                       </td>
                     </tr>
                     <tr>
@@ -95,9 +95,6 @@
               </div>
             </div>
             <div class="row">
-              <div class="col-md-12"></div>
-            </div>
-            <div class="row">
               <div class="col-md-8 text-center">
                 <a class="btn btn-primary" id="reset">Reset</a>
                 <button class="btn-primary">
@@ -110,8 +107,16 @@
               </div>
             </div>
           </div>
+          <div class="row"></div>
           <div class="row">
             <div class="col-md-8">
+              <a class="btn btn-lg btn-success" id="enable_override_mode" data-toggle="button">Override mode Enable</a>
+              <span>
+                <span class="image">
+                  <img src="enable.png" id="isHeatingIcon">
+                </span>
+                <span id="isHeatingOver" class="text">Heating in progresss</span>
+              </span>
               <table class="table">
                 <thead>
                   <tr>

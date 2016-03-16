@@ -146,15 +146,15 @@ void SousvideCommand::checkTempTriggerRelay(float temp) {
 	if (operationMode == Sousvide)
 	{
 		int trigger = (int)sousController->Setpoint;
-//		if((int)temp < trigger && !relayState ) {
-//			debugf("current temp is below %i, so starting relay", temp);
-////			Serial.println("temp is " + String(trigger) + ", starting relay");
+		if((int)temp < trigger && !relayState ) {
+			debugf("current temp is below %i, so starting relay", temp);
+//			Serial.println("temp is " + String(trigger) + ", starting relay");
 //			handleCommands("toggleRelay:true");
-//		} else if((int)temp >= trigger && relayState){
-//			debugf("current temp is %i, so stopping relay", temp);
-////			Serial.println("temp is <  " + String(trigger) + ",stopping relay");
+		} else if((int)temp >= trigger && relayState){
+			debugf("current temp is %i, so stopping relay", temp);
+//			Serial.println("temp is <  " + String(trigger) + ",stopping relay");
 //			handleCommands("toggleRelay:false");
-//		}
+		}
 	}
 }
 
