@@ -38,7 +38,7 @@ function init() {
     doSend("app stop");
   });
 
-  setupIsHeating();
+  handleRelayState(false);
 
 //    $("#flip_sous_state").attr("disabled", false);
 //    $("#relay1_state").attr("disabled", false);
@@ -74,15 +74,15 @@ function init() {
   });
 }
 
-function setupIsHeating(state) {
+function handleRelayState(state) {
   // <img id="isHeatingIcon " src="enable.png">
   // $('#isHeatingIcon').attr("src", "disable.png");
 
-  if (state) {
-    $('#isHeating').prev().attr("src", "enable.png");
+  if (state === "true") {
+    $('#isHeatingIcon').attr("src", "enable.png");
     $('#isHeating').html("Heating in progress");
   } else {
-    $('#isHeating').prev().attr("src", "disable.png");
+    $('#isHeatingIcon').attr("src", "disable.png");
     $('#isHeating').html("Not Heating");
   }
 
@@ -198,8 +198,9 @@ function handlePayload(payload) {
       var cmd = parseCommand(command);
     //check if need to change the realy button state
     if (cmd[0].startsWith('relayState')) {
-      // var state = cmd[1];
-      //   // console.log('state = ' + state + ", relay1 = " + $("#relay1_state").val());
+      var state = cmd[1];
+      handleRelayState(state);
+        // console.log('state = ' + state + ", relay1 = " + $("#relay1_state").val());
       //   if( (state == 'true' && $("#relay1_state").val() == 'leave') ||
       //       (state == 'false' && $("#relay1_state").val() == 'arrive')      )
       //   {
