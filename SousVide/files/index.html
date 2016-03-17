@@ -53,133 +53,138 @@
                 <tr></tr>
               </tbody>
             </table>
-            <div class="row">
-              <div class="col-md-8">
-                <table class="table">
-                  <thead></thead>
-                  <tbody>
-                    <tr>
-                      <td class="bottom-border info text-danger">
-                        <strong>Current Temp:</strong>
-                      </td>
-                      <td class="bottom-border info text-center">
-                        <div class="text-danger" id="currentTemp">#</div>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td class="bottom-border info text-danger">
-                        <strong>Target Temp: 20-100</strong>
-                      </td>
-                      <td class="bottom-border info">
-                        <input type="range" id="target" min="20" max="100" value="30" step="0.1" onchange="sendValueChanged('target', this.value)">
-                        <span>0</span>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td class="info text-danger">
-                        <div>Working Time:
-                          <span id="workCounter">00:00:00</span>
-                        </div>
-                      </td>
-                      <td class="info text-center">
-                        <span>
-                          <span class="image">
-                            <img src="enable.png" id="isHeatingIcon">
-                          </span>
-                          <span id="isHeating" class="text">Heating in progresss</span>
+            <div class="row"></div>
+            <div class="col-md-8">
+              <table class="table">
+                <thead></thead>
+                <tbody>
+                  <tr>
+                    <td class="bottom-border info text-danger">
+                      <strong>Current Temp:</strong>
+                    </td>
+                    <td class="bottom-border info text-center">
+                      <div class="text-danger" id="currentTemp">#</div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="bottom-border info text-danger">
+                      <strong>Target Temp: 20-100</strong>
+                    </td>
+                    <td class="bottom-border info">
+                      <input type="range" id="target" min="20" max="100" value="30" step="0.1" onchange="sendValueChanged('target', this.value)">
+                      <span>0</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="info text-danger">
+                      <div>Working Time:
+                        <span id="workCounter">00:00:00</span>
+                      </div>
+                    </td>
+                    <td class="info text-center">
+                      <span>
+                        <span class="image">
+                          <img src="enable.png" id="isHeatingIcon">
                         </span>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+                        <span id="isHeating" class="text">Heating in progresss</span>
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-            <div class="row">
-              <div class="col-md-8 text-center">
-                <a class="btn btn-primary" id="reset">Reset</a>
-                <button class="btn-primary">
+          </div>
+          <div class="row">
+            <div class="col-md-8 text-center">
+              <a class="btn btn-primary" id="reset">Reset</a>
+              <button class="btn-primary">
+                <span class="image">
+                  <img src="enable.png">
+                </span>
+                <span id="play" class="text">Start work</span>
+              </button>
+              <a class="btn btn-primary" id="stop">Stop</a>
+            </div>
+          </div>
+        </div>
+        <div class="row" style="display: none;"></div>
+        <div class="row">
+          <div class="col-md-8">
+            <a class="btn btn-lg btn-success" id="enable_override_mode" data-toggle="button">Override mode Enable</a>
+            <span>
+              <span class="image">
+                <img src="enable.png" id="isHeatingIcon">
+              </span>
+              <span id="isHeatingOver" class="text">Heating in progresss</span>
+              <button class="btn-primary">
                   <span class="image">
                     <img src="enable.png">
                   </span>
                   <span id="play" class="text">Start work</span>
                 </button>
-                <a class="btn btn-primary" id="stop">Stop</a>
-              </div>
-            </div>
-          </div>
-          <div class="row"></div>
-          <div class="row">
-            <div class="col-md-8">
-              <a class="btn btn-lg btn-success" id="enable_override_mode" data-toggle="button">Override mode Enable</a>
-              <span>
-                <span class="image">
-                  <img src="enable.png" id="isHeatingIcon">
-                </span>
-                <span id="isHeatingOver" class="text">Heating in progresss</span>
-              </span>
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th class="warning">PID Attribute</th>
-                    <th class="warning">Value</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr></tr>
-                  <tr class="tr_1">
-                    <td class="danger">Proportional: 0-10</td>
-                    <td class="success">
-                      <input type="range" id="p" min="0" max="10" value="8" step="0.1" onchange="sendValueChanged('p', this.value)">
-                      <span>0</span>
-                    </td>
-                  </tr>
-                  <tr></tr>
-                  <tr class="tr_1">
-                    <td class="danger">Integral: 0-10</td>
-                    <td class="success">
-                      <label for="iVal"></label>
-                      <input type="range" id="i" min="0" max="10" value="8" step="0.1" onchange="sendValueChanged('i', this.value)">
-                      <span>0</span>
-                    </td>
-                  </tr>
-                  <tr></tr>
-                  <tr class="tr_1">
-                    <td class="danger">Derivable: 0-10</td>
-                    <td class="success">
-                      <input type="range" id="d" min="0" max="10" value="8" step="0.1" onchange="sendValueChanged('d', this.value)">
-                      <span>0</span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <div class="col-md-4">
-                <h1>Wifi</h1>
-                <form role="form">
-                  <div class="form-group">
-                    <label class="control-label" for="exampleInputEmail1">SSID</label>
-                    <input class="form-control" id="exampleInputEmail1" placeholder="Enter ssid" type="email">
-                  </div>
-                  <div class="form-group">
-                    <label class="control-label" for="exampleInputPassword1">Password</label>
-                    <input class="form-control" id="exampleInputPassword1" placeholder="Password" type="password">
-                  </div>
-                  <button type="submit" class="btn btn-default">Submit</button>
-                </form>
-              </div>
+            </span>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th class="warning">PID Attribute</th>
+                  <th class="warning">Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr></tr>
+                <tr class="tr_1">
+                  <td class="danger">Proportional: 0-10</td>
+                  <td class="success">
+                    <input type="range" id="p" min="0" max="10" value="8" step="0.1" onchange="sendValueChanged('p', this.value)">
+                    <span>0</span>
+                  </td>
+                </tr>
+                <tr></tr>
+                <tr class="tr_1">
+                  <td class="danger">Integral: 0-10</td>
+                  <td class="success">
+                    <label for="iVal"></label>
+                    <input type="range" id="i" min="0" max="10" value="8" step="0.1" onchange="sendValueChanged('i', this.value)">
+                    <span>0</span>
+                  </td>
+                </tr>
+                <tr></tr>
+                <tr class="tr_1">
+                  <td class="danger">Derivable: 0-10</td>
+                  <td class="success">
+                    <input type="range" id="d" min="0" max="10" value="8" step="0.1" onchange="sendValueChanged('d', this.value)">
+                    <span>0</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="col-md-4">
+              <h1>Wifi</h1>
+              <form role="form">
+                <div class="form-group">
+                  <label class="control-label" for="exampleInputEmail1">SSID</label>
+                  <input class="form-control" id="exampleInputEmail1" placeholder="Enter ssid" type="email">
+                </div>
+                <div class="form-group">
+                  <label class="control-label" for="exampleInputPassword1">Password</label>
+                  <input class="form-control" id="exampleInputPassword1" placeholder="Password" type="password">
+                </div>
+                <button type="submit" class="btn btn-default">Submit</button>
+              </form>
             </div>
           </div>
         </div>
       </div>
-      <div id="NotConnectedDiv">
-        <div class="row">
-          <div class="col-md-12 text-center">
-            <h2>NOT CONNECTED</h2>
-            <!-- <div data-role="fieldcontain" id="div-sliderPrincipleAmnt">
+    </div>
+    <div id="NotConnectedDiv">
+      <div class="row">
+        <div class="col-md-12 text-center">
+          <h2>NOT CONNECTED</h2>
+          <!-- <div data-role="fieldcontain" id="div-sliderPrincipleAmnt">
               <label for="slider1">Amount:</label>
               <input type="range" name="slider1" id="slider-PrincipleAmnt" value="100" min="20" max="999" data-highlight="true">
             </div> -->
-            <a class="active btn btn-lg btn-warning" id="ReconnnectToWS" data-role="button" onclick="startWebSocket();">Try Connecting NOW</a>
-          </div>
+          <a class="active btn btn-lg btn-warning" id="ReconnnectToWS" data-role="button" onclick="startWebSocket();">Try Connecting NOW</a>
         </div>
       </div>
     </div>

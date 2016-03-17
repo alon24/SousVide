@@ -14,11 +14,11 @@
 class SousVideController {
 	volatile long onTime = 0;
 
-	// EEPROM addresses for persisted data
-	const int SpAddress = 0;
-	const int KpAddress = 8;
-	const int KiAddress = 16;
-	const int KdAddress = 24;
+//	// EEPROM addresses for persisted data
+//	const int SpAddress = 0;
+//	const int KpAddress = 8;
+//	const int KiAddress = 16;
+//	const int KdAddress = 24;
 
 	//Specify the links and initial tuning parameters
 	PID *myPID;
@@ -52,13 +52,6 @@ protected:
 
 		myPID->SetSampleTime(1000);
 		myPID->SetOutputLimits(0, WindowSize);
-
-	//	 // Run timer2 interrupt every 15 ms
-	//	  TCCR2A = 0;
-	//	  TCCR2B = 1<<CS22 | 1<<CS21 | 1<<CS20;
-	//
-	//	  //Timer2 Overflow Interrupt Enable
-	//	  TIMSK2 |= 1<<TOIE2;
 	}
 public:
 
@@ -99,214 +92,6 @@ public:
 	   debugf("Selected OFF state");
 	   opState = OFF;
 	};
-
-	void Tune_Sp()
-	{
-	//   lcd.setBacklight(TEAL);
-	//   lcd.print(F("Set Temperature:"));
-	//   uint8_t buttons = 0;
-	//   while(true)
-	//   {
-	//      buttons = ReadButtons();
-	//
-	//      float increment = 0.1;
-	//      if (buttons & BUTTON_SHIFT)
-	//      {
-	//        increment *= 10;
-	//      }
-	//      if (buttons & BUTTON_LEFT)
-	//      {
-	//         opState = RUN;
-	//         return;
-	//      }
-	//      if (buttons & BUTTON_RIGHT)
-	//      {
-	//         opState = TUNE_P;
-	//         return;
-	//      }
-	//      if (buttons & BUTTON_UP)
-	//      {
-	//         Setpoint += increment;
-	//         delay(200);
-	//      }
-	//      if (buttons & BUTTON_DOWN)
-	//      {
-	//         Setpoint -= increment;
-	//         delay(200);
-	//      }
-	//
-	//      if ((millis() - lastInput) > 3000)  // return to RUN after 3 seconds idle
-	//      {
-	//         opState = RUN;
-	//         return;
-	//      }
-	//      lcd.setCursor(0,1);
-	//      lcd.print(Setpoint);
-	//      lcd.print(" ");
-	//      DoControl();
-	//   }
-	}
-
-	// ************************************************
-	// Proportional Tuning State
-	// UP/DOWN to change Kp
-	// RIGHT for Ki
-	// LEFT for setpoint
-	// SHIFT for 10x tuning
-	// ************************************************
-	void TuneP()
-	{
-	//   lcd.setBacklight(TEAL);
-	//   lcd.print(F("Set Kp"));
-	//
-	//   uint8_t buttons = 0;
-	//   while(true)
-	//   {
-	//      buttons = ReadButtons();
-	//
-	//      float increment = 1.0;
-	//      if (buttons & BUTTON_SHIFT)
-	//      {
-	//        increment *= 10;
-	//      }
-	//      if (buttons & BUTTON_LEFT)
-	//      {
-	//         opState = SETP;
-	//         return;
-	//      }
-	//      if (buttons & BUTTON_RIGHT)
-	//      {
-	//         opState = TUNE_I;
-	//         return;
-	//      }
-	//      if (buttons & BUTTON_UP)
-	//      {
-	//         Kp += increment;
-	//         delay(200);
-	//      }
-	//      if (buttons & BUTTON_DOWN)
-	//      {
-	//         Kp -= increment;
-	//         delay(200);
-	//      }
-	//      if ((millis() - lastInput) > 3000)  // return to RUN after 3 seconds idle
-	//      {
-	//         opState = RUN;
-	//         return;
-	//      }
-	//      lcd.setCursor(0,1);
-	//      lcd.print(Kp);
-	//      lcd.print(" ");
-	//      DoControl();
-	//   }
-	}
-
-	// ************************************************
-	// Integral Tuning State
-	// UP/DOWN to change Ki
-	// RIGHT for Kd
-	// LEFT for Kp
-	// SHIFT for 10x tuning
-	// ************************************************
-	void TuneI()
-	{
-	//   lcd.setBacklight(TEAL);
-	//   lcd.print(F("Set Ki"));
-	//
-	//   uint8_t buttons = 0;
-	//   while(true)
-	//   {
-	//      buttons = ReadButtons();
-	//
-	//      float increment = 0.01;
-	//      if (buttons & BUTTON_SHIFT)
-	//      {
-	//        increment *= 10;
-	//      }
-	//      if (buttons & BUTTON_LEFT)
-	//      {
-	//         opState = TUNE_P;
-	//         return;
-	//      }
-	//      if (buttons & BUTTON_RIGHT)
-	//      {
-	//         opState = TUNE_D;
-	//         return;
-	//      }
-	//      if (buttons & BUTTON_UP)
-	//      {
-	//         Ki += increment;
-	//         delay(200);
-	//      }
-	//      if (buttons & BUTTON_DOWN)
-	//      {
-	//         Ki -= increment;
-	//         delay(200);
-	//      }
-	//      if ((millis() - lastInput) > 3000)  // return to RUN after 3 seconds idle
-	//      {
-	//         opState = RUN;
-	//         return;
-	//      }
-	//      lcd.setCursor(0,1);
-	//      lcd.print(Ki);
-	//      lcd.print(" ");
-	//      DoControl();
-	//   }
-	}
-
-	// ************************************************
-	// Derivative Tuning State
-	// UP/DOWN to change Kd
-	// RIGHT for setpoint
-	// LEFT for Ki
-	// SHIFT for 10x tuning
-	// ************************************************
-	void TuneD()
-	{
-	//   lcd.setBacklight(TEAL);
-	//   lcd.print(F("Set Kd"));
-	//
-	//   uint8_t buttons = 0;
-	//   while(true)
-	//   {
-	//      buttons = ReadButtons();
-	//      float increment = 0.01;
-	//      if (buttons & BUTTON_SHIFT)
-	//      {
-	//        increment *= 10;
-	//      }
-	//      if (buttons & BUTTON_LEFT)
-	//      {
-	//         opState = TUNE_I;
-	//         return;
-	//      }
-	//      if (buttons & BUTTON_RIGHT)
-	//      {
-	//         opState = RUN;
-	//         return;
-	//      }
-	//      if (buttons & BUTTON_UP)
-	//      {
-	//         Kd += increment;
-	//         delay(200);
-	//      }
-	//      if (buttons & BUTTON_DOWN)
-	//      {
-	//         Kd -= increment;
-	//         delay(200);
-	//      }
-	//      if ((millis() - lastInput) > 3000)  // return to RUN after 3 seconds idle
-	//      {
-	//         opState = RUN;
-	//         return;
-	//      }
-	//      lcd.setCursor(0,1);
-	//      lcd.print(Kd);
-	//      lcd.print(" ");
-	//      DoControl();
-	//   }
-	}
 
 	// ************************************************
 	// PID COntrol State

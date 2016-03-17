@@ -20,20 +20,20 @@ public:
 	SousVideController *sousController;
 	bool relayState = false;
 	bool enabled = false;
+	float currentTemp = 0;
 
 	SousvideCommand(int relayPin, int dsTempPin, InfoUpdateSousDelegate delegate = null);
 	virtual ~SousvideCommand();
 	void initCommand(int setpoint, int Kp, int Ki, int Kd);
 	void setOnUpdateOutsideWorld(InfoUpdateSousDelegate delegate);
 	void startwork();
-
 private:
 	int relayPin;
 	int dsTempPin;
 
 	OperationMode operationMode = Manual;
 
-	float currentTemp = 0;
+
 
 	DS18S20 ReadTemp;
 	Timer readTempTimer;
