@@ -39,6 +39,35 @@ function init() {
   });
 
   handleRelayState(false);
+  $("[name='111']").hide();
+
+  $('#overrideRelayStateBtn').click(function() {
+    doSend("app stop");
+  });
+
+  $("[name='relayStateSwitch']").bootstrapSwitch();
+  $("[name='sousvideMode']").bootstrapSwitch('state',false, true);
+
+//need to set state when
+  $("[name='sousvideMode']").bootstrapSwitch('onSwitchChange',
+      function(event, state) {
+        if (state == false) {
+          // $("[name='relayStateSwitch']").bootstrapSwitch('readonly', (state==false), false);
+          $("[name='111']").hide();
+        }
+        else {
+          $("[name='111']").show();
+        }
+      }
+  );
+
+  $("[name='relayStateSwitch']").bootstrapSwitch('onSwitchChange',
+      function(event, state) {
+        doSend("app toggleRelaystae:" + state);
+      }
+  );
+
+
 
 //    $("#flip_sous_state").attr("disabled", false);
 //    $("#relay1_state").attr("disabled", false);
@@ -75,15 +104,16 @@ function init() {
 }
 
 function handleRelayState(state) {
-  // <img id="isHeatingIcon " src="enable.png">
-  // $('#isHeatingIcon').attr("src", "disable.png");
-
   if (state === "true") {
     $('#isHeatingIcon').attr("src", "enable.png");
     $('#isHeating').html("Heating in progress");
+    $("[name='relayStateSwitch']").bootstrapSwitch('state', true, true);
+    // $("[name='relayStateSwitchOverrideMode']").bootstrapSwitch('readonly', true, false);
+
   } else {
     $('#isHeatingIcon').attr("src", "disable.png");
     $('#isHeating').html("Not Heating");
+    $("[name='relayStateSwitch']").bootstrapSwitch('state', false, true);
   }
 
   // $('#isHeatingIcon').click(function() {
@@ -224,14 +254,18 @@ function handlePayload(payload) {
 }
 
 function updateSousvideMode(mode) {
-  if (mode==="manual"){
-    if (!$('#enable_override_mode').hasClass('active')) {
-        $('#enable_override_mode').addClass('active');
+  if (mode==="1"){
+    if (!$('#sousvideMode').hasClass('active')) {
+        $('#sousvideMode').addClass('active');
+        $('#overrideRelayStateBtn').show();
+        doSend("setOverrideMode 1" );
     }
-  } else {
-      if ($('#enable_override_mode').hasClass('active')) {
-          $('#enable_override_mode').removeClass('active');
+  } else if (mode==="0"){
+      if ($('#sousvideMode').hasClass('active')) {
+          $('#sousvideMode').removeClass('active');
         }
+        $('#overrideRelayStateBtn').hide();
+        doSend("setOverrideMode 0" );
   }
 }
 

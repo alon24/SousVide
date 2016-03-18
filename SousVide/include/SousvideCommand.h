@@ -33,8 +33,6 @@ private:
 
 	OperationMode operationMode = Manual;
 
-
-
 	DS18S20 ReadTemp;
 	Timer readTempTimer;
 	InfoUpdateSousDelegate updateSousDelegate = null;
@@ -43,6 +41,7 @@ private:
 	void processSousvideCommands(String commandLine, CommandOutput* commandOutput);
 	void updateOutsideWorld(String param, String value);
 	void readData();
+	void setOperationMode(OperationMode mode = Sousvide);
 	void setRelayState(boolean state);
 };
 

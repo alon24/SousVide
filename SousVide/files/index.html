@@ -15,6 +15,10 @@
     <!-- Local code -->
     <script type="text/javascript" src="main.js"></script>
     <link href="main.css" rel="stylesheet" type="text/css">
+    <script type="text/javascript" src="../webstuff/holder/bootstrap-switch.min.js"></script>
+    <script type="text/javascript" src="bootstrap-switch.min.js"></script>
+    <link href="../webstuff/holder/bootstrap-switch.min.css" rel="stylesheet" type="text/css">
+    <link href="bootstrap-switch.min.css" rel="stylesheet" type="text/css">
   </head><body>
     <div class="navbar navbar-default navbar-static-top">
       <div class="container">
@@ -53,7 +57,6 @@
                 <tr></tr>
               </tbody>
             </table>
-            <div class="row"></div>
             <div class="col-md-8">
               <table class="table">
                 <thead></thead>
@@ -110,19 +113,13 @@
         <div class="row" style="display: none;"></div>
         <div class="row">
           <div class="col-md-8">
-            <a class="btn btn-lg btn-success" id="enable_override_mode" data-toggle="button">Override mode Enable</a>
+            <!-- <a class="btn btn-lg btn-success" id="sousvideMode" data-toggle="button">Override mode Enable</a> -->
             <span>
-              <span class="image">
-                <img src="enable.png" id="isHeatingIcon">
-              </span>
-              <span id="isHeatingOver" class="text">Heating in progresss</span>
-              <button class="btn-primary">
-                  <span class="image">
-                    <img src="enable.png">
-                  </span>
-                  <span id="play" class="text">Start work</span>
-                </button>
-            </span>
+                <input type="checkbox" name="sousvideMode" data-label-width="160" data-on-text="Activated"  data-label-text="Manual Mode">
+             </span>
+            <span name='111'>
+                <input type="checkbox" name="relayStateSwitch" checked data-label-width="160" data-on-text="Yes" data-off-text="No" data-label-text="Is Heating now">
+             </span>
             <table class="table">
               <thead>
                 <tr>
@@ -188,6 +185,6 @@
         </div>
       </div>
     </div>
-  
+
 
 </body></html>

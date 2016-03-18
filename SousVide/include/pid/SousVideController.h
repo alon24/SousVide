@@ -14,12 +14,6 @@
 class SousVideController {
 	volatile long onTime = 0;
 
-//	// EEPROM addresses for persisted data
-//	const int SpAddress = 0;
-//	const int KpAddress = 8;
-//	const int KiAddress = 16;
-//	const int KdAddress = 24;
-
 	//Specify the links and initial tuning parameters
 	PID *myPID;
 

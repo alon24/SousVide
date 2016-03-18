@@ -80,8 +80,9 @@ void SousvideCommand::processSousvideCommands(String commandLine, CommandOutput*
 		else if (commandToken[1].equals("toggleRelay")) {
 //			String state = commands.substring(12);
 //			setRelayState(state.equals("true"));
-
-			setRelayState(commandToken[2].equals("true"));
+			if (operationMode == Manual) {
+				setRelayState(commandToken[2].equals("true"));
+			}
 
 	//		Serial.println("handleCommands::toggeled relay " + String(state));
 	//		relayState = state.equals("true") ? true : false;
@@ -89,6 +90,8 @@ void SousvideCommand::processSousvideCommands(String commandLine, CommandOutput*
 
 //			Serial.println("handleCommand:: state.equals(true)==" + String(command.equals("true")));
 //			updateWebSockets("relayState:" + String(relayState == true ? "true" : "false"));
+		} else if(commandToken[1].equals("setOverrideMode")) {
+			setOperationMode(commandToken[2] == "1" ? Manual : Sousvide);
 		}
 	}
 }
@@ -167,6 +170,10 @@ void SousvideCommand::setRelayState(boolean state) {
 //		digitalWrite(relayPin, (relayState ? HIGH : LOW));
 		digitalWrite(relayPin, (relayState ? LOW : HIGH));
 	}
+}
+
+void SousvideCommand::setOperationMode(OperationMode mode) {
+	operationMode = mode;
 }
 
 //void handleCommands(String commands) {
