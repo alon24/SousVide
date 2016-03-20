@@ -265,7 +265,7 @@ function handlePayload(payload) {
       updateSousvideMode(cmd[1]);
     }
     else if (cmd[0].startsWith('highlow')) {
-      // $("[name='HighLowMode']")
+      $("[name='HighLowMode']").bootstrapSwitch('state', cmd[1] == 'true', false);
     }
   }
 }

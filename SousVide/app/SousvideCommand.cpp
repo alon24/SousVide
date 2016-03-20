@@ -88,8 +88,9 @@ void SousvideCommand::processSousvideCommands(String commandLine, CommandOutput*
 //			debugf("set op mode=%s", commandToken[2].c_str());
 			setOperationMode(commandToken[2] == "1" ? Manual : Sousvide);
 		} else if(commandToken[1].equals("highlow")) {
-			debugf("set highlow mode=%s", commandToken[2].c_str());
-			highLow = commandToken[2] == "true";
+			highLow = commandToken[2] == "1";
+			debugf("set highlow mode=%i", highLow);
+			setRelayState(relayState, true);
 //			setOperationMode(commandToken[2] == "1" ? Manual : Sousvide);
 		}
 	}
@@ -163,18 +164,20 @@ void SousvideCommand::checkTempTriggerRelay(float temp) {
 	}
 }
 
-void SousvideCommand::setRelayState(boolean state) {
+void SousvideCommand::setRelayState(boolean state, bool override) {
 
-	if (state != relayState) {
+	if (state != relayState || override) {
 		relayState = state;
-		debugf("new relaystate =%s ",String(relayState).c_str());
 //		digitalWrite(relayPin, (relayState ? HIGH : LOW));
 
+		int tempVal=0;
 		if (highLow) {
-			digitalWrite(relayPin, (relayState ? LOW : HIGH));
+			tempVal = relayState ? LOW : HIGH;
 		} else {
-			digitalWrite(relayPin, (relayState ? HIGH : LOW));
+			tempVal = relayState ? HIGH : LOW;
 		}
+		digitalWrite(relayPin, tempVal);
+		debugf("new relaystate =%s, realypinVal = %i",String(relayState).c_str(), tempVal);
 	}
 }
 

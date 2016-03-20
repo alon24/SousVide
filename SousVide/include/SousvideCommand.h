@@ -43,7 +43,7 @@ private:
 	void updateOutsideWorld(String param, String value);
 	void readData();
 	void setOperationMode(OperationMode mode = Sousvide);
-	void setRelayState(boolean state);
+	void setRelayState(boolean state, bool override=false);
 };
 
 #endif /* Sousvide_COMMAND_H_ */

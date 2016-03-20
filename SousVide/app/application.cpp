@@ -813,7 +813,7 @@ void updateInfoOnStart() {
 
 void init()
 {
-	Serial.begin(74880); // 74880
+	Serial.begin(115200); // 74880
 	Serial.systemDebugOutput(true); // Debug output to serial
 
 	initSpiff();

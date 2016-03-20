@@ -111,14 +111,19 @@
           </div>
         </div>
         <div class="row">
-          <div class="col-md-6">
+
             <!-- <a class="btn btn-lg btn-success" id="sousvideMode" data-toggle="button">Override mode Enable</a> -->
             <span>
-              <input type="checkbox" name="sousvideMode" data-label-width="160" data-on-text="Activated" data-label-text="Manual Mode" data-label-weight="160">
+              Sousvide Mode:
+              <input type="checkbox" name="sousvideMode" data-on-text="Automatic" data-off-text="Manual" data-animate=false>
             </span>
             <span name="ManuModeSpan">
-              <input type="checkbox" name="relayStateSwitch" checked="" data-label-width="160" data-on-text="ON" data-off-text="OFF" data-on-color="success" data-label-text="Heating is now">
+              <input type="checkbox" name="relayStateSwitch" checked="" data-on-text="ON" data-off-text="OFF">
             </span>
+
+          </row>
+         <div class="row">
+           <div class="col-md-">
             <table class="table">
               <thead>
                 <tr>
@@ -155,7 +160,7 @@
               </tbody>
             </table>
             <div class="col-md-4">
-              <input type="checkbox" name="HighLowMode" checked="" data-label-width="160" data-on-text="LOW" data-off-text="HIGH" data-label-text="Relay Opereration Mode">
+              <input type="checkbox" name="HighLowMode" checked="" data-label-width="160" data-on-text="HIGH" data-off-text="LOW" data-label-text="Relay Opereration Mode">
             </div>
           </div>
           <div class="col-md-4">
@@ -190,7 +195,7 @@
     <script>
       $("[name='relayStateSwitch']").bootstrapSwitch();
               $("[name='sousvideMode']").bootstrapSwitch('state',false, true);
-              $("[name='LowOrHighMode']").bootstrapSwitch('state',false, true);
+              $("[name='HighLowMode']").bootstrapSwitch('state',false, true);
     </script>
 
 
