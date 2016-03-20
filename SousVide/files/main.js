@@ -39,31 +39,45 @@ function init() {
   });
 
   handleRelayState(false);
-  $("[name='111']").hide();
+  $("[name='ManuModeSpan']").hide();
 
   $('#overrideRelayStateBtn').click(function() {
     doSend("app stop");
   });
 
-  $("[name='relayStateSwitch']").bootstrapSwitch();
-  $("[name='sousvideMode']").bootstrapSwitch('state',false, true);
+  $("[name='HighLowMode']").bootstrapSwitch('onSwitchChange',
+      function(event, state) {
+        doSend("sousvide highlow " + (state == true ? 1 :0));
+        // if (state == false) {
+        //   // $("[name='relayStateSwitch']").bootstrapSwitch('readonly', (state==false), false);
+        //   // $("[name='ManuModeSpan']").hide();
+        // }
+        // else {
+        //   $("[name='ManuModeSpan']").show();
+        // }
+      }
+  );
+
+  // $("[name='relayStateSwitch']").bootstrapSwitch();
+  // $("[name='sousvideMode']").bootstrapSwitch('state',false, true);
 
 //need to set state when
   $("[name='sousvideMode']").bootstrapSwitch('onSwitchChange',
       function(event, state) {
         if (state == false) {
           // $("[name='relayStateSwitch']").bootstrapSwitch('readonly', (state==false), false);
-          $("[name='111']").hide();
+          $("[name='ManuModeSpan']").hide();
         }
         else {
-          $("[name='111']").show();
+          $("[name='ManuModeSpan']").show();
         }
       }
   );
 
   $("[name='relayStateSwitch']").bootstrapSwitch('onSwitchChange',
       function(event, state) {
-        doSend("app toggleRelaystae:" + state);
+        doSend("sousvide toggleRelay " + state);
+        handleRelayState(""+state+"");
       }
   );
 
@@ -104,16 +118,16 @@ function init() {
 }
 
 function handleRelayState(state) {
-  if (state === "true") {
+  if (state == "true") {
     $('#isHeatingIcon').attr("src", "enable.png");
     $('#isHeating').html("Heating in progress");
-    $("[name='relayStateSwitch']").bootstrapSwitch('state', true, true);
+    // $("[name='relayStateSwitch']").bootstrapSwitch('state', true, true);
     // $("[name='relayStateSwitchOverrideMode']").bootstrapSwitch('readonly', true, false);
 
   } else {
     $('#isHeatingIcon').attr("src", "disable.png");
     $('#isHeating').html("Not Heating");
-    $("[name='relayStateSwitch']").bootstrapSwitch('state', false, true);
+    // $("[name='relayStateSwitch']").bootstrapSwitch('state', false, true);
   }
 
   // $('#isHeatingIcon').click(function() {
@@ -250,6 +264,9 @@ function handlePayload(payload) {
     else if (cmd[0].startsWith('sousvideMode')) {
       updateSousvideMode(cmd[1]);
     }
+    else if (cmd[0].startsWith('highlow')) {
+      // $("[name='HighLowMode']")
+    }
   }
 }
 
@@ -257,15 +274,15 @@ function updateSousvideMode(mode) {
   if (mode==="1"){
     if (!$('#sousvideMode').hasClass('active')) {
         $('#sousvideMode').addClass('active');
-        $('#overrideRelayStateBtn').show();
-        doSend("setOverrideMode 1" );
+        $('#relayStateSwitch').show();
+        doSend("sousvide setOperationMode 1" );
     }
   } else if (mode==="0"){
       if ($('#sousvideMode').hasClass('active')) {
           $('#sousvideMode').removeClass('active');
         }
-        $('#overrideRelayStateBtn').hide();
-        doSend("setOverrideMode 0" );
+        $('#relayStateSwitch').hide();
+        doSend("sousvide setOperationMode 0" );
   }
 }
 

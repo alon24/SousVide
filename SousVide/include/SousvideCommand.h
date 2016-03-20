@@ -21,6 +21,7 @@ public:
 	bool relayState = false;
 	bool enabled = false;
 	float currentTemp = 0;
+	bool highLow = 0;
 
 	SousvideCommand(int relayPin, int dsTempPin, InfoUpdateSousDelegate delegate = null);
 	virtual ~SousvideCommand();

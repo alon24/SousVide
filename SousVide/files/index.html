@@ -17,8 +17,8 @@
     <link href="main.css" rel="stylesheet" type="text/css">
     <script type="text/javascript" src="../webstuff/holder/bootstrap-switch.min.js"></script>
     <script type="text/javascript" src="bootstrap-switch.min.js"></script>
-    <link href="../webstuff/holder/bootstrap-switch.min.css" rel="stylesheet" type="text/css">
-    <link href="bootstrap-switch.min.css" rel="stylesheet" type="text/css">
+    <link href="../webstuff/holder/bootstrap-switch.css" rel="stylesheet" type="text/css">
+    <link href="bootstrap-switch.css" rel="stylesheet" type="text/css">
   </head><body>
     <div class="navbar navbar-default navbar-static-top">
       <div class="container">
@@ -110,16 +110,15 @@
             </div>
           </div>
         </div>
-        <div class="row" style="display: none;"></div>
         <div class="row">
-          <div class="col-md-8">
+          <div class="col-md-6">
             <!-- <a class="btn btn-lg btn-success" id="sousvideMode" data-toggle="button">Override mode Enable</a> -->
             <span>
-                <input type="checkbox" name="sousvideMode" data-label-width="160" data-on-text="Activated"  data-label-text="Manual Mode">
-             </span>
-            <span name='111'>
-                <input type="checkbox" name="relayStateSwitch" checked data-label-width="160" data-on-text="Yes" data-off-text="No" data-label-text="Is Heating now">
-             </span>
+              <input type="checkbox" name="sousvideMode" data-label-width="160" data-on-text="Activated" data-label-text="Manual Mode" data-label-weight="160">
+            </span>
+            <span name="ManuModeSpan">
+              <input type="checkbox" name="relayStateSwitch" checked="" data-label-width="160" data-on-text="ON" data-off-text="OFF" data-on-color="success" data-label-text="Heating is now">
+            </span>
             <table class="table">
               <thead>
                 <tr>
@@ -156,6 +155,10 @@
               </tbody>
             </table>
             <div class="col-md-4">
+              <input type="checkbox" name="HighLowMode" checked="" data-label-width="160" data-on-text="LOW" data-off-text="HIGH" data-label-text="Relay Opereration Mode">
+            </div>
+          </div>
+          <div class="col-md-4">
               <h1>Wifi</h1>
               <form role="form">
                 <div class="form-group">
@@ -169,7 +172,6 @@
                 <button type="submit" class="btn btn-default">Submit</button>
               </form>
             </div>
-          </div>
         </div>
       </div>
     </div>
@@ -185,6 +187,11 @@
         </div>
       </div>
     </div>
+    <script>
+      $("[name='relayStateSwitch']").bootstrapSwitch();
+              $("[name='sousvideMode']").bootstrapSwitch('state',false, true);
+              $("[name='LowOrHighMode']").bootstrapSwitch('state',false, true);
+    </script>
 
 
 </body></html>

@@ -27,7 +27,8 @@ SousvideConfig loadConfig()
 		cfg.Kd = sousvide["kd"];
 		cfg.enabled = sousvide["enabled"];
 
-		JsonObject& trigger = root["trigger"];
+
+		JsonObject& trigger = root["operations"];
 		cfg.operationMode = (OperationMode)(int)trigger["type"];
 
 //		delete[] jsonString;
@@ -63,10 +64,10 @@ void saveConfig(SousvideConfig& cfg)
 	sousvide["kd"] = cfg.Kd;
 	sousvide["enabled"] = cfg.enabled;
 
-	JsonObject& trigger = jsonBuffer.createObject();
-	root["trigger"] = trigger;
-	trigger["type"] = (int)cfg.operationMode;
-
+	JsonObject& operations = jsonBuffer.createObject();
+	root["operations"] = operations;
+	operations["type"] = (int)cfg.operationMode;
+	operations["HighLow"] = int(cfg.highlow);
 	String st = "";
 	root.prettyPrintTo(st);
 //	char buf[ConfigFileBufferSize];

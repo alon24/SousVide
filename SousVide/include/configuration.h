@@ -38,7 +38,7 @@ const uint16_t ConfigFileBufferSize = 2048; // Application configuration FileBuf
 #define DS_TEMP_PIN 12
 
 // Pin for trigger control output
-#define RELAY_PIN 2
+#define RELAY_PIN 4
 
 ////Rotary Pins
 #define encoderSwitchPin 0 //push button switch
@@ -65,6 +65,7 @@ struct SousvideConfig
 		Kd = 1;
 		operationMode = Manual;
 		enabled = false;
+		highlow = 0;
 	}
 
 	String NetworkSSID;
@@ -76,6 +77,9 @@ struct SousvideConfig
 	float Kd;
 	bool enabled;
 	OperationMode operationMode;
+
+	// 0 == operation on low, 1== operation on HIGH
+	bool highlow;
 };
 //
 SousvideConfig loadConfig();

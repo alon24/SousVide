@@ -78,20 +78,16 @@ void wsMessageReceived(WebSocket& socket, const String& message)
 }
 
 void updateInitWebSockets(WebSocket client) {
-//	String st = "updatePID:" +  String(sousCommand.sousController->Kp, 1) +","
-//			+ String(sousCommand.sousController->Ki, 1) +","
-//		+ String(sousCommand.sousController->Kd, 1)
-//		+ ";updateSetPoint:" + String(sousCommand.sousController->Setpoint, 1);
-//////		+ String(sousCommand.sousController->Kp, 1).c_str();
-
 	char *buf = new char[100];
-	sprintf(buf, "updatePID:%s,%s,%s;updateSetPoint:%s;updateWIFI:%s,%s;relayState:%s",
+	sprintf(buf, "updatePID:%s,%s,%s;updateSetPoint:%s;updateWIFI:%s,%s;relayState:%s;highlow;currentTemp=%s",
 			String(sousCommand.sousController->Kp, 1).c_str(),
 			String(sousCommand.sousController->Ki, 1).c_str(),
 			String(sousCommand.sousController->Kd, 1).c_str(),
 			String(sousCommand.sousController->Setpoint, 1).c_str(),
-			ActiveConfig.NetworkSSID.c_str(), ActiveConfig.NetworkPassword.c_str(),
+			ActiveConfig.NetworkSSID.c_str(),
+			ActiveConfig.NetworkPassword.c_str(),
 			(sousCommand.relayState == true ? "true" : "false"),
+			ActiveConfig.highlow == true ? "true" : "false",
 			String(sousCommand.currentTemp,2));
 
 	String ret = String(buf);

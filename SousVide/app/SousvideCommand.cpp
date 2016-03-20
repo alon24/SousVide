@@ -80,18 +80,17 @@ void SousvideCommand::processSousvideCommands(String commandLine, CommandOutput*
 		else if (commandToken[1].equals("toggleRelay")) {
 //			String state = commands.substring(12);
 //			setRelayState(state.equals("true"));
+			debugf("toggleRelay: op mode=%s, setting=%s", (operationMode == Manual ? "Manual" : "Sousvide"), commandToken[2].c_str());
 			if (operationMode == Manual) {
 				setRelayState(commandToken[2].equals("true"));
 			}
-
-	//		Serial.println("handleCommands::toggeled relay " + String(state));
-	//		relayState = state.equals("true") ? true : false;
-	//		digitalWrite(relayPin, (state.equals("true") ? HIGH : LOW));
-
-//			Serial.println("handleCommand:: state.equals(true)==" + String(command.equals("true")));
-//			updateWebSockets("relayState:" + String(relayState == true ? "true" : "false"));
-		} else if(commandToken[1].equals("setOverrideMode")) {
+		} else if(commandToken[1].equals("setOperationMode")) {
+//			debugf("set op mode=%s", commandToken[2].c_str());
 			setOperationMode(commandToken[2] == "1" ? Manual : Sousvide);
+		} else if(commandToken[1].equals("highlow")) {
+			debugf("set highlow mode=%s", commandToken[2].c_str());
+			highLow = commandToken[2] == "true";
+//			setOperationMode(commandToken[2] == "1" ? Manual : Sousvide);
 		}
 	}
 }
@@ -165,10 +164,17 @@ void SousvideCommand::checkTempTriggerRelay(float temp) {
 }
 
 void SousvideCommand::setRelayState(boolean state) {
+
 	if (state != relayState) {
 		relayState = state;
+		debugf("new relaystate =%s ",String(relayState).c_str());
 //		digitalWrite(relayPin, (relayState ? HIGH : LOW));
-		digitalWrite(relayPin, (relayState ? LOW : HIGH));
+
+		if (highLow) {
+			digitalWrite(relayPin, (relayState ? LOW : HIGH));
+		} else {
+			digitalWrite(relayPin, (relayState ? HIGH : LOW));
+		}
 	}
 }
 
