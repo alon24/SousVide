@@ -45,6 +45,14 @@ function init() {
     doSend("app stop");
   });
 
+  $('#save').click(function() {
+    doSend("app saveConfig");
+  });
+
+  $('#load').click(function() {
+    doSend("app loadConfig");
+  });
+
   $("[name='HighLowMode']").bootstrapSwitch('onSwitchChange',
       function(event, state) {
         doSend("sousvide highlow " + (state == true ? 1 :0));
@@ -184,7 +192,7 @@ function onOpen(event){
         heartbeat_interval = setInterval(function() {
             try {
                 missed_heartbeats++;
-                if (missed_heartbeats >= 2)
+                if (missed_heartbeats >= 4)
                     throw new Error("Too many missed heartbeats.");
                 socket.send("app " + heartbeat_msg);
             } catch(e) {

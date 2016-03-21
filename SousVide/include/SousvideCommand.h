@@ -22,6 +22,7 @@ public:
 	bool enabled = false;
 	float currentTemp = 0;
 	bool highLow = 0;
+	OperationMode operationMode = Manual;
 
 	SousvideCommand(int relayPin, int dsTempPin, InfoUpdateSousDelegate delegate = null);
 	virtual ~SousvideCommand();
@@ -31,8 +32,6 @@ public:
 private:
 	int relayPin;
 	int dsTempPin;
-
-	OperationMode operationMode = Manual;
 
 	DS18S20 ReadTemp;
 	Timer readTempTimer;

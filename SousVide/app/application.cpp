@@ -22,6 +22,7 @@ void  connectFail();
 //void  handleCommands(String commands);
 void  updateInitWebSockets(WebSocket client);
 void  setRelayState(boolean state);
+void updateInfoOnStart();
 
 InfoScreens* infos;
 
@@ -36,6 +37,7 @@ Timer procTimer;
 Timer currentWorkTimeTimer;
 Timer initTimer;
 Timer heartBeat;
+Timer updateWebSocketTimer;
 //time_t lastActionTime = 0;
 long currentWorkTime = 0;
 
@@ -65,10 +67,11 @@ void wsConnected(WebSocket& socket)
 //	debugf("******* wsConnected");
 	totalActiveSockets++;
 	// Notify everybody about new connection
-	WebSocketsList &clients = server.getActiveWebSockets();
-	for (int i = 0; i < clients.count(); i++) {
-		updateInitWebSockets(clients[i]);
-	}
+//	WebSocketsList &clients = server.getActiveWebSockets();
+//	for (int i = 0; i < clients.count(); i++) {
+//		updateInitWebSockets(clients[i]);
+//	}
+	updateInitWebSockets(socket);
 }
 
 void wsMessageReceived(WebSocket& socket, const String& message)
@@ -77,22 +80,48 @@ void wsMessageReceived(WebSocket& socket, const String& message)
 //	handleCommands(message);
 }
 
+void updateInitAllClients() {
+	WebSocketsList &clients = server.getActiveWebSockets();
+//	debugf("server has %i websocket clients", clients.size());
+	for (int i = 0; i < clients.count(); i++) {
+		updateInitWebSockets(clients[i]);
+	}
+}
+
 void updateInitWebSockets(WebSocket client) {
-	char *buf = new char[100];
-	sprintf(buf, "updatePID:%s,%s,%s;updateSetPoint:%s;updateWIFI:%s,%s;relayState:%s;highlow;currentTemp=%s",
+//	DynamicJsonBuffer jsonBuffer;
+//	JsonObject& root = jsonBuffer.createObject();
+//	JsonObject& update = jsonBuffer.createObject();
+//	root["PID"] = update;
+//	update["P"] = String(sousCommand.sousController->Kp, 1);
+//	update["I"] = String(sousCommand.sousController->Ki, 1);
+//	update["D"] = String(sousCommand.sousController->Kd, 1);
+//
+//	update["SetPoint"] = String(sousCommand.sousController->Setpoint, 1);
+//
+//	String st = "";
+//	root.prettyPrintTo(st);
+//	client.sendString(st);
+
+	char *buf = new char[200];
+	sprintf(buf, "updatePID:%s,%s,%s;updateSetPoint:%s;%s,%s;relayState:%s;highlow;currentTemp=%s",
 			String(sousCommand.sousController->Kp, 1).c_str(),
 			String(sousCommand.sousController->Ki, 1).c_str(),
 			String(sousCommand.sousController->Kd, 1).c_str(),
 			String(sousCommand.sousController->Setpoint, 1).c_str(),
-			ActiveConfig.NetworkSSID.c_str(),
-			ActiveConfig.NetworkPassword.c_str(),
+//			ActiveConfig.NetworkSSID.c_str(),
+//			ActiveConfig.NetworkPassword.c_str(),
 			(sousCommand.relayState == true ? "true" : "false"),
 			ActiveConfig.highlow == true ? "true" : "false",
 			String(sousCommand.currentTemp,2));
+//			,ActiveConfig.operationMode == Manual ?0:1);
 
 	String ret = String(buf);
 	delete buf;
 	client.sendString(ret);
+
+	//This is a simple test for just sending text!!!
+//	client.sendString("updatePID:2,2,2");
 }
 
 void updateWebSockets(String cmd) {
@@ -100,6 +129,10 @@ void updateWebSockets(String cmd) {
 	for (int i = 0; i < clients.count(); i++) {
 		clients[i].sendString(cmd);
 	}
+}
+
+void updateWebSocketsFromTimer() {
+	updateInitAllClients();
 }
 
 //should return the command and make the cmd string hold data onl
@@ -179,6 +212,28 @@ void processAppCommands(Command inputCommand, CommandOutput* commandOutput)
 			if (currentWorkTimeTimer.isStarted()) {
 				currentWorkTimeTimer.stop();
 			}
+		}
+		else if(commandToken[1].equals("saveConfig")) {
+			debugf("SaveConfig called");
+			ActiveConfig.Kp = sousCommand.sousController->Kp;
+			ActiveConfig.Ki = sousCommand.sousController->Ki;
+			ActiveConfig.Kd = sousCommand.sousController->Kd;
+			ActiveConfig.Needed_temp = sousCommand.sousController->Setpoint;
+			ActiveConfig.enabled = sousCommand.enabled;
+			ActiveConfig.highlow = sousCommand.highLow;
+			ActiveConfig.operationMode = sousCommand.operationMode;
+			saveConfig(ActiveConfig);
+		}
+		else if(commandToken[1].equals("loadConfig")) {
+			debugf("loadConfig called");
+			loadConfig();
+			updateInfoOnStart();
+
+			//TODO: check with this only for sending a simple message
+			updateInitAllClients();
+
+			//Check with startonce timer
+//			updateWebSocketTimer.startOnce();
 		}
     }
 }
@@ -832,6 +887,8 @@ void init()
 	initInfoScreens();
 	infos->initMFButton(encoderSwitchPin);
 	infos->show();
+
+	updateWebSocketTimer.initializeMs(80, updateWebSocketsFromTimer);
 
 	ActiveConfig = loadConfig();
 	sousCommand.initCommand(ActiveConfig.Needed_temp, ActiveConfig.Kp, ActiveConfig.Ki, ActiveConfig.Kd);
