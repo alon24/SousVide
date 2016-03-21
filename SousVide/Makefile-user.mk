@@ -37,5 +37,5 @@ RBOOT_BIG_FLASH ?= 1
 ## size of the flash chip
 SPI_SIZE        ?= 4M
 ## size of the spiffs to create
-SPIFF_SIZE      ?= 600000
+#SPIFF_SIZE      ?= 600000
 ## (spiffs location defaults to the mb after the rom slot on 4mb flash)
