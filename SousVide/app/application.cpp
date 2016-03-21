@@ -104,17 +104,18 @@ void updateInitWebSockets(WebSocket client) {
 //	client.sendString(st);
 
 	char *buf = new char[200];
-	sprintf(buf, "updatePID:%s,%s,%s;updateSetPoint:%s;%s,%s;relayState:%s;highlow;currentTemp=%s",
+	sprintf(buf, "updatePID:%s,%s,%s;updateSetPoint:%s",
+//			;relayState:%s;highlow=%s;currentTemp=%s",
 			String(sousCommand.sousController->Kp, 1).c_str(),
 			String(sousCommand.sousController->Ki, 1).c_str(),
 			String(sousCommand.sousController->Kd, 1).c_str(),
-			String(sousCommand.sousController->Setpoint, 1).c_str(),
-//			ActiveConfig.NetworkSSID.c_str(),
-//			ActiveConfig.NetworkPassword.c_str(),
-			(sousCommand.relayState == true ? "true" : "false"),
-			ActiveConfig.highlow == true ? "true" : "false",
-			String(sousCommand.currentTemp,2));
-//			,ActiveConfig.operationMode == Manual ?0:1);
+			String(sousCommand.sousController->Setpoint, 1).c_str());
+////			ActiveConfig.NetworkSSID.c_str(),
+////			ActiveConfig.NetworkPassword.c_str(),
+//			(sousCommand.relayState == true ? "true" : "false"),
+//			ActiveConfig.highlow == true ? "true" : "false",
+//			String(sousCommand.currentTemp,2));
+////			,ActiveConfig.operationMode == Manual ?0:1);
 
 	String ret = String(buf);
 	delete buf;
