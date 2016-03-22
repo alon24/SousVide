@@ -20,7 +20,7 @@
 void  connectOk();
 void  connectFail();
 //void  handleCommands(String commands);
-void  updateInitWebSockets(WebSocket client);
+void  updateInitWebSockets(WebSocket &client);
 void  setRelayState(boolean state);
 void updateInfoOnStart();
 
@@ -36,7 +36,7 @@ Base_Display_Driver* display;
 Timer procTimer;
 Timer currentWorkTimeTimer;
 Timer initTimer;
-Timer heartBeat;
+//Timer heartBeat;
 Timer updateWebSocketTimer;
 //time_t lastActionTime = 0;
 long currentWorkTime = 0;
@@ -82,13 +82,14 @@ void wsMessageReceived(WebSocket& socket, const String& message)
 
 void updateInitAllClients() {
 	WebSocketsList &clients = server.getActiveWebSockets();
-//	debugf("server has %i websocket clients", clients.size());
+	debugf("server has %i websocket clients", clients.size());
 	for (int i = 0; i < clients.count(); i++) {
 		updateInitWebSockets(clients[i]);
+//		clients[i].sendString("updatePID:2,2,2");
 	}
 }
 
-void updateInitWebSockets(WebSocket client) {
+void updateInitWebSockets(WebSocket &client) {
 //	DynamicJsonBuffer jsonBuffer;
 //	JsonObject& root = jsonBuffer.createObject();
 //	JsonObject& update = jsonBuffer.createObject();
@@ -104,23 +105,23 @@ void updateInitWebSockets(WebSocket client) {
 //	client.sendString(st);
 
 	char *buf = new char[200];
-	sprintf(buf, "updatePID:%s,%s,%s;updateSetPoint:%s",
-//			;relayState:%s;highlow=%s;currentTemp=%s",
+	sprintf(buf, "updatePID:%s,%s,%s;updateSetPoint:%s;relayState:%s;highlow:%s;currentTemp:%s",
 			String(sousCommand.sousController->Kp, 1).c_str(),
 			String(sousCommand.sousController->Ki, 1).c_str(),
 			String(sousCommand.sousController->Kd, 1).c_str(),
-			String(sousCommand.sousController->Setpoint, 1).c_str());
+			String(sousCommand.sousController->Setpoint, 1).c_str(),
 ////			ActiveConfig.NetworkSSID.c_str(),
 ////			ActiveConfig.NetworkPassword.c_str(),
-//			(sousCommand.relayState == true ? "true" : "false"),
-//			ActiveConfig.highlow == true ? "true" : "false",
-//			String(sousCommand.currentTemp,2));
-////			,ActiveConfig.operationMode == Manual ?0:1);
+			(sousCommand.relayState == true ? "true" : "false"),
+			ActiveConfig.highlow == true ? "true" : "false",
+			String(sousCommand.currentTemp,2).c_str());
+////			,ActiveConfig.operationMode == Manual ?0:1)
 
 	String ret = String(buf);
-	delete buf;
+//	debugf("%s", ret.c_str());
 	client.sendString(ret);
-
+//	Serial.println("message sent");
+	delete buf;
 	//This is a simple test for just sending text!!!
 //	client.sendString("updatePID:2,2,2");
 }
@@ -232,9 +233,6 @@ void processAppCommands(Command inputCommand, CommandOutput* commandOutput)
 
 			//TODO: check with this only for sending a simple message
 			updateInitAllClients();
-
-			//Check with startonce timer
-//			updateWebSocketTimer.startOnce();
 		}
     }
 }
@@ -835,10 +833,10 @@ void initFromConfig() {
 
 const String WS_HEARTBEAT = "--heartbeat--";
 
-void sendHeartBeat() {
-//	debugf("sendHeartBeat");
-	updateWebSockets(WS_HEARTBEAT);
-}
+//void sendHeartBeat() {
+////	debugf("sendHeartBeat");
+//	updateWebSockets(WS_HEARTBEAT);
+//}
 
 void STADisconnect(String ssid, uint8_t ssid_len, uint8_t bssid[6], uint8_t reason)
 {
@@ -964,5 +962,5 @@ void init()
 ////	System.onReady(startServers);
 	startServers();
 //	WifiStation.waitConnection(connectOk, 20, connectFail); // We recommend 20+ seconds for connection timeout at start
-	heartBeat.initializeMs(4000, sendHeartBeat).start();
+//	heartBeat.initializeMs(4000, sendHeartBeat).start();
 }
