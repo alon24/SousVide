@@ -10,21 +10,18 @@ SousvideCommand::SousvideCommand(int relayPin, int dsTempPin, InfoUpdateSousDele
 	debugf("SousvideCommand Instantiating");
 	this->relayPin = relayPin;
 	this->dsTempPin = dsTempPin;
-
 	//init the relay
 	pinMode(relayPin, OUTPUT);
 	digitalWrite(relayPin, HIGH);
 	updateSousDelegate = delegate;
-
 	sousController = new SousVideController();
-
-//	ReadTemp.Init(dsTempPin);  			// select PIN It's required for one-wire initialization!
-
+	// select PIN It's required for one-wire initialization!
 }
 
 void SousvideCommand::startwork() {
+	ReadTemp.Init(this->dsTempPin);
 	ReadTemp.StartMeasure(); // first measure start,result after 1.2 seconds * number of sensors
-	readTempTimer.initializeMs(10000, TimerDelegate(&SousvideCommand::readData, this)).start();   // every 10 seconds
+	readTempTimer.initializeMs(4000, TimerDelegate(&SousvideCommand::readData, this)).start();   // every 10 seconds
 }
 
 SousvideCommand::~SousvideCommand()
@@ -127,12 +124,13 @@ void SousvideCommand::readData()
 	        {
 	    	  Serial.print(ReadTemp.GetCelsius(a));
 	    	  Serial.print(" Celsius, (");
-	    	  currentTemp = celsius;
 	    	  celsius = ReadTemp.GetCelsius(a);
+	    	  currentTemp = celsius;
 	    	  updateOutsideWorld("temp", String(currentTemp, 2));
+	    	  debugf("current temp==%s", String(currentTemp, 2).c_str());
 //	    	  updateWebSockets("temp:" + String(celsius));
 //	    	  infos->updateParamValue("temp", String(currentTemp, 2));
-	    	  checkTempTriggerRelay(celsius);
+	    	  checkTempTriggerRelay();
 	        }
 	      else
 	    	  Serial.println("Temperature not valid");
@@ -142,25 +140,28 @@ void SousvideCommand::readData()
 	}
 	else
 		Serial.println("No valid Measure so far! wait please");
+
 }
 
-void SousvideCommand::checkTempTriggerRelay(float temp) {
+void SousvideCommand::checkTempTriggerRelay() {
 	//move on this only when Sousvide, do not interfere with manual mode
+	debugf("current mode is %s, currentTemp = %s", operationMode == Sousvide ? "sousvide" : "Manual", String(currentTemp, 2).c_str());
 	if (operationMode == Sousvide)
 	{
 		int trigger = (int)sousController->Setpoint;
 		boolean newState = false;
-		if((int)temp < trigger && !relayState ) {
-			debugf("current temp is below %i, so starting relay", temp);
+		if((int)currentTemp < trigger && !relayState ) {
+			debugf("current temp is below %i, so starting relay", trigger);
 			newState = true;
 //			Serial.println("temp is " + String(trigger) + ", starting relay");
 //			handleCommands("toggleRelay:true");
-		} else if((int)temp >= trigger && relayState){
-			debugf("current temp is %i, so stopping relay", temp);
+			setRelayState(newState);
+		} else if((int)currentTemp >= trigger && relayState){
+			debugf("current temp is %s, so stopping relay", String(currentTemp, 2).c_str());
 //			Serial.println("temp is <  " + String(trigger) + ",stopping relay");
 //			handleCommands("toggleRelay:false");
+			setRelayState(newState);
 		}
-		setRelayState(newState);
 	}
 }
 

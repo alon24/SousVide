@@ -31,21 +31,21 @@ const uint16_t ConfigFileBufferSize = 2048; // Application configuration FileBuf
 //#define dcPin 5
 
 //SSD13006 Pins
-#define sclPin 13
-#define sdaPin 14
+#define sclPin 13//D7
+#define sdaPin 14//D5
 
 // Pin for communication with Temp sensor
-#define DS_TEMP_PIN 12
+#define DS_TEMP_PIN 12//D6
 
 // Pin for trigger control output
-#define RELAY_PIN 4
+#define RELAY_PIN 4//D2
 
 ////Rotary Pins
 #define encoderSwitchPin 0 //push button switch
 //#define encoderCLK 4
 //#define encoderDT 12
 
-#define lightPin = 14;
+#define lightPin = 14;//D5
 
 const char SOUSVIDE_CONFIG_FILE[] = ".sousvide.conf"; // leading point for security reasons :)
 
@@ -59,11 +59,11 @@ struct SousvideConfig
 {
 	SousvideConfig()
 	{
-		Needed_temp = 36;
+		Needed_temp = 30;
 		Kp = 1;
 		Ki = 1;
 		Kd = 1;
-		operationMode = Manual;
+		operationMode = Sousvide;
 		enabled = false;
 		highlow = 0;
 	}

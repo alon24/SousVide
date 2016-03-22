@@ -33,18 +33,18 @@ SousvideConfig loadConfig()
 		cfg.operationMode = operations["type"] == "0" ? Manual : Sousvide;
 		cfg.highlow = operations["highlow"] == "0" ? false : true;
 	}
-	else
-	{
-		//Factory defaults if no config file present
-		cfg.NetworkSSID = WIFI_SSID;
-		cfg.NetworkPassword = WIFI_PWD;
-//		cfg.Needed_temp =54;
-//		cfg.Kp =9;
-//		cfg.Ki =9;
-//		cfg.Kd =9;
-		cfg.highlow = 0;
-		cfg.operationMode = Manual;
-	}
+//	else
+//	{
+//		//Factory defaults if no config file present
+//		cfg.NetworkSSID = WIFI_SSID;
+//		cfg.NetworkPassword = WIFI_PWD;
+////		cfg.Needed_temp =54;
+////		cfg.Kp =9;
+////		cfg.Ki =9;
+////		cfg.Kd =9;
+//		cfg.highlow = 0;
+//		cfg.operationMode = Sousvide;
+//	}
 	return cfg;
 }
 

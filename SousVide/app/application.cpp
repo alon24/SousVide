@@ -33,7 +33,6 @@ Base_Display_Driver* display;
 //OperationMode operationMode = Manual;
 
 //Timers
-Timer procTimer;
 Timer currentWorkTimeTimer;
 Timer initTimer;
 Timer heartBeat;
@@ -53,12 +52,12 @@ BssList networks;
 String network, password;
 Timer connectionTimer;
 
-void handleSousInfoUpdates(String param, String value) {
+void handleUpdateOutsideWorld(String param, String value) {
 //	debugf("*********** handleSousInfoUpdates %s=%s", param.c_str(), value.c_str());
 	infos->updateParamValue(param.c_str(), value.c_str());
 }
 
-SousvideCommand sousCommand(RELAY_PIN, DS_TEMP_PIN, handleSousInfoUpdates);
+SousvideCommand sousCommand(RELAY_PIN, DS_TEMP_PIN, handleUpdateOutsideWorld);
 
 ////Web Sockets ///////
 
@@ -891,6 +890,8 @@ void init()
 
 	ActiveConfig = loadConfig();
 	sousCommand.initCommand(ActiveConfig.Needed_temp, ActiveConfig.Kp, ActiveConfig.Ki, ActiveConfig.Kd);
+	sousCommand.setOperationMode(ActiveConfig.operationMode);
+	sousCommand.highLow = ActiveConfig.highlow;
 
 	updateInfoOnStart();
 
@@ -907,14 +908,6 @@ void init()
 //	keepAliveTimer.initializeMs(1000, updateTimeTimerAction).start();
 //
 //	AppSettings.load();
-//
-////	ds.begin(); // It's required for one-wire initialization!
-////	readTempTimer.initializeMs(1000, readTempData).startOnce();
-//
-////	ReadTemp.Init(dsTempPin);  			// select PIN It's required for one-wire initialization!
-////	ReadTemp.StartMeasure(); // first measure start,result after 1.2 seconds * number of sensors
-////
-////	readTempTimer.initializeMs(10000, readData).start();   // every 10 seconds
 //
 	WifiStation.enable(false);
 //	WifiStation.config(ActiveConfig.NetworkSSID, ActiveConfig.NetworkPassword);
