@@ -182,19 +182,19 @@ function startWebSocket(){
 var heartbeat_msg = '--heartbeat--', heartbeat_interval = null, missed_heartbeats = 0;
 
 function onOpen(event){
-  if(window.timerID){ /* a setInterval has been fired */
-    window.clearInterval(window.timerID);
-    window.timerID=0;
-  }
+  // if(window.timerID){ /* a setInterval has been fired */
+  //   window.clearInterval(window.timerID);
+  //   window.timerID=0;
+  // }
 
   // if (heartbeat_interval === null) {
   //       missed_heartbeats = 0;
   //       heartbeat_interval = setInterval(function() {
   //           try {
   //               missed_heartbeats++;
-  //               if (missed_heartbeats >= 12)
+  //               if (missed_heartbeats >= 4)
   //                   throw new Error("Too many missed heartbeats.");
-  //               socket.send("app " + heartbeat_msg);
+  //               // socket.send("app " + heartbeat_msg);
   //           } catch(e) {
   //               clearInterval(heartbeat_interval);
   //               heartbeat_interval = null;

@@ -36,7 +36,7 @@ Base_Display_Driver* display;
 Timer procTimer;
 Timer currentWorkTimeTimer;
 Timer initTimer;
-//Timer heartBeat;
+Timer heartBeat;
 Timer updateWebSocketTimer;
 //time_t lastActionTime = 0;
 long currentWorkTime = 0;
@@ -137,19 +137,19 @@ void updateWebSocketsFromTimer() {
 	updateInitAllClients();
 }
 
-//should return the command and make the cmd string hold data onl
-String getCommandAndData(String &cmd) {
-	int cmdEnd = cmd.indexOf(":");
-//	debugf("in getCommand:: orig=%s, deli=%i", cmd.c_str(), cmdEnd );
-	String retCmd = cmd.substring(0, cmdEnd);
-
-	String data = cmd.substring(cmdEnd+1);
-	cmd = data;
-
-//	debugf("in getCommand::retcmd=%s, data=%s", retCmd.c_str(), cmd.c_str());
-
-	return retCmd;
-}
+////should return the command and make the cmd string hold data onl
+//String getCommandAndData(String &cmd) {
+//	int cmdEnd = cmd.indexOf(":");
+////	debugf("in getCommand:: orig=%s, deli=%i", cmd.c_str(), cmdEnd );
+//	String retCmd = cmd.substring(0, cmdEnd);
+//
+//	String data = cmd.substring(cmdEnd+1);
+//	cmd = data;
+//
+////	debugf("in getCommand::retcmd=%s, data=%s", retCmd.c_str(), cmd.c_str());
+//
+//	return retCmd;
+//}
 
 void processAppCommands(Command inputCommand, CommandOutput* commandOutput)
 {
@@ -833,10 +833,10 @@ void initFromConfig() {
 
 const String WS_HEARTBEAT = "--heartbeat--";
 
-//void sendHeartBeat() {
-////	debugf("sendHeartBeat");
-//	updateWebSockets(WS_HEARTBEAT);
-//}
+void sendHeartBeat() {
+//	debugf("sendHeartBeat");
+	updateWebSockets(WS_HEARTBEAT);
+}
 
 void STADisconnect(String ssid, uint8_t ssid_len, uint8_t bssid[6], uint8_t reason)
 {
@@ -894,20 +894,14 @@ void init()
 
 	updateInfoOnStart();
 
-//	sousCommand.initCommand(0,0,0,0);
 	sousCommand.startwork();
-//	commandHandler.registerCommand(CommandDelegate("fromClient","Application commands","Application",processAppCommands));
 	commandHandler.registerCommand(CommandDelegate("app","Application commands","Application",processAppCommands));
 
-//////	sousController = new SousVideController();
-////	initFromConfig();
-////
-//	debugf("======= SousVide ==========");
-////	Serial.println();
-////
+	Debug.setDebug(Serial);
+	Debug.initCommand();
 
-//	DateTime date = SystemClock.now();
-//	lastActionTime = date.Milliseconds;
+	Serial.systemDebugOutput(true); // Enable debug output to serial
+	Serial.commandProcessing(true);
 
 	//ilan
 //	keepAliveTimer.initializeMs(1000, updateTimeTimerAction).start();
@@ -962,5 +956,5 @@ void init()
 ////	System.onReady(startServers);
 	startServers();
 //	WifiStation.waitConnection(connectOk, 20, connectFail); // We recommend 20+ seconds for connection timeout at start
-//	heartBeat.initializeMs(4000, sendHeartBeat).start();
+	heartBeat.initializeMs(4000, sendHeartBeat).start();
 }
